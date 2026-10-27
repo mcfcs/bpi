@@ -1,0 +1,141 @@
+{
+  "_note": "Entirely synthetic. Names, studies, figures and quotes are invented for the demo; none are real BPI data.",
+  "teams": [
+    {"name": "Strategy & Insights", "kind": "si"},
+    {"name": "SME Banking", "kind": "bu"},
+    {"name": "Cards & Payments", "kind": "bu"}
+  ],
+  "personas": [
+    {"email": "ana.reyes@example.com", "display_name": "Ana Reyes", "team": "Strategy & Insights", "role": "si_analyst"},
+    {"email": "ben.santos@example.com", "display_name": "Ben Santos", "team": "SME Banking", "role": "bu_user"},
+    {"email": "dino.cruz@example.com", "display_name": "Dino Cruz", "team": "SME Banking", "role": "bu_approver"},
+    {"email": "carla.mendoza@example.com", "display_name": "Carla Mendoza", "team": "Cards & Payments", "role": "bu_user"}
+  ],
+  "studies": [
+    {
+      "code": "SI-2026-014",
+      "title": "SME Online Loan Application Drop-off Survey 2026",
+      "summary": "Online and phone survey of SME owners in Metro Manila who started an online loan application in the past 12 months, measuring why they did not finish.",
+      "owner_team": "SME Banking",
+      "access_level": "restricted",
+      "method_type": "quant",
+      "sample_size": 1200,
+      "fieldwork_end": "2026-03-20",
+      "population": {"age_min": 20, "age_max": 40, "regions": ["NCR"], "segment": "SME owners"},
+      "theme": "loan_application_dropoff",
+      "findings": [
+        {"text": "Documentation requirements were the most-cited reason SME owners abandoned an online loan application (46%).", "finding_type": "quant_stat", "metric_key": "barrier:documents", "value": 46, "unit": "%", "base_n": 1200, "direction": "high"},
+        {"text": "Not knowing how long approval would take was the second most-cited reason for dropping off (40%).", "finding_type": "quant_stat", "metric_key": "barrier:approval_time", "value": 40, "unit": "%", "base_n": 1200, "direction": "high"},
+        {"text": "Fees ranked third of seven drop-off reasons, cited by 38% of owners who started an online loan application.", "finding_type": "quant_stat", "metric_key": "barrier:fees", "value": 38, "unit": "%", "base_n": 1200, "direction": "high"},
+        {"text": "Among owners aged 20-29, 44% cited fees as a reason for dropping off.", "finding_type": "quant_stat", "metric_key": "barrier:fees", "value": 44, "unit": "%", "base_n": 520, "subgroup": {"age_band": "20-29"}, "direction": "high"},
+        {"text": "Among owners aged 30-40, 33% cited fees as a reason for dropping off.", "finding_type": "quant_stat", "metric_key": "barrier:fees", "value": 33, "unit": "%", "base_n": 680, "subgroup": {"age_band": "30-40"}, "direction": "high"},
+        {"text": "App errors during document upload were cited by 22% of owners who dropped off.", "finding_type": "quant_stat", "metric_key": "barrier:app_errors", "value": 22, "unit": "%", "base_n": 1200, "direction": "neutral"}
+      ]
+    },
+    {
+      "code": "SI-2025-009",
+      "title": "Nationwide SME Banking Needs Study 2025",
+      "summary": "Nationwide face-to-face and online survey of SME owners on financing needs, including why online loan applications are left unfinished.",
+      "owner_team": "Strategy & Insights",
+      "access_level": "open",
+      "method_type": "quant",
+      "sample_size": 800,
+      "fieldwork_end": "2025-02-14",
+      "population": {"age_min": 30, "age_max": 60, "regions": ["Nationwide"], "segment": "SME owners"},
+      "theme": "loan_application_dropoff",
+      "findings": [
+        {"text": "Documentation requirements were the top reason SME owners stopped an online loan application (52%).", "finding_type": "quant_stat", "metric_key": "barrier:documents", "value": 52, "unit": "%", "base_n": 800, "direction": "high"},
+        {"text": "Unclear approval time was the second reason owners dropped off (44%).", "finding_type": "quant_stat", "metric_key": "barrier:approval_time", "value": 44, "unit": "%", "base_n": 800, "direction": "high"},
+        {"text": "Collateral requirements ranked third among reasons for abandoning a loan application (31%).", "finding_type": "quant_stat", "metric_key": "barrier:collateral", "value": 31, "unit": "%", "base_n": 800, "direction": "high"},
+        {"text": "Fees were not among the top barriers: 12% of SME owners cited them, sixth of seven drop-off reasons.", "finding_type": "quant_stat", "metric_key": "barrier:fees", "value": 12, "unit": "%", "base_n": 800, "direction": "low"}
+      ]
+    },
+    {
+      "code": "SI-2025-031",
+      "title": "Visayas SME Owner Focus Groups 2025",
+      "summary": "Six focus groups with SME owners in Cebu and Iloilo on their experience of applying for business loans online.",
+      "owner_team": "Strategy & Insights",
+      "access_level": "open",
+      "method_type": "qual",
+      "sample_size": 42,
+      "fieldwork_end": "2025-09-12",
+      "population": {"age_min": 28, "age_max": 58, "regions": ["Cebu", "Iloilo"], "segment": "SME owners"},
+      "theme": "loan_application_dropoff",
+      "findings": [
+        {"text": "In the Cebu and Iloilo groups, participants described fees as a minor concern in a loan application; what they raised instead was not knowing whom to call when an application stalled.", "finding_type": "qual_theme", "metric_key": "barrier:fees", "direction": "low"},
+        {"text": "Participants described wanting a named contact person who can answer questions while a loan application is in progress.", "finding_type": "qual_theme", "metric_key": "support:contact_person", "direction": "high"},
+        {"text": "Participants described re-uploading documents they had already submitted as the point where they gave up on an online loan application.", "finding_type": "qual_theme", "metric_key": "barrier:documents", "direction": "high"},
+        {"text": "The fees are fine as long as they're clear. What I need is someone I can call when the application gets stuck.", "finding_type": "verbatim", "metric_key": "barrier:fees", "subgroup": {"segment": "Bakery owner, 41", "region": "Cebu City"}},
+        {"text": "Okay lang ang fees, basta may makakausap ako kapag may problema. (The fees are okay, as long as I have someone to talk to when there's a problem.)", "finding_type": "verbatim", "metric_key": "barrier:fees", "subgroup": {"segment": "Sari-sari store owner, 36", "region": "Cebu City"}},
+        {"text": "I'd rather talk to one person who knows my business than fill in the same form three times.", "finding_type": "verbatim", "metric_key": "support:contact_person", "subgroup": {"segment": "Hardware store owner, 52", "region": "Iloilo City"}},
+        {"text": "When the app asked for my ITR again, I just went to the branch instead.", "finding_type": "verbatim", "metric_key": "barrier:documents", "subgroup": {"segment": "Rice retailer, 47", "region": "Iloilo City"}}
+      ]
+    },
+    {
+      "code": "SI-2022-007",
+      "title": "SME Loan Journey Benchmark 2022",
+      "summary": "Nationwide benchmark survey of SME owners' loan application journeys across banks.",
+      "owner_team": "Strategy & Insights",
+      "access_level": "open",
+      "method_type": "quant",
+      "sample_size": 1050,
+      "fieldwork_end": "2022-06-30",
+      "population": {"age_min": 25, "age_max": 55, "regions": ["Nationwide"], "segment": "SME owners"},
+      "theme": "loan_application_dropoff",
+      "findings": [
+        {"text": "In 2022, documentation requirements led the reasons SME owners abandoned a loan application (41%).", "finding_type": "quant_stat", "metric_key": "barrier:documents", "value": 41, "unit": "%", "base_n": 1050, "direction": "high"},
+        {"text": "In 2022, fees were the second most-cited reason for abandoning a loan application (35%).", "finding_type": "quant_stat", "metric_key": "barrier:fees", "value": 35, "unit": "%", "base_n": 1050, "direction": "high"}
+      ]
+    },
+    {
+      "code": "SI-2026-021",
+      "title": "Card Rewards Preference Pulse Q1 2026",
+      "summary": "Online pulse survey of young professionals in Metro Manila on preferred credit card rewards.",
+      "owner_team": "Strategy & Insights",
+      "access_level": "open",
+      "method_type": "quant",
+      "sample_size": 640,
+      "fieldwork_end": "2026-02-27",
+      "population": {"age_min": 25, "age_max": 35, "regions": ["NCR"], "segment": "Young professionals"},
+      "theme": "card_rewards",
+      "findings": [
+        {"text": "Cashback was the preferred credit card reward for 54% of young professionals.", "finding_type": "quant_stat", "metric_key": "reward_pref:cashback", "value": 54, "unit": "%", "base_n": 640, "direction": "high"},
+        {"text": "Travel rewards were the preferred credit card reward for 19% of young professionals.", "finding_type": "quant_stat", "metric_key": "reward_pref:travel", "value": 19, "unit": "%", "base_n": 640, "direction": "low"}
+      ]
+    },
+    {
+      "code": "SI-2026-027",
+      "title": "Credit Card Value Proposition Test 2026",
+      "summary": "Online survey testing credit card reward propositions with young professionals in Metro Manila.",
+      "owner_team": "Cards & Payments",
+      "access_level": "restricted",
+      "method_type": "quant",
+      "sample_size": 580,
+      "fieldwork_end": "2026-04-30",
+      "population": {"age_min": 25, "age_max": 35, "regions": ["NCR"], "segment": "Young professionals"},
+      "theme": "card_rewards",
+      "findings": [
+        {"text": "Only 21% of young professionals chose cashback as their preferred credit card reward.", "finding_type": "quant_stat", "metric_key": "reward_pref:cashback", "value": 21, "unit": "%", "base_n": 580, "direction": "low"},
+        {"text": "Travel rewards were the first choice of credit card reward for 47% of young professionals.", "finding_type": "quant_stat", "metric_key": "reward_pref:travel", "value": 47, "unit": "%", "base_n": 580, "direction": "high"}
+      ]
+    },
+    {
+      "code": "SI-2026-033",
+      "title": "Market Vendor QR Payments Groups 2026",
+      "summary": "Four focus groups with public market vendors in Davao City and Cagayan de Oro on accepting QR payments.",
+      "owner_team": "Strategy & Insights",
+      "access_level": "open",
+      "method_type": "qual",
+      "sample_size": 30,
+      "fieldwork_end": "2026-05-29",
+      "population": {"age_min": 25, "age_max": 60, "regions": ["Davao City", "Cagayan de Oro"], "segment": "Market vendors"},
+      "theme": "qr_payments",
+      "findings": [
+        {"text": "In the Davao and Cagayan de Oro groups, participants described QR payments as convenient for small amounts but worried about confirming that a payment had arrived before handing over goods.", "finding_type": "qual_theme", "metric_key": "qr:payment_confirmation", "direction": "high"},
+        {"text": "Participants described keeping cash as their default because their own suppliers still ask to be paid in cash.", "finding_type": "qual_theme", "metric_key": "qr:cash_habit", "direction": "high"},
+        {"text": "With QR I have to check my phone before I hand over the fish, and when it's busy that slows me down.", "finding_type": "verbatim", "metric_key": "qr:payment_confirmation", "subgroup": {"segment": "Fish vendor, 46", "region": "Davao City"}},
+        {"text": "My suppliers want cash, so the QR money just sits in the app until I withdraw it.", "finding_type": "verbatim", "metric_key": "qr:cash_habit", "subgroup": {"segment": "Vegetable vendor, 38", "region": "Cagayan de Oro"}}
+      ]
+    }
+  ]
+}

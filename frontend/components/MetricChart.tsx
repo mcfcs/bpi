@@ -1,0 +1,179 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import { Bar, BarChart, CartesianGrid, LabelList, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import type { ChartBar, ChartSpec } from "@/lib/types";
+import { fmtValue, monthYear, n } from "@/lib/format";
+import { TierBadge } from "./Citation";
+
+type Datum = ChartBar & { tipLabel: string };
+
+interface ValueLabelProps {
+  x?: number | string;
+  y?: number | string;
+  width?: number | string;
+  height?: number | string;
+  value?: number | string | boolean | null;
+}
+
+interface TickProps {
+  x?: number | string;
+  y?: number | string;
+  index?: number;
+  payload?: { value: string };
+}
+
+function useNarrow(breakpoint = 560): boolean {
+  const [narrow, setNarrow] = useState(false);
+  useEffect(() => {
+    const query = window.matchMedia(`(max-width: ${breakpoint}px)`);
+    const update = () => setNarrow(query.matches);
+    update();
+    query.addEventListener("change", update);
+    return () => query.removeEventListener("change", update);
+  }, [breakpoint]);
+  return narrow;
+}
+
+function axis(max: number, unit: string): { top: number; ticks: number[] } {
+  const padded = max * 1.12;
+  const step = padded > 50 ? 20 : 10;
+  const top = unit === "%" ? Math.min(100, Math.ceil(padded / step) * step) : Math.ceil(padded / step) * step;
+  const ticks: number[] = [];
+  for (let t = 0; t <= top; t += step) ticks.push(t);
+  return { top, ticks };
+}
+
+function ChartTooltip({ active, payload }: { active?: boolean; payload?: ReadonlyArray<{ payload?: Datum }> }) {
+  const bar = payload?.[0]?.payload;
+  if (!active || !bar) return null;
+  return (
+    <div className="chart-tooltip">
+      <strong>{fmtValue(bar.value, bar.unit)}</strong> <span className="muted">base n={n(bar.base_n)}</span>
+      <div>{bar.label}</div>
+      <div className="muted">
+        {bar.study_code} · Tier {bar.tier ?? "not set"} · {bar.region_label} · fieldwork ended {monthYear(bar.fieldwork_end)}
+      </div>
+      <div className="muted">{bar.study_title}</div>
+    </div>
+  );
+}
+
+/** Horizontal bars, one per study or subgroup, sorted by value; numbers come from the database. */
+export function MetricChart({ chart }: { chart: ChartSpec }) {
+  const narrow = useNarrow();
+  const [showTable, setShowTable] = useState(false);
+  const data: Datum[] = chart.bars.map((b) => ({
+    ...b,
+    tipLabel: `${fmtValue(b.value, b.unit)} · n=${n(b.base_n)} · ${b.tier ?? "–"}`,
+  }));
+  const { top, ticks } = axis(Math.max(...data.map((d) => d.value)), chart.unit);
+  const labelWidth = narrow ? 124 : 168;
+  const rowHeight = narrow ? 58 : 46;
+  const summary = data.map((d) => `${d.label}: ${fmtValue(d.value, d.unit)}, base ${n(d.base_n)}, tier ${d.tier}`).join("; ");
+
+  // Row label: the group on one line (two on narrow screens, split at the comma), study and year below.
+  const renderTick = ({ x, y, index, payload }: TickProps) => {
+    const datum = index != null ? data[index] : undefined;
+    const label = datum?.label ?? payload?.value ?? "";
+    const cut = label.indexOf(", ");
+    const lines = narrow && cut > 0 ? [label.slice(0, cut + 1), label.slice(cut + 2)] : [label];
+    const top = -2 - (lines.length - 1) * 13;
+    return (
+      <g transform={`translate(${Number(x) - 8},${Number(y)})`}>
+        <text textAnchor="end" fill="var(--ink)" fontSize={12} fontFamily="var(--sans)">
+          {lines.map((line, i) => (
+            <tspan key={i} x={0} dy={i === 0 ? top : 13}>{line}</tspan>
+          ))}
+        </text>
+        <text textAnchor="end" fill="var(--muted)" fontSize={narrow ? 10 : 10.5} fontFamily="var(--mono)" dy={12}>
+          {datum?.detail}
+        </text>
+      </g>
+    );
+  };
+
+  // Value, base n and tier at the bar tip, on one line (never wrapped or clipped by the bar).
+  const renderValue = ({ x, y, width, height, value }: ValueLabelProps) => (
+    <text
+      x={Number(x) + Number(width) + 8}
+      y={Number(y) + Number(height) / 2}
+      dy={4}
+      fill="var(--ink)"
+      fontSize={narrow ? 11 : 11.5}
+      fontFamily="var(--mono)"
+    >
+      {String(value ?? "")}
+    </text>
+  );
+
+  return (
+    <figure className="chart" style={{ margin: "8px 0 20px" }}>
+      <figcaption>
+        <p className="chart-title">{chart.title}</p>
+        <p className="chart-sub">
+          {chart.unit === "%" ? "Share of respondents (%)" : "Score"}. Each bar uses its own study&apos;s base; labels
+          show value, base n and robustness tier.
+        </p>
+      </figcaption>
+      <div style={{ width: "100%", height: data.length * rowHeight + 34 }} role="img" aria-label={`${chart.title}. ${summary}`}>
+        <ResponsiveContainer>
+          <BarChart data={data} layout="vertical" margin={{ top: 4, right: narrow ? 122 : 138, bottom: 4, left: 0 }} barCategoryGap={12}>
+            <CartesianGrid horizontal={false} stroke="var(--rule)" strokeWidth={1} />
+            <XAxis
+              type="number"
+              domain={[0, top]}
+              ticks={ticks}
+              interval="preserveStartEnd"
+              tickFormatter={(v: number) => (chart.unit === "%" ? `${v}%` : String(v))}
+              tick={{ fill: "var(--muted)", fontSize: 11, fontFamily: "var(--mono)" }}
+              tickLine={false}
+              axisLine={{ stroke: "var(--rule)" }}
+            />
+            <YAxis type="category" dataKey="finding_id" width={labelWidth} tick={renderTick} tickLine={false} axisLine={{ stroke: "var(--rule)" }} interval={0} />
+            <Tooltip
+              cursor={{ fill: "var(--rule)", fillOpacity: 0.3 }}
+              content={(props) => <ChartTooltip active={props.active} payload={props.payload as ReadonlyArray<{ payload?: Datum }>} />}
+              isAnimationActive={false}
+            />
+            <Bar dataKey="value" fill="var(--link)" barSize={18} radius={[0, 4, 4, 0]} isAnimationActive={false}>
+              <LabelList dataKey="tipLabel" content={renderValue} />
+            </Bar>
+          </BarChart>
+        </ResponsiveContainer>
+      </div>
+      <button type="button" className="btn btn-quiet small" aria-expanded={showTable} onClick={() => setShowTable((s) => !s)}>
+        {showTable ? "Hide table" : "Show as table"}
+      </button>
+      {showTable && (
+        <div className="table-wrap chart-table">
+          <table>
+            <caption className="visually-hidden">{chart.title}</caption>
+            <thead>
+              <tr>
+                <th>Group</th>
+                <th className="num">Value</th>
+                <th>Study</th>
+                <th>Tier</th>
+              </tr>
+            </thead>
+            <tbody>
+              {data.map((d) => (
+                <tr key={d.finding_id}>
+                  <td>{d.label}</td>
+                  <td className="num mono">{fmtValue(d.value, d.unit)}</td>
+                  <td>
+                    <span className="mono">{d.study_code}</span> <span className="muted">{d.study_title}</span>
+                  </td>
+                  <td>
+                    <TierBadge tier={d.tier} sample={`n=${n(d.base_n)}`} when={d.fieldwork_end?.slice(0, 4) ?? "n.d."} />
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </figure>
+  );
+}
