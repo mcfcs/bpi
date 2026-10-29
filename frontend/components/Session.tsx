@@ -30,18 +30,18 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     let cancelled = false;
     (async () => {
+      // Independent requests: fetch the persona list and the current profile together.
+      const mePromise = getToken()
+        ? api<Profile>("/api/me").catch(() => {
+            setToken(null);
+            return null;
+          })
+        : Promise.resolve(null);
       try {
-        const list = await api<Profile[]>("/api/demo/personas");
+        const [list, me] = await Promise.all([api<Profile[]>("/api/demo/personas"), mePromise]);
         if (cancelled) return;
         setPersonas(list);
-        if (getToken()) {
-          try {
-            const me = await api<Profile>("/api/me");
-            if (!cancelled) setProfile(me);
-          } catch {
-            setToken(null);
-          }
-        }
+        if (me) setProfile(me);
       } catch (e) {
         if (!cancelled) setError(e instanceof Error ? e.message : "Could not load the demo personas.");
       } finally {

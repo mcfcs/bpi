@@ -1,9 +1,11 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useState } from "react";
 import { SignedIn } from "@/components/SiteHeader";
 import { useSession } from "@/components/Session";
+import { LoadError } from "@/components/LoadError";
 import { api, ApiError } from "@/lib/api";
+import { useApi } from "@/lib/useApi";
 import type { AccessRequest } from "@/lib/types";
 import { dateTime } from "@/lib/format";
 
@@ -11,9 +13,11 @@ function Decide({ request, onDone }: { request: AccessRequest; onDone: () => voi
   const [note, setNote] = useState("");
   const [expires, setExpires] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
 
   async function decide(approve: boolean) {
     setError(null);
+    setBusy(true);
     try {
       await api(`/api/access-requests/${request.id}/decision`, {
         method: "POST",
@@ -22,6 +26,8 @@ function Decide({ request, onDone }: { request: AccessRequest; onDone: () => voi
       onDone();
     } catch (e) {
       setError(e instanceof ApiError ? e.message : "Could not record the decision.");
+    } finally {
+      setBusy(false);
     }
   }
 
@@ -37,10 +43,10 @@ function Decide({ request, onDone }: { request: AccessRequest; onDone: () => voi
           <input id={`exp-${request.id}`} type="date" value={expires} onChange={(e) => setExpires(e.target.value)} />
         </div>
       </div>
-      {error && <p className="error">{error}</p>}
+      {error && <p className="error" role="alert">{error}</p>}
       <div className="actions">
-        <button className="btn btn-primary" onClick={() => decide(true)}>Approve for {request.requester_team}</button>
-        <button className="btn" onClick={() => decide(false)}>Decline</button>
+        <button className="btn btn-primary" disabled={busy} onClick={() => decide(true)}>Approve for {request.requester_team}</button>
+        <button className="btn" disabled={busy} onClick={() => decide(false)}>Decline</button>
       </div>
     </div>
   );
@@ -48,13 +54,9 @@ function Decide({ request, onDone }: { request: AccessRequest; onDone: () => voi
 
 function Access() {
   const { profile } = useSession();
-  const [requests, setRequests] = useState<AccessRequest[] | null>(null);
-  const load = useCallback(() => {
-    api<AccessRequest[]>("/api/access-requests").then(setRequests).catch(() => setRequests([]));
-  }, []);
-  useEffect(load, [load, profile?.id]);
+  const { data: requests, error, reload: load } = useApi<AccessRequest[]>("/api/access-requests", profile?.id);
 
-  if (!requests) return <p className="loading">Loading…</p>;
+  if (!requests) return error ? <LoadError message={error} onRetry={load} /> : <p className="loading" role="status">Loading…</p>;
   const toDecide = requests.filter((r) => r.can_decide);
   const mine = requests.filter((r) => r.mine);
   const decidedByOthers = requests.filter((r) => !r.mine && !r.can_decide);
@@ -63,6 +65,7 @@ function Access() {
     <>
       <section className="page-head">
         <p className="eyebrow">Checkpoint 2 · access</p>
+        <title>Access requests · Evidence brief</title>
         <h1>Access requests</h1>
         <p>
           Studies paid for by a business unit are shared with other teams only when the owning team or S&amp;I approves.

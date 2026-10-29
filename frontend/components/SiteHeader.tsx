@@ -40,12 +40,14 @@ export function SiteHeader() {
             <select
               id="persona"
               value={profile?.email ?? ""}
-              onChange={(e) => e.target.value && signIn(e.target.value)}
+              onChange={(e) => {
+                if (e.target.value) signIn(e.target.value).catch(() => undefined);
+              }}
             >
               {!profile && <option value="">Choose a persona</option>}
               {personas.map((p) => (
                 <option key={p.email} value={p.email}>
-                  {p.display_name} · {p.team_name} · {ROLE_LABELS[p.role]}
+                  {p.display_name} · {p.team_name}
                 </option>
               ))}
             </select>
@@ -59,8 +61,8 @@ export function SiteHeader() {
 /** Renders children once a persona is signed in; otherwise offers the persona list. */
 export function SignedIn({ children, siOnly = false }: { children: React.ReactNode; siOnly?: boolean }) {
   const { profile, personas, ready, error, signIn } = useSession();
-  if (!ready) return <p className="loading">Loading…</p>;
-  if (error) return <p className="error">{error}</p>;
+  if (!ready) return <p className="loading" role="status">Loading…</p>;
+  if (error) return <p className="error" role="alert">{error}</p>;
   if (!profile) {
     return (
       <section className="page-head">
@@ -74,7 +76,9 @@ export function SignedIn({ children, siOnly = false }: { children: React.ReactNo
                 <strong>{p.display_name}</strong>{" "}
                 <span className="muted">· {p.team_name} · {ROLE_LABELS[p.role]}</span>
               </span>
-              <button className="btn" onClick={() => signIn(p.email)}>Sign in</button>
+              <button className="btn" aria-label={`Sign in as ${p.display_name}`} onClick={() => signIn(p.email).catch(() => undefined)}>
+                Sign in
+              </button>
             </li>
           ))}
         </ul>

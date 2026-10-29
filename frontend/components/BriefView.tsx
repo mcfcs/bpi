@@ -1,17 +1,23 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import Link from "next/link";
-import { Lock } from "lucide-react";
+import { Lock, Printer } from "lucide-react";
 import { useState } from "react";
 import { api, ApiError } from "@/lib/api";
 import type { Brief, Claim, ContextNote, RestrictedMatch, SourceView } from "@/lib/types";
 import { dateTime, DIFFERS_LABELS, monthYear, n } from "@/lib/format";
 import { SourceList, TierBadge, uniqueByStudy, type CitationItem } from "./Citation";
-import { MetricChart } from "./MetricChart";
 
-function Section({ title, tag, intro, children }: { title: string; tag?: string; intro?: string; children: React.ReactNode }) {
+// recharts is the heaviest dependency; load it only for briefs that have charts.
+const MetricChart = dynamic(() => import("./MetricChart").then((m) => m.MetricChart), {
+  ssr: false,
+  loading: () => <div className="chart-placeholder" aria-hidden />,
+});
+
+function Section({ title, tag, intro, id, children }: { title: string; tag?: string; intro?: string; id?: string; children: React.ReactNode }) {
   return (
-    <section className="section" aria-label={title}>
+    <section className="section" aria-label={title} id={id}>
       <div className="section-head">
         <h2>{title}</h2>
         {tag && <span className="tag">{tag}</span>}
@@ -151,16 +157,20 @@ function AskAnalyst({ brief }: { brief: Brief }) {
   const [note, setNote] = useState("");
   const [sent, setSent] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
 
   async function submit(event: React.FormEvent) {
     event.preventDefault();
     setError(null);
+    setBusy(true);
     try {
       await api("/api/escalations", { method: "POST", json: { brief_id: brief.id, note } });
       setSent(true);
       setOpen(false);
     } catch (e) {
       setError(e instanceof ApiError ? e.message : "Could not send.");
+    } finally {
+      setBusy(false);
     }
   }
 
@@ -178,9 +188,9 @@ function AskAnalyst({ brief }: { brief: Brief }) {
         <label htmlFor="escalation-note">What should the analyst check?</label>
         <textarea id="escalation-note" rows={3} value={note} onChange={(e) => setNote(e.target.value)} required />
       </div>
-      {error && <p className="error">{error}</p>}
+      {error && <p className="error" role="alert">{error}</p>}
       <div className="actions">
-        <button className="btn btn-primary" disabled={note.trim().length < 3}>Send to S&amp;I</button>
+        <button className="btn btn-primary" disabled={busy || note.trim().length < 3}>Send to S&amp;I</button>
         <button type="button" className="btn btn-quiet" onClick={() => setOpen(false)}>Cancel</button>
       </div>
     </form>
@@ -188,6 +198,16 @@ function AskAnalyst({ brief }: { brief: Brief }) {
 }
 
 const LEVELS = { high: 3, medium: 2, low: 1 } as const;
+
+function Meter({ level }: { level: keyof typeof LEVELS }) {
+  return (
+    <span className="meter" aria-hidden>
+      {[1, 2, 3].map((i) => (
+        <i key={i} className={i <= LEVELS[level] ? "on" : ""} />
+      ))}
+    </span>
+  );
+}
 
 export function BriefView({ brief }: { brief: Brief }) {
   const { sources } = brief;
@@ -198,6 +218,7 @@ export function BriefView({ brief }: { brief: Brief }) {
 
   return (
     <article>
+      <title>{`${brief.question} · Evidence brief`}</title>
       <header className="brief-head">
         <p className="eyebrow">Evidence brief</p>
         <h1>{brief.question}</h1>
@@ -208,6 +229,18 @@ export function BriefView({ brief }: { brief: Brief }) {
           {brief.dropped_claims > 0 && <span>{brief.dropped_claims} claim(s) removed by the checks</span>}
         </div>
         {brief.generator_note && <p className="hint">{brief.generator_note}</p>}
+        <div className="brief-glance">
+          <a href="#confidence" className="glance-confidence">
+            <Meter level={level} />
+            <span>
+              <strong>{level[0].toUpperCase() + level.slice(1)} confidence.</strong>{" "}
+              {brief.confidence.reasons[0]}
+            </span>
+          </a>
+          <button type="button" className="btn btn-quiet no-print" onClick={() => window.print()}>
+            <Printer size={15} strokeWidth={1.5} aria-hidden /> Print or save as PDF
+          </button>
+        </div>
       </header>
 
       <Section title="Headline">
@@ -311,15 +344,11 @@ export function BriefView({ brief }: { brief: Brief }) {
         </Section>
       )}
 
-      <Section title="Confidence">
+      <Section title="Confidence" id="confidence">
         <div className="row">
           <div className="text">
             <p className="confidence-level">
-              <span className="meter" aria-hidden>
-                {[1, 2, 3].map((i) => (
-                  <i key={i} className={i <= LEVELS[level] ? "on" : ""} />
-                ))}
-              </span>
+              <Meter level={level} />
               {level[0].toUpperCase() + level.slice(1)}
             </p>
             <ul className="gaps">
@@ -329,7 +358,7 @@ export function BriefView({ brief }: { brief: Brief }) {
             </ul>
             <p className="hint">Computed from study tiers and how the studies relate, not reported by the model.</p>
           </div>
-          <div>{!brief.escalation && <AskAnalyst brief={brief} />}</div>
+          <div className="no-print">{!brief.escalation && <AskAnalyst brief={brief} />}</div>
         </div>
       </Section>
     </article>

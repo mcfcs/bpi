@@ -1,9 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useState } from "react";
+import { useState } from "react";
 import { SignedIn } from "@/components/SiteHeader";
 import { useSession } from "@/components/Session";
+import { LoadError } from "@/components/LoadError";
+import { useApi } from "@/lib/useApi";
 import { api, ApiError } from "@/lib/api";
 import type { EscalationRow } from "@/lib/types";
 import { dateTime } from "@/lib/format";
@@ -41,16 +43,13 @@ function Respond({ row, onDone }: { row: EscalationRow; onDone: () => void }) {
 function Desk() {
   const { profile } = useSession();
   const isSi = profile?.role === "si_analyst";
-  const [rows, setRows] = useState<EscalationRow[] | null>(null);
-  const load = useCallback(() => {
-    api<EscalationRow[]>("/api/escalations").then(setRows).catch(() => setRows([]));
-  }, []);
-  useEffect(load, [load, profile?.id]);
+  const { data: rows, error, reload: load } = useApi<EscalationRow[]>("/api/escalations", profile?.id);
 
   return (
     <>
       <section className="page-head">
         <p className="eyebrow">Checkpoint 3 · escalation</p>
+        <title>{`${isSi ? "Analyst desk" : "Ask an analyst"} · Evidence brief`}</title>
         <h1>{isSi ? "Analyst desk" : "Ask an analyst"}</h1>
         <p>
           {isSi
@@ -58,8 +57,9 @@ function Desk() {
             : "Questions you have sent to S&I, and their replies. To ask about a brief, open it and choose Ask an analyst."}
         </p>
       </section>
+      {error && <LoadError message={error} onRetry={load} />}
       {rows === null ? (
-        <p className="loading">Loading…</p>
+        !error && <p className="loading" role="status">Loading…</p>
       ) : rows.length === 0 ? (
         <p className="notice">Nothing here yet.</p>
       ) : (

@@ -1,8 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { SignedIn } from "@/components/SiteHeader";
-import { api } from "@/lib/api";
+import { LoadError } from "@/components/LoadError";
+import { useApi } from "@/lib/useApi";
+
 import type { AuditRow } from "@/lib/types";
 import { dateTime } from "@/lib/format";
 
@@ -14,17 +16,15 @@ function summarise(details: Record<string, unknown>): string {
 }
 
 function Audit() {
-  const [rows, setRows] = useState<AuditRow[] | null>(null);
+  const { data: rows, error, reload } = useApi<AuditRow[]>("/api/audit?limit=300");
   const [filter, setFilter] = useState("");
-  useEffect(() => {
-    api<AuditRow[]>("/api/audit?limit=300").then(setRows).catch(() => setRows([]));
-  }, []);
   const shown = (rows ?? []).filter((r) => !filter || r.action.includes(filter) || r.actor.toLowerCase().includes(filter.toLowerCase()));
 
   return (
     <>
       <section className="page-head">
         <p className="eyebrow">Governance</p>
+        <title>Audit log · Evidence brief</title>
         <h1>Audit log</h1>
         <p>Append-only. Every brief, review edit, tier change, override, access decision, escalation and export.</p>
       </section>
@@ -32,8 +32,9 @@ function Audit() {
         <label htmlFor="filter">Filter by action or person</label>
         <input id="filter" value={filter} onChange={(e) => setFilter(e.target.value)} placeholder="tier_override" />
       </div>
+      {error && <LoadError message={error} onRetry={reload} />}
       {rows === null ? (
-        <p className="loading">Loading…</p>
+        !error && <p className="loading" role="status">Loading…</p>
       ) : (
         <div className="table-wrap">
           <table>

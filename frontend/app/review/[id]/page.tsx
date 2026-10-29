@@ -117,7 +117,7 @@ function StudyCard({ study, onSaved }: { study: StudyDetail; onSaved: (s: StudyD
           <option value="open">Open to all teams</option>
         </select>
       </div>
-      {status && <p className={status.kind === "error" ? "error" : "muted"}>{status.text}</p>}
+      {status && <p role={status.kind === "error" ? "alert" : "status"} className={status.kind === "error" ? "error" : "muted"}>{status.text}</p>}
       <button className="btn btn-primary">Save study card</button>
     </form>
   );
@@ -137,10 +137,8 @@ function TierPanel({ study, onSaved }: { study: StudyDetail; onSaved: (s: StudyD
         json: clear ? { clear_tier_override: true } : { tier_override: override, tier_override_reason: reason },
       });
       onSaved(updated);
-      if (clear) {
-        setOverride("");
-        setReason("");
-      }
+      setOverride(updated.tier_override ?? "");
+      setReason(updated.tier_override_reason ?? "");
       setStatus({ kind: "ok", text: clear ? "Override removed. Logged to the audit trail." : "Override saved. Logged to the audit trail." });
     } catch (e) {
       setStatus({ kind: "error", text: errorText(e, "Could not save the override.") });
@@ -187,7 +185,7 @@ function TierPanel({ study, onSaved }: { study: StudyDetail; onSaved: (s: StudyD
         <label htmlFor="reason">Reason (required for an override)</label>
         <textarea id="reason" rows={2} value={reason} onChange={(e) => setReason(e.target.value)} />
       </div>
-      {status && <p className={status.kind === "error" ? "error" : "muted"}>{status.text}</p>}
+      {status && <p role={status.kind === "error" ? "alert" : "status"} className={status.kind === "error" ? "error" : "muted"}>{status.text}</p>}
       <div className="actions">
         <button className="btn btn-primary" type="button" disabled={!override || !reason.trim()} onClick={() => save(false)}>
           Save override
@@ -239,8 +237,8 @@ function FindingEditor({ finding }: { finding: FindingRow }) {
       </div>
       <div className="field-row">
         <div className="field">
-          <label>Type</label>
-          <select value={f.finding_type ?? ""} onChange={(e) => update({ finding_type: (e.target.value || null) as FindingRow["finding_type"] })}>
+          <label htmlFor={`type-${f.id}`}>Type</label>
+          <select id={`type-${f.id}`} value={f.finding_type ?? ""} onChange={(e) => update({ finding_type: (e.target.value || null) as FindingRow["finding_type"] })}>
             <option value="">Not set</option>
             <option value="quant_stat">Quant statistic</option>
             <option value="qual_theme">Qualitative theme</option>
@@ -248,12 +246,12 @@ function FindingEditor({ finding }: { finding: FindingRow }) {
           </select>
         </div>
         <div className="field">
-          <label>Metric key</label>
-          <input value={f.metric_key ?? ""} onChange={(e) => update({ metric_key: e.target.value })} placeholder="barrier:fees" />
+          <label htmlFor={`metric-key-${f.id}`}>Metric key</label>
+          <input id={`metric-key-${f.id}`} value={f.metric_key ?? ""} onChange={(e) => update({ metric_key: e.target.value })} placeholder="barrier:fees" />
         </div>
         <div className="field">
-          <label>Direction</label>
-          <select value={f.direction ?? ""} onChange={(e) => update({ direction: (e.target.value || null) as FindingRow["direction"] })}>
+          <label htmlFor={`direction-${f.id}`}>Direction</label>
+          <select id={`direction-${f.id}`} value={f.direction ?? ""} onChange={(e) => update({ direction: (e.target.value || null) as FindingRow["direction"] })}>
             <option value="">Not set</option>
             <option value="high">High: prominent</option>
             <option value="low">Low: not prominent</option>
@@ -261,19 +259,19 @@ function FindingEditor({ finding }: { finding: FindingRow }) {
           </select>
         </div>
         <div className="field">
-          <label>Theme</label>
-          <input value={f.theme ?? ""} onChange={(e) => update({ theme: e.target.value })} />
+          <label htmlFor={`theme-${f.id}`}>Theme</label>
+          <input id={`theme-${f.id}`} value={f.theme ?? ""} onChange={(e) => update({ theme: e.target.value })} />
         </div>
       </div>
       {f.finding_type === "quant_stat" && (
         <div className="field-row">
           <div className="field">
-            <label>Value</label>
-            <input type="number" step="any" value={f.value ?? ""} onChange={(e) => update({ value: e.target.value === "" ? null : Number(e.target.value) })} />
+            <label htmlFor={`value-${f.id}`}>Value</label>
+            <input id={`value-${f.id}`} type="number" step="any" value={f.value ?? ""} onChange={(e) => update({ value: e.target.value === "" ? null : Number(e.target.value) })} />
           </div>
           <div className="field">
-            <label>Unit</label>
-            <select value={f.unit ?? ""} onChange={(e) => update({ unit: (e.target.value || null) as FindingRow["unit"] })}>
+            <label htmlFor={`unit-${f.id}`}>Unit</label>
+            <select id={`unit-${f.id}`} value={f.unit ?? ""} onChange={(e) => update({ unit: (e.target.value || null) as FindingRow["unit"] })}>
               <option value="">Not set</option>
               <option value="%">%</option>
               <option value="rank">rank</option>
@@ -281,28 +279,28 @@ function FindingEditor({ finding }: { finding: FindingRow }) {
             </select>
           </div>
           <div className="field">
-            <label>Base n</label>
-            <input type="number" min={1} value={f.base_n ?? ""} onChange={(e) => update({ base_n: e.target.value === "" ? null : Number(e.target.value) })} />
+            <label htmlFor={`base-n-${f.id}`}>Base n</label>
+            <input id={`base-n-${f.id}`} type="number" min={1} value={f.base_n ?? ""} onChange={(e) => update({ base_n: e.target.value === "" ? null : Number(e.target.value) })} />
           </div>
         </div>
       )}
       <div className="field-row">
         <div className="field">
-          <label>Subgroup: age band</label>
-          <input value={sub.age_band ?? ""} onChange={(e) => update({ subgroup: { ...sub, age_band: e.target.value } })} placeholder="20-29" />
+          <label htmlFor={`subgroup-age-band-${f.id}`}>Subgroup: age band</label>
+          <input id={`subgroup-age-band-${f.id}`} value={sub.age_band ?? ""} onChange={(e) => update({ subgroup: { ...sub, age_band: e.target.value } })} placeholder="20-29" />
         </div>
         <div className="field">
-          <label>Subgroup: region</label>
-          <input value={sub.region ?? ""} onChange={(e) => update({ subgroup: { ...sub, region: e.target.value } })} />
+          <label htmlFor={`subgroup-region-${f.id}`}>Subgroup: region</label>
+          <input id={`subgroup-region-${f.id}`} value={sub.region ?? ""} onChange={(e) => update({ subgroup: { ...sub, region: e.target.value } })} />
         </div>
         <div className="field">
-          <label>Subgroup: segment</label>
-          <input value={sub.segment ?? ""} onChange={(e) => update({ subgroup: { ...sub, segment: e.target.value } })} />
+          <label htmlFor={`subgroup-segment-${f.id}`}>Subgroup: segment</label>
+          <input id={`subgroup-segment-${f.id}`} value={sub.segment ?? ""} onChange={(e) => update({ subgroup: { ...sub, segment: e.target.value } })} />
         </div>
       </div>
       <div className="actions">
         <button type="button" className="btn" onClick={save}>Save finding</button>
-        {status && <span className={status.kind === "error" ? "error" : "muted small"}>{status.text}</span>}
+        {status && <span role={status.kind === "error" ? "alert" : "status"} className={status.kind === "error" ? "error" : "muted small"}>{status.text}</span>}
       </div>
     </li>
   );
@@ -313,6 +311,7 @@ function Review({ id }: { id: string }) {
   const [error, setError] = useState<string | null>(null);
   const [note, setNote] = useState("");
   const [decision, setDecision] = useState<Status>(null);
+  const [deciding, setDeciding] = useState(false);
 
   useEffect(() => {
     api<StudyDetail>(`/api/studies/${id}`).then(setStudy).catch((e) => setError(errorText(e, "Could not load the study.")));
@@ -320,17 +319,20 @@ function Review({ id }: { id: string }) {
 
   async function decide(approve: boolean) {
     setDecision(null);
+    setDeciding(true);
     try {
       const updated = await api<StudyDetail>(`/api/review/studies/${id}/decision`, { method: "POST", json: { approve, note: note || null } });
       setStudy(updated);
       setDecision({ kind: "ok", text: approve ? "Approved. The study is now searchable for teams that may read it." : "Rejected." });
     } catch (e) {
       setDecision({ kind: "error", text: errorText(e, "Could not record the decision.") });
+    } finally {
+      setDeciding(false);
     }
   }
 
-  if (error) return <p className="error">{error}</p>;
-  if (!study) return <p className="loading">Loading…</p>;
+  if (error) return <p className="error" role="alert">{error}</p>;
+  if (!study) return <p className="loading" role="status">Loading…</p>;
 
   return (
     <>
@@ -338,6 +340,7 @@ function Review({ id }: { id: string }) {
         <p className="eyebrow">
           <Link href="/review">Review queue</Link> · {study.code} · {study.review_status.replace("_", " ")}
         </p>
+        <title>{`Review: ${study.title} · Evidence brief`}</title>
         <h1>{study.title}</h1>
         <p>
           {study.owner_team} · {study.access_level} · fieldwork ended {monthYear(study.fieldwork_end)} · source{" "}
@@ -348,19 +351,19 @@ function Review({ id }: { id: string }) {
       <div className="two-col">
         <StudyCard key={`card-${study.id}`} study={study} onSaved={setStudy} />
         <div>
-          <TierPanel key={`tier-${study.id}-${study.tier_override ?? ""}`} study={study} onSaved={setStudy} />
+          <TierPanel key={`tier-${study.id}`} study={study} onSaved={setStudy} />
           <div className="panel">
             <h2 style={{ marginBottom: 10 }}>Decision</h2>
             <div className="field">
               <label htmlFor="note">Note (optional)</label>
               <textarea id="note" rows={2} value={note} onChange={(e) => setNote(e.target.value)} />
             </div>
-            {decision && <p className={decision.kind === "error" ? "error" : "muted"}>{decision.text}</p>}
+            {decision && <p role={decision.kind === "error" ? "alert" : "status"} className={decision.kind === "error" ? "error" : "muted"}>{decision.text}</p>}
             <div className="actions">
-              <button className="btn btn-primary" onClick={() => decide(true)} disabled={study.review_status === "approved"}>
+              <button className="btn btn-primary" onClick={() => decide(true)} disabled={deciding || study.review_status === "approved"}>
                 Approve
               </button>
-              <button className="btn" onClick={() => decide(false)} disabled={study.review_status === "rejected"}>
+              <button className="btn" onClick={() => decide(false)} disabled={deciding || study.review_status === "rejected"}>
                 Reject
               </button>
             </div>

@@ -42,9 +42,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <main>
             <div className="shell">{children}</div>
           </main>
-          <footer className="shell demo-note">
-            Synthetic demonstration data. Findings come only from studies approved by S&amp;I and readable by the
-            signed-in team.
+          <footer className="demo-note">
+            <div className="shell">
+              Synthetic demonstration data. Findings come only from studies approved by S&amp;I and readable by the
+              signed-in team.
+            </div>
           </footer>
         </SessionProvider>
       </body>

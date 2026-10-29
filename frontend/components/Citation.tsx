@@ -5,7 +5,9 @@ import { monthYear, sampleLabel, year } from "@/lib/format";
 export function TierBadge({ tier, sample, when }: { tier: Tier | null; sample: string; when: string }) {
   const label = `Tier ${tier ?? "not set"}, ${sample}, ${when}`;
   return (
-    <span className={`tier tier-${tier ?? "C"}`} title={`Robustness tier ${tier ?? "not set"}`} aria-label={label}>
+    <span className={`tier tier-${tier ?? "C"}`} title={`Robustness tier ${tier ?? "not set"}`}>
+      {/* A plain span cannot carry an accessible name, so the reading goes in hidden text. */}
+      <span className="visually-hidden">{label}</span>
       <b aria-hidden>{tier ?? "–"}</b>
       <span aria-hidden>
         {sample} · {when}

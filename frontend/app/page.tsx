@@ -9,6 +9,36 @@ import { api, ApiError } from "@/lib/api";
 import type { Brief, BriefSummary } from "@/lib/types";
 import { dateTime } from "@/lib/format";
 
+// What happens while a brief is prepared, in order. Shown as a list, not a fake progress bar:
+// the server does not report which step it is on.
+const STEPS = [
+  "Search approved studies your team can read",
+  "Compare who each study asked, and when",
+  "Write the brief from those findings only",
+  "Check every claim against its sources",
+];
+
+function Preparing() {
+  const [seconds, setSeconds] = useState(0);
+  useEffect(() => {
+    const started = Date.now();
+    const timer = window.setInterval(() => setSeconds(Math.floor((Date.now() - started) / 1000)), 1000);
+    return () => window.clearInterval(timer);
+  }, []);
+  return (
+    <div className="preparing" role="status" aria-live="polite">
+      <p>
+        Preparing the brief <span className="mono small muted">{seconds}s</span>
+      </p>
+      <ol>
+        {STEPS.map((s) => (
+          <li key={s}>{s}</li>
+        ))}
+      </ol>
+    </div>
+  );
+}
+
 const EXAMPLES = [
   "Why do SME owners drop off during online loan applications?",
   "How do market vendors feel about accepting QR payments?",
@@ -28,6 +58,12 @@ function Ask() {
   }, [profile?.id]);
 
   async function ask(text: string) {
+    // The same question asked before: open that brief instead of writing a duplicate.
+    const earlier = recent.find((b) => b.question.trim().toLowerCase() === text.trim().toLowerCase());
+    if (earlier && EXAMPLES.includes(text)) {
+      router.push(`/briefs/${earlier.id}`);
+      return;
+    }
     setBusy(true);
     setError(null);
     try {
@@ -41,6 +77,7 @@ function Ask() {
 
   return (
     <>
+      <title>Ask a question · Evidence brief</title>
       <section className="page-head">
         <p className="eyebrow">Strategy &amp; Insights · {profile?.team_name}</p>
         <h1>Ask a question</h1>
@@ -69,10 +106,10 @@ function Ask() {
           <button className="btn btn-primary" disabled={busy || question.trim().length < 5}>
             {busy ? "Preparing the brief…" : "Ask a question"}
           </button>
-          {busy && <span className="muted small">Searching approved studies and checking every claim against its sources.</span>}
         </div>
-        {error && <p className="error">{error}</p>}
-        <div className="examples" aria-label="Example questions">
+        {busy && <Preparing />}
+        {error && <p className="error" role="alert">{error}</p>}
+        <div className="examples" role="group" aria-label="Example questions">
           <span className="muted small">Try one of these</span>
           {EXAMPLES.map((q) => (
             <button key={q} type="button" className="btn btn-quiet" disabled={busy} onClick={() => { setQuestion(q); ask(q); }}>

@@ -18,9 +18,20 @@ const COVERAGE = {
 function Result({ check }: { check: CoverageCheck }) {
   const [submission, setSubmission] = useState<string | null>(check.submitted_at ? `Sent ${dateTime(check.submitted_at)}.` : null);
   const [error, setError] = useState<string | null>(null);
+  const [sending, setSending] = useState(false);
+
+  async function save(path: string, filename: string) {
+    setError(null);
+    try {
+      await download(path, filename);
+    } catch (e) {
+      setError(e instanceof ApiError ? e.message : "Could not download the file.");
+    }
+  }
 
   async function submit() {
     setError(null);
+    setSending(true);
     try {
       const result = await api<{ adapter: string; status: string }>(`/api/commissioning/${check.id}/submit`, { method: "POST" });
       setSubmission(result.status === "sent"
@@ -28,11 +39,13 @@ function Result({ check }: { check: CoverageCheck }) {
         : "Saved for S&I. Download the JSON or PDF to attach it to your commissioning request.");
     } catch (e) {
       setError(e instanceof ApiError ? e.message : "Could not hand over the check.");
+    } finally {
+      setSending(false);
     }
   }
 
   return (
-    <section className="section" aria-label="Coverage result">
+    <section className="section" aria-label="Coverage result" id="coverage-result" style={{ scrollMarginTop: 16 }}>
       <div className="section-head">
         <h2>{check.title}</h2>
         <span className="tag">{dateTime(check.created_at)}</span>
@@ -62,11 +75,11 @@ function Result({ check }: { check: CoverageCheck }) {
         <p>{check.result.recommended_new_scope}</p>
       </div>
       <div className="actions" style={{ marginTop: 16 }}>
-        <button className="btn btn-primary" onClick={submit} disabled={!!submission}>Send to S&amp;I commissioning</button>
-        <button className="btn" onClick={() => download(`/api/commissioning/${check.id}/export.json`, `coverage-${check.id.slice(0, 8)}.json`)}>
+        <button className="btn btn-primary" onClick={submit} disabled={sending || !!submission}>Send to S&amp;I commissioning</button>
+        <button className="btn" onClick={() => save(`/api/commissioning/${check.id}/export.json`, `coverage-${check.id.slice(0, 8)}.json`)}>
           <Download size={15} strokeWidth={1.5} aria-hidden /> Download JSON
         </button>
-        <button className="btn" onClick={() => download(`/api/commissioning/${check.id}/export.pdf`, `coverage-${check.id.slice(0, 8)}.pdf`)}>
+        <button className="btn" onClick={() => save(`/api/commissioning/${check.id}/export.pdf`, `coverage-${check.id.slice(0, 8)}.pdf`)}>
           <Download size={15} strokeWidth={1.5} aria-hidden /> Download PDF
         </button>
       </div>
@@ -90,7 +103,14 @@ function Commission() {
   }, [profile?.id, check?.id]);
 
   async function open(id: string) {
-    setCheck(await api<CoverageCheck>(`/api/commissioning/${id}`));
+    setError(null);
+    try {
+      setCheck(await api<CoverageCheck>(`/api/commissioning/${id}`));
+      // The result renders above the list; bring it into view.
+      requestAnimationFrame(() => document.getElementById("coverage-result")?.scrollIntoView({ block: "start" }));
+    } catch (e) {
+      setError(e instanceof ApiError ? e.message : "Could not open that check.");
+    }
   }
 
   async function run(event: React.FormEvent) {
@@ -112,6 +132,7 @@ function Commission() {
     <>
       <section className="page-head">
         <p className="eyebrow">Checkpoint 4 · commissioning</p>
+        <title>Before you commission · Evidence brief</title>
         <h1>Before you commission</h1>
         <p>
           List your research objectives. Each one is checked against approved studies your team can read, so new
@@ -129,7 +150,7 @@ function Commission() {
           <textarea id="objectives" rows={5} value={objectives} onChange={(e) => setObjectives(e.target.value)} required
                     placeholder={"Understand why SME owners abandon online loan applications\nExplore whether SME owners want a named contact person"} />
         </div>
-        {error && <p className="error">{error}</p>}
+        {error && <p className="error" role="alert">{error}</p>}
         <button className="btn btn-primary" disabled={busy || title.trim().length < 3 || !objectives.trim()}>
           {busy ? "Checking existing studies…" : "Check coverage"}
         </button>

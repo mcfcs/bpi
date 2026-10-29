@@ -5,13 +5,15 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { TierBadge } from "@/components/Citation";
 import { SignedIn } from "@/components/SiteHeader";
+import { LoadError } from "@/components/LoadError";
+import { useApi } from "@/lib/useApi";
 import { api, ApiError } from "@/lib/api";
 import type { StudyDetail, Team } from "@/lib/types";
 import { dateTime, monthYear, n } from "@/lib/format";
 
 function Queue() {
   const router = useRouter();
-  const [queue, setQueue] = useState<StudyDetail[] | null>(null);
+  const { data: queue, error: loadError, reload } = useApi<StudyDetail[]>("/api/review/queue");
   const [teams, setTeams] = useState<Team[]>([]);
   const [text, setText] = useState("");
   const [team, setTeam] = useState("");
@@ -20,11 +22,12 @@ function Queue() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    api<StudyDetail[]>("/api/review/queue").then(setQueue).catch(() => setQueue([]));
-    api<Team[]>("/api/teams").then((t) => {
-      setTeams(t);
-      setTeam((current) => current || t[0]?.id || "");
-    });
+    api<Team[]>("/api/teams")
+      .then((t) => {
+        setTeams(t);
+        setTeam((current) => current || t[0]?.id || "");
+      })
+      .catch(() => setTeams([]));
   }, []);
 
   async function ingest(event: React.FormEvent) {
@@ -47,6 +50,7 @@ function Queue() {
     <>
       <section className="page-head">
         <p className="eyebrow">Checkpoint 1 · S&amp;I review</p>
+        <title>Review queue · Evidence brief</title>
         <h1>Review queue</h1>
         <p>
           New reports wait here until an analyst checks the study card. Nothing is searchable until it is approved. The
@@ -54,8 +58,9 @@ function Queue() {
         </p>
       </section>
 
+      {loadError && <LoadError message={loadError} onRetry={reload} />}
       {queue === null ? (
-        <p className="loading">Loading…</p>
+        !loadError && <p className="loading" role="status">Loading…</p>
       ) : queue.length === 0 ? (
         <p className="notice">Nothing waiting for review.</p>
       ) : (
