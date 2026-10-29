@@ -40,6 +40,24 @@ npm run dev                                          # http://localhost:3000
 
 `scripts/dev_db.py --stop` stops the local database; `--reset` wipes and reseeds it.
 
+The browser only talks to Next.js: `/api/*` is proxied to the backend (`BACKEND_URL`, default
+`http://127.0.0.1:8000`; see `frontend/.env.local.example`), so the backend never needs to be
+exposed.
+
+### On your Tailscale tailnet (one port)
+
+From the repo root, in PowerShell:
+
+```powershell
+./scripts/tailnet.ps1                 # build and serve on 0.0.0.0:10012; prints the tailnet URL
+./scripts/tailnet.ps1 -Dev            # hot reload instead
+./scripts/tailnet.ps1 -Stop
+./scripts/tailnet.ps1 -OpenFirewall   # once, as Administrator: allow TCP 10012 from 100.64.0.0/10 only
+```
+
+Then open `http://<this machine's tailscale ip>:10012` from any device on the tailnet. The backend
+stays on loopback. On macOS/Linux: run the backend as above and `npm run build && npm run start:tailnet`.
+
 Sign in as one of the demo personas (each sees only what their team may read):
 
 | Persona | Team | Role |

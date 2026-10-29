@@ -16,3 +16,12 @@ frontend/.env.local
 
 # Tooling output
 *.log
+
+# Local run and QA artefacts
+.run/
+.playwright-cli/
+**/.playwright-cli/
+.claude/settings.local.json
+
+# Downloaded embedding models
+backend/.cache/

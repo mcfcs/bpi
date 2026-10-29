@@ -6,6 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
+    "dev:tailnet": "next dev -H 0.0.0.0 -p 10012",
+    "start:tailnet": "next start -H 0.0.0.0 -p 10012",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {

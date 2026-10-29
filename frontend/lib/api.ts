@@ -1,4 +1,6 @@
-const BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
+// Empty by default: requests go to /api/* on the same origin and Next proxies them to the backend
+// (next.config.mjs). Set NEXT_PUBLIC_API_URL only to call a backend on another origin directly.
+const BASE = (process.env.NEXT_PUBLIC_API_URL ?? "").replace(/\/$/, "");
 const TOKEN_KEY = "si-evidence:token";
 
 export class ApiError extends Error {
@@ -37,14 +39,15 @@ async function request(path: string, init: RequestInit & { json?: unknown } = {}
   try {
     response = await fetch(`${BASE}${path}`, { ...init, headers, body });
   } catch {
-    throw new ApiError(0, `Cannot reach the evidence service at ${BASE}. Is the backend running?`);
+    throw new ApiError(0, `Cannot reach the evidence service${BASE ? ` at ${BASE}` : ""}. Is the backend running?`);
   }
   if (!response.ok) {
     let detail: unknown = response.statusText;
     try {
       detail = (await response.json()).detail ?? detail;
     } catch {
-      // not JSON
+      // Not JSON: when the backend is down, the Next proxy answers with a bare 5xx.
+      if (response.status >= 500) detail = "The evidence service is not responding. Is the backend running?";
     }
     const message = typeof detail === "string" ? detail : Array.isArray(detail)
       ? detail.map((d: { msg?: string }) => d.msg).filter(Boolean).join("; ")
