@@ -22,6 +22,7 @@ from .prompts import (
     SCOPE_SYSTEM,
     render_brief_prompt,
     render_extract_prompt,
+    render_feedback,
     render_scope_prompt,
 )
 from .retrieval import Source
@@ -36,12 +37,14 @@ class ClaudeLLM:
         import anthropic
 
         self._anthropic = anthropic
-        self.client = client or anthropic.Anthropic()
+        # A brief is a draft plus at most one regeneration, behind the frontend's 300 s proxy
+        # timeout: bound each call and retry once.
+        self.client = client or anthropic.Anthropic(timeout=120.0, max_retries=1)
         self.model = model
         self.effort = effort
         self.name = model
 
-    def _parse(self, system: str, content: str, schema: type[T]) -> T:
+    def _parse(self, system: str, content: str | list[dict], schema: type[T]) -> T:
         anthropic = self._anthropic
         try:
             # Server-side fallback re-runs a declined request on Anthropic's recommended fallback
@@ -58,6 +61,8 @@ class ClaudeLLM:
             )
         except anthropic.RateLimitError as exc:
             raise LLMError("The Claude API rate limit was reached; try again shortly.") from exc
+        except anthropic.APITimeoutError as exc:
+            raise LLMError("The Claude API took too long to answer.") from exc
         except anthropic.APIStatusError as exc:
             raise LLMError(f"Claude API error {exc.status_code}: {exc.message}") from exc
         except anthropic.APIConnectionError as exc:
@@ -73,7 +78,12 @@ class ClaudeLLM:
         return response.parsed_output
 
     def write_brief(self, request: BriefRequest, feedback: list[str] | None = None) -> EvidenceBrief:
-        return self._parse(BRIEF_SYSTEM, render_brief_prompt(request, feedback), EvidenceBrief)
+        # The findings block is marked for caching: a regeneration after failed checks resends the
+        # same system prompt and findings with the problems appended, so it is mostly a cache read.
+        content = [{"type": "text", "text": render_brief_prompt(request), "cache_control": {"type": "ephemeral"}}]
+        if feedback:
+            content.append({"type": "text", "text": render_feedback(feedback)})
+        return self._parse(BRIEF_SYSTEM, content, EvidenceBrief)
 
     def extract_study_card(self, report_text: str, known_metric_keys: list[str]) -> StudyCardExtraction:
         return self._parse(EXTRACT_SYSTEM, render_extract_prompt(report_text, known_metric_keys), StudyCardExtraction)

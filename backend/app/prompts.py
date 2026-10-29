@@ -128,11 +128,15 @@ def render_brief_prompt(req: BriefRequest, feedback: list[str] | None = None) ->
     parts.append("CHARTABLE METRICS\n" + (", ".join(req.chartable) or "(none)"))
     parts.append("GAPS FOUND BY CODE\n" + ("\n".join(f"- {g}" for g in req.computed_gaps) or "(none)"))
     if feedback:
-        parts.append(
-            "YOUR PREVIOUS DRAFT FAILED THESE CHECKS. Write the whole brief again and fix them:\n"
-            + "\n".join(f"- {f}" for f in feedback)
-        )
+        parts.append(render_feedback(feedback))
     return "\n\n".join(parts)
+
+
+def render_feedback(feedback: list[str]) -> str:
+    """The validator problems sent with a regeneration request. Kept separate from the findings so
+    the findings block can be a cached prefix shared by the first draft and the retry."""
+    return ("YOUR PREVIOUS DRAFT FAILED THESE CHECKS. Write the whole brief again and fix them:\n"
+            + "\n".join(f"- {f}" for f in feedback))
 
 
 def render_extract_prompt(report_text: str, known_metric_keys: list[str]) -> str:

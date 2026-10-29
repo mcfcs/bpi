@@ -16,8 +16,9 @@ const nextConfig = {
   // Pin the project root so a stray lockfile higher up the tree is not mistaken for it.
   turbopack: { root: import.meta.dirname },
   allowedDevOrigins: ["*.ts.net", "**.ts.net", ...devOrigins],
-  // A Claude-written brief can take longer than the 30 s default proxy timeout.
-  experimental: { proxyTimeout: 180_000 },
+  // A Claude-written brief (a draft plus at most one regeneration) can take far longer than the
+  // 30 s default proxy timeout.
+  experimental: { proxyTimeout: 300_000 },
   async rewrites() {
     return [{ source: "/api/:path*", destination: `${backendUrl}/api/:path*` }];
   },
