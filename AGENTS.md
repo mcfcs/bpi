@@ -81,7 +81,10 @@ tests are edited to pass.
 - Python: type hints, dataclasses/Pydantic, small modules, docstrings that explain *why*. Match the
   existing plain, precise comment style.
 - Frontend: the visual direction is a typeset research memo (Newsreader serif, Public Sans, IBM Plex
-  Mono, warm paper, one red accent). Keep it; don't introduce a component library or gradients.
+  Mono) in **BPI colours**: red `#9A191E` and gold `#D5B625`, sampled from the current logo, on a
+  white page. Red carries the header band and primary actions; gold appears only on the red band
+  (gold on white fails contrast). Links and chart bars stay slate blue on purpose. Don't introduce
+  a component library or gradients, and don't use the BPI logo itself without the owner's say-so.
   Colour tokens live in `frontend/app/globals.css`.
 - The browser calls `/api/*` on its own origin; `next.config.mjs` proxies to `BACKEND_URL`. Don't
   hard-code `localhost:8000` in the frontend.

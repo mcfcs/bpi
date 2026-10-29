@@ -29,6 +29,9 @@ _Last updated: 29 Oct 2026._
    "Fix accessibility, error handling and mobile issues in the frontend".
 5. **Claude path**: findings prompt cached for regeneration; timeouts; first tests of `ClaudeLLM`.
 6. **Retrieval**: evaluation harness and an optional local semantic embedder. Results below.
+7. **BPI colours**: red `#9A191E` and gold `#D5B625` sampled from the current logo; red header band
+   with a gold rule, white page, red primary actions. Links and charts stay slate blue on purpose.
+   The logo itself is not used in the app.
 
 ## Retrieval results
 
@@ -68,7 +71,8 @@ Models download to `%LOCALAPPDATA%\si-evidence-assistant\models`; the dev databa
 3. Their commissioning system and required fields (`WebhookAdapter.payload`).
 4. Fixed vocabularies for regions, age bands and metric keys?
 5. A sample of real (anonymised) BU questions to evaluate retrieval on (IMPROVEMENTS A3).
-6. Brand guidelines for the accent colour and typeface (IMPROVEMENTS S9).
+6. Brand guidelines: confirm the sampled red/gold, the typeface, and whether the crest may appear
+   in the prototype (IMPROVEMENTS S9).
 
 ## Next steps, in order
 
