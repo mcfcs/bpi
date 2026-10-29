@@ -18,7 +18,7 @@ from .commissioning import CommissioningAdapter, build_adapter
 from .config import Settings, get_settings
 from .db import Database
 from .describe import source_view
-from .embeddings import Embedder, HashingEmbedder
+from .embeddings import Embedder, build_embedder
 from .jobs.recompute_tiers import recompute_all
 from .llm import OfflineLLM, build_llm
 from .llm_types import LLM, LLMError
@@ -50,7 +50,7 @@ def create_app(settings: Settings | None = None, *, db: Database | None = None, 
     settings = settings or get_settings()
     db = db or Database(settings.database_url)
     llm = llm or build_llm(settings)
-    embedder = embedder or HashingEmbedder()
+    embedder = embedder or build_embedder(settings.embedding_provider, settings.embedding_model)
     adapter = adapter or build_adapter(settings)
     offline = OfflineLLM()
     briefs = BriefService(db, llm, embedder, fallback_llm=offline, today=today)
@@ -117,7 +117,7 @@ def create_app(settings: Settings | None = None, *, db: Database | None = None, 
 
     @app.get("/api/health")
     def health():
-        return {"ok": True, "llm": llm.name, "commissioning_adapter": adapter.name}
+        return {"ok": True, "llm": llm.name, "embedder": embedder.name, "commissioning_adapter": adapter.name}
 
     if settings.demo_mode:
         @app.get("/api/demo/personas")

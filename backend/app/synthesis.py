@@ -20,6 +20,7 @@ from psycopg.types.json import Jsonb
 from . import audit, charts, divergence, retrieval
 from .auth import CurrentUser
 from .confidence import compute_confidence
+from .config import retrieval_config
 from .db import Database
 from .describe import compute_gaps, source_view, topic_label
 from .embeddings import Embedder
@@ -36,7 +37,9 @@ from .validators import (
     validate_brief,
 )
 
-ESCALATION_NOTE = "Routed automatically: the brief contains an unresolved conflict between studies."
+NO_SOURCES_MESSAGE = ("No approved study you can read answers this. Try describing it another way, "
+                      "or ask an analyst whether S&I has covered it.")
+ESCALATION_NOTE ="Routed automatically: the brief contains an unresolved conflict between studies."
 
 
 def _map_ids(brief: EvidenceBrief, mapping: dict[str, str]) -> EvidenceBrief:
@@ -66,11 +69,11 @@ class BriefService:
 
     def ask(self, user: CurrentUser, question: str) -> dict:
         question = question.strip()
-        vector = self.embedder.embed(question)
+        vector = self.embedder.embed_query(question)
         with self.db.as_user(user.id, user.email) as conn:
             sources = retrieval.search(conn, question, self.embedder, query_embedding=vector)
             sources = retrieval.attach_verbatims(conn, sources)
-            restricted = retrieval.restricted_matches(conn, vector)
+            restricted = retrieval.restricted_matches(conn, vector, retrieval_config(self.embedder.name))
             points = charts.load_points(conn, {
                 s.metric_key for s in sources if s.finding_type == "quant_stat" and s.is_quant and s.metric_key
             })
@@ -92,7 +95,9 @@ class BriefService:
             brief.gaps = computed_gaps
 
         no_headline_message = None
-        if not any(c.kind == "headline" for c in brief.claims) and sources:
+        if not sources:
+            no_headline_message = NO_SOURCES_MESSAGE
+        elif not any(c.kind == "headline" for c in brief.claims):
             if not any(is_ab_quant(s) for s in sources):
                 no_headline_message = NO_QUANT_MESSAGE if not any(s.is_quant for s in sources) else NO_AB_QUANT_MESSAGE
         qual_only = [is_qual_only(c, by_id) for c in brief.claims]

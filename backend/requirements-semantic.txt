@@ -1,0 +1,2 @@
+# Optional: local semantic embeddings (EMBEDDING_PROVIDER=fastembed). Not needed for tests.
+fastembed>=0.7

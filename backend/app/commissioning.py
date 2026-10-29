@@ -22,7 +22,7 @@ from fpdf import FPDF
 from psycopg.types.json import Jsonb
 
 from . import audit, retrieval
-from .config import COVERAGE_CONFIG, Settings
+from .config import Settings, coverage_config
 from .describe import join_words
 from .embeddings import Embedder
 from .llm_types import LLM, LLMError
@@ -107,7 +107,7 @@ def _evidence_summary(findings: list[retrieval.Source]) -> str:
 def assess_objectives(conn: psycopg.Connection, objectives: list[str], embedder: Embedder) -> list[dict]:
     """Coverage per objective, decided in code: covered needs a relevant Tier A/B quant finding,
     partial means only qualitative or Tier C evidence, gap means nothing relevant."""
-    cfg = COVERAGE_CONFIG
+    cfg = coverage_config(embedder.name)
     assessed = []
     for text in objectives:
         sources = retrieval.search(conn, text, embedder, config={

@@ -21,8 +21,10 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 import pgserver  # noqa: E402
 
-from app.config import BACKEND_DIR, DEV_JWT_SECRET  # noqa: E402
+from app.config import BACKEND_DIR, DEV_JWT_SECRET, _load_env_file  # noqa: E402
 from app.db import Database  # noqa: E402
+from app.embeddings import build_embedder  # noqa: E402
+from app.jobs.reembed import reembed_all  # noqa: E402
 from app.migrations import apply_migrations  # noqa: E402
 from app.seed import seed  # noqa: E402
 
@@ -67,12 +69,18 @@ def main() -> int:
     print(f"Database: {uri}")
     print(f"Migrations applied: {', '.join(applied) if applied else 'none (already up to date)'}")
 
+    _load_env_file(BACKEND_DIR / ".env.local")  # EMBEDDING_PROVIDER / EMBEDDING_MODEL
+    embedder = build_embedder()
     db = Database(uri, max_size=2)
     try:
-        result = seed(db, date.today())
+        result = seed(db, date.today(), embedder=embedder)
+        # Seeding skips studies that already exist, so re-embed everything: stored vectors must
+        # come from the same model as query vectors.
+        count = reembed_all(db, embedder)
     finally:
         db.close()
     print(f"Seeded {len(result['studies'])} approved studies; {len(result['pending'])} new report(s) in the review queue.")
+    print(f"Embedded {count} findings with {embedder.name}.")
     print(f"Wrote {write_env(uri)}")
     return 0
 

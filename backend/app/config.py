@@ -41,6 +41,30 @@ RETRIEVAL_CONFIG: dict = {
 # for the local hashing embedder; recalibrate when a hosted embedding model is used.
 COVERAGE_CONFIG: dict = {"min_similarity": 0.45, "relative_floor": 0.8, "max_findings": 6}
 
+# Similarity floors per embedder, layered over RETRIEVAL_CONFIG / COVERAGE_CONFIG (which were
+# calibrated for the hashing embedder). Neural models score unrelated text far higher than a
+# hashing embedder does, so they need their own floors. Calibrated with `python -m eval.retrieval_eval`
+# on the synthetic corpus; recalibrate on real studies.
+EMBEDDER_FLOORS: dict[str, dict[str, dict]] = {
+    "hashing": {},
+    # Sweep (eval/retrieval_eval.py --sweep): every floor from 0.36 to 0.40 kept off-topic questions
+    # at zero hits (their best match peaked at 0.355) with micro F1 0.86-0.87; 0.38 is the middle.
+    # Restricted-study hints and coverage are stricter; coverage is not separately evaluated yet.
+    "fastembed:sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2": {
+        "retrieval": {"min_similarity": 0.38, "relative_floor": 0.7, "restricted_min_similarity": 0.42},
+        "coverage": {"min_similarity": 0.5, "relative_floor": 0.8},
+    },
+}
+
+
+def retrieval_config(embedder_name: str = "hashing") -> dict:
+    return {**RETRIEVAL_CONFIG, **EMBEDDER_FLOORS.get(embedder_name, {}).get("retrieval", {})}
+
+
+def coverage_config(embedder_name: str = "hashing") -> dict:
+    return {**COVERAGE_CONFIG, **EMBEDDER_FLOORS.get(embedder_name, {}).get("coverage", {})}
+
+
 # Divergence classification (app/divergence.py). The proposal compared ranges for any overlap at
 # all, which would call 20-40 vs 30-60 the same population; these minimum-overlap ratios
 # (intersection over union) are what make that example a context difference.
@@ -123,6 +147,8 @@ class Settings:
     commissioning_webhook_url: str | None
     commissioning_webhook_headers: dict[str, str]
     cors_origins: tuple[str, ...]
+    embedding_provider: str = "hashing"   # "hashing" or "fastembed"
+    embedding_model: str | None = None    # fastembed model name; None for the default
 
 
 @lru_cache
@@ -148,4 +174,6 @@ def get_settings() -> Settings:
         cors_origins=tuple(
             o.strip() for o in env.get("CORS_ORIGINS", "http://localhost:3000").split(",") if o.strip()
         ),
+        embedding_provider=env.get("EMBEDDING_PROVIDER", "hashing").lower(),
+        embedding_model=env.get("EMBEDDING_MODEL") or None,
     )

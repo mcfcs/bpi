@@ -12,7 +12,7 @@ from decimal import Decimal
 
 import psycopg
 
-from .config import DIRECTION_FALLBACK, RETRIEVAL_CONFIG
+from .config import DIRECTION_FALLBACK, RETRIEVAL_CONFIG, retrieval_config
 from .divergence import FindingCtx, parse_age_band
 from .embeddings import Embedder, to_pgvector
 
@@ -132,8 +132,8 @@ def load_sources(conn: psycopg.Connection, where: str, params: list) -> list[Sou
 
 def search(conn: psycopg.Connection, question: str, embedder: Embedder, *,
            query_embedding: list[float] | None = None, config: dict | None = None) -> list[Source]:
-    cfg = {**RETRIEVAL_CONFIG, **(config or {})}
-    vector = query_embedding or embedder.embed(question)
+    cfg = {**retrieval_config(embedder.name), **(config or {})}
+    vector = query_embedding or embedder.embed_query(question)
     rows = conn.execute(
         "select finding_id::text as finding_id, similarity, score "
         "from public.match_findings(%s::extensions.vector, %s, %s, %s, %s)",

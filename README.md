@@ -183,9 +183,12 @@ findings never reach the LLM.
 
 ## Known limitations
 
-- The local embedder (`app/embeddings.py`) is lexical feature hashing with a small glossary. Swap in
-  a hosted embedding model (512 dimensions, or change the column) and recalibrate the similarity
-  floors before relying on paraphrase matching.
+- The default embedder (`app/embeddings.py`) is lexical feature hashing with a small glossary, so it
+  misses paraphrases. For semantic search, `pip install -r requirements-semantic.txt` and set
+  `EMBEDDING_PROVIDER=fastembed`: a local multilingual model (no data leaves the machine) that, on
+  the evaluation set in `backend/eval/`, raises paraphrase recall from 0.69 to 0.90 and Taglish
+  recall from 0.81 to 0.88 with no off-topic matches. Its floors were tuned on 24 synthetic
+  questions; recalibrate on real ones (`python -m eval.retrieval_eval --sweep`).
 - The offline extractor reads the semi-structured synthetic reports only; prose reports need Claude.
 - The Claude path is not exercised by the automated tests, which use the deterministic writer and
   scripted fakes to check the validators.
