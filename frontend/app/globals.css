@@ -32,13 +32,21 @@
   color-scheme: light;
 }
 
+/* Dark follows the device unless the reader picked a theme in the header (data-theme on <html>,
+   set before first paint; see components/ThemeToggle.tsx). Keep the two dark blocks identical. */
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root:not([data-theme="light"]) {
     --paper: #141517; --surface: #1C1E21; --wash: #202327; --ink: #ECE9E4; --muted: #A3A9B1;
     --rule: #33373D; --accent: #C8323A; --band: #7A1418; --link: #8FB0D6;
     --tier-a: #5FA897; --tier-b: #D8A85A; --tier-c: #9AA0A8; --flag: #F07A3E;
     color-scheme: dark;
   }
+}
+:root[data-theme="dark"] {
+  --paper: #141517; --surface: #1C1E21; --wash: #202327; --ink: #ECE9E4; --muted: #A3A9B1;
+  --rule: #33373D; --accent: #C8323A; --band: #7A1418; --link: #8FB0D6;
+  --tier-a: #5FA897; --tier-b: #D8A85A; --tier-c: #9AA0A8; --flag: #F07A3E;
+  color-scheme: dark;
 }
 
 *, *::before, *::after { box-sizing: border-box; }
@@ -105,6 +113,19 @@ a:hover { text-decoration-thickness: 2px; }
 .nav a:hover { color: var(--band-ink); }
 .nav a[aria-current="page"] { color: var(--band-ink); border-bottom-color: var(--bpi-gold); }
 
+/* Theme switch on the red band: three icon buttons, the current one sunk into the band. */
+.theme-toggle {
+  display: inline-flex; padding: 2px; gap: 2px; border-radius: var(--radius);
+  border: 1px solid color-mix(in srgb, var(--band-ink) 30%, transparent);
+}
+.theme-toggle button {
+  display: inline-grid; place-items: center; width: 30px; height: 28px; padding: 0; border: 0;
+  border-radius: 2px; background: transparent; cursor: pointer;
+  color: color-mix(in srgb, var(--band-ink) 72%, transparent);
+}
+.theme-toggle button:hover { color: var(--band-ink); }
+.theme-toggle button[aria-pressed="true"] { color: var(--band-ink); background: rgb(0 0 0 / 0.24); }
+
 .persona { display: flex; align-items: center; gap: 8px; font-size: 0.85rem; color: var(--muted); }
 .persona select { max-width: 240px; border-color: transparent; }
 .persona > span { display: none; }
@@ -120,6 +141,7 @@ a:hover { text-decoration-thickness: 2px; }
 @media (max-width: 440px) {
   /* Name and team need the full width at 16px (no iOS zoom). */
   .persona { order: 2; flex: 1 0 100%; }
+  .theme-toggle { margin-left: auto; }
 }
 
 main { padding: 40px 0 112px; }
@@ -320,7 +342,12 @@ details > summary { cursor: pointer; color: var(--link); }
 /* ---------------------------------------------------------------- print: the brief as a memo */
 
 @media print {
-  :root { --paper: #fff; --surface: #fff; --ink: #000; --muted: #444; --rule: #bbb; color-scheme: light; }
+  /* Always print light, whatever theme is on screen: these selectors outrank both dark blocks. */
+  html:root:not([data-theme]), html:root[data-theme] {
+    --paper: #fff; --surface: #fff; --wash: #f4f4f4; --ink: #000; --muted: #444; --rule: #bbb;
+    --accent: var(--bpi-red); --link: #2F4A6D; --tier-a: #2E6B5E; --tier-b: #B07D2B; --tier-c: #7A8088;
+    --flag: #C2410C; color-scheme: light;
+  }
   .site-header, .demo-note, .no-print, .btn, form, .restricted { display: none !important; }
   main { padding: 0; }
   .shell { max-width: none; padding: 0; }

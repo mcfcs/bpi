@@ -25,7 +25,8 @@ report issues, don't edit source.
 
 ## Checks
 
-1. Each page above at 1440 px and 390 px; light and dark (`set-color-scheme dark`).
+1. Each page above at 1440 px and 390 px; light and dark (`set-color-scheme dark`), and with the
+   header theme switch forced to the opposite of the device setting.
 2. No horizontal page scroll at 390 px; nav reachable; no text clipped.
 3. Console clean (`playwright-cli console`), no failed `/api` requests.
 4. Citations show tier badge, sample, year, study code; charts have "Show as table".

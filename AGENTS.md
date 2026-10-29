@@ -85,7 +85,10 @@ tests are edited to pass.
   white page. Red carries the header band and primary actions; gold appears only on the red band
   (gold on white fails contrast). Links and chart bars stay slate blue on purpose. Don't introduce
   a component library or gradients, and don't use the BPI logo itself without the owner's say-so.
-  Colour tokens live in `frontend/app/globals.css`.
+  Colour tokens live in `frontend/app/globals.css`. Themes: light and dark token sets; dark applies
+  when the device prefers it unless the reader chose otherwise in the header switch
+  (`components/ThemeToggle.tsx` sets `data-theme` on `<html>` before first paint). The two dark
+  blocks in `globals.css` must stay identical, and print always uses the light tokens.
 - The browser calls `/api/*` on its own origin; `next.config.mjs` proxies to `BACKEND_URL`. Don't
   hard-code `localhost:8000` in the frontend.
 - Copy is plain English for BU readers: short sentences, no hype.

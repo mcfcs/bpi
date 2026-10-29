@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useSession } from "./Session";
 import { ROLE_LABELS } from "@/lib/format";
+import { ThemeToggle } from "./ThemeToggle";
 
 export function SiteHeader() {
   const pathname = usePathname();
@@ -34,6 +35,7 @@ export function SiteHeader() {
             </Link>
           ))}
         </nav>
+        <ThemeToggle />
         {personas.length > 0 && (
           <div className="persona">
             <label htmlFor="persona" className="visually-hidden">Viewing as (demo persona)</label>

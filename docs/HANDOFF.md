@@ -32,6 +32,8 @@ _Last updated: 29 Oct 2026._
 7. **BPI colours**: red `#9A191E` and gold `#D5B625` sampled from the current logo; red header band
    with a gold rule, white page, red primary actions. Links and charts stay slate blue on purpose.
    The logo itself is not used in the app.
+8. **Light / dark switch** in the header (Match device, Light, Dark), saved per browser, applied
+   before first paint so there is no flash; printing is always light.
 
 ## Retrieval results
 

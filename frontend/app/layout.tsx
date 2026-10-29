@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { IBM_Plex_Mono, Newsreader, Public_Sans } from "next/font/google";
 import { SessionProvider } from "@/components/Session";
 import { SiteHeader } from "@/components/SiteHeader";
+import { THEME_INIT_SCRIPT } from "@/components/ThemeToggle";
 import "./globals.css";
 
 const serif = Newsreader({
@@ -35,7 +36,11 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${serif.variable} ${sans.variable} ${mono.variable}`}>
+    // The inline script sets data-theme on <html> before React hydrates, hence suppressHydrationWarning.
+    <html lang="en" className={`${serif.variable} ${sans.variable} ${mono.variable}`} suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
+      </head>
       <body>
         <SessionProvider>
           <SiteHeader />
