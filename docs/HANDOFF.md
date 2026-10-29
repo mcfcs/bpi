@@ -77,7 +77,7 @@ Models download to `%LOCALAPPDATA%\si-evidence-assistant\models`; the dev databa
 ## Next steps, in order
 
 1. Run one session with a real `ANTHROPIC_API_KEY` and record validator/regeneration/cost numbers (A7).
-2. CI on GitHub Actions: pytest + typecheck + build (P2).
+2. Check the first CI run in the GitHub Actions tab (`.github/workflows/ci.yml`; not verified yet).
 3. Pitch deck: lead with the paraphrase-search before/after (eval table above) and the four checkpoints.
 4. Supabase Auth in the frontend for a non-demo deployment (S6).
 

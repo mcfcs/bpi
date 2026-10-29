@@ -52,6 +52,6 @@ exact failure S&I described.
 | # | Pri | Item | Status |
 |---|---|---|---|
 | P1 | P1 | `.claude/` folder, `AGENTS.md`, `CLAUDE.md`, `docs/HANDOFF.md` for continuity between sessions and agents. | Done |
-| P2 | P1 | CI: GitHub Actions running pytest (pgserver works on Linux runners), `npm run typecheck` and `npm run build` on every push. | Open |
+| P2 | P1 | CI: GitHub Actions running pytest (pgserver works on Linux runners), `npm run typecheck` and `npm run build` on every push. | Added (`.github/workflows/ci.yml`); first run not yet checked — the repo is private and `gh` is not installed here |
 | P3 | P2 | Supabase deployment rehearsal: apply migrations to a real project, run the API against it, check RLS with real JWTs. JWKS verification for asymmetric keys (`app/auth.py`). | Open |
 | P4 | P2 | Nightly jobs (`recompute_tiers`, and `reembed` after a model change) scheduled outside the API process. | Open |
