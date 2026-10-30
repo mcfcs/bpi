@@ -23,12 +23,11 @@ function Audit() {
   return (
     <>
       <section className="page-head">
-        <p className="eyebrow">Governance</p>
         <title>Audit log · Evidence brief</title>
         <h1>Audit log</h1>
-        <p>Append-only. Every brief, review edit, tier change, override, access decision, escalation and export.</p>
+        <p>Every brief, review edit, tier change, override, access decision, escalation and export. Entries are append-only: nobody can change or delete them.</p>
       </section>
-      <div className="field" style={{ maxWidth: 360 }}>
+      <div className="field" style={{ maxWidth: 360, marginBottom: 20 }}>
         <label htmlFor="filter">Filter by action or person</label>
         <input id="filter" value={filter} onChange={(e) => setFilter(e.target.value)} placeholder="tier_override" />
       </div>
@@ -37,18 +36,18 @@ function Audit() {
         !error && <p className="loading" role="status">Loading…</p>
       ) : (
         <div className="table-wrap">
-          <table>
+          <table className="audit">
             <thead>
               <tr><th>When</th><th>Who</th><th>Action</th><th>Record</th><th>Details</th></tr>
             </thead>
             <tbody>
               {shown.map((r) => (
                 <tr key={r.id}>
-                  <td className="small nums" style={{ whiteSpace: "nowrap" }}>{dateTime(r.occurred_at)}</td>
-                  <td>{r.actor}</td>
-                  <td className="mono small">{r.action}</td>
-                  <td className="mono small">{r.entity_type}{r.entity_id ? ` ${r.entity_id.slice(0, 8)}` : ""}</td>
-                  <td className="small" style={{ maxWidth: 520 }}>{summarise(r.details)}</td>
+                  <td className="nums muted" style={{ whiteSpace: "nowrap" }}>{dateTime(r.occurred_at)}</td>
+                  <td style={{ whiteSpace: "nowrap" }}>{r.actor}</td>
+                  <td><span className="code">{r.action}</span></td>
+                  <td className="muted">{r.entity_type}{r.entity_id ? <span className="code"> {r.entity_id.slice(0, 8)}</span> : ""}</td>
+                  <td className="small" style={{ minWidth: 320, overflowWrap: "anywhere" }}>{summarise(r.details)}</td>
                 </tr>
               ))}
             </tbody>

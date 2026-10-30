@@ -80,15 +80,17 @@ tests are edited to pass.
   S&I has not validated; say so when you add one.
 - Python: type hints, dataclasses/Pydantic, small modules, docstrings that explain *why*. Match the
   existing plain, precise comment style.
-- Frontend: the visual direction is a typeset research memo (Newsreader serif, Public Sans, IBM Plex
-  Mono) in **BPI colours**: red `#9A191E` and gold `#D5B625`, sampled from the current logo, on a
-  white page. Red carries the header band and primary actions; gold appears only on the red band
-  (gold on white fails contrast). Links and chart bars stay slate blue on purpose. Don't introduce
-  a component library or gradients, and don't use the BPI logo itself without the owner's say-so.
-  Colour tokens live in `frontend/app/globals.css`. Themes: light and dark token sets; dark applies
-  when the device prefers it unless the reader chose otherwise in the header switch
-  (`components/ThemeToggle.tsx` sets `data-theme` on `<html>` before first paint). The two dark
-  blocks in `globals.css` must stay identical, and print always uses the light tokens.
+- Frontend: the visual direction is a research desk set in one grotesque: Archivo (text, headings,
+  figures; tabular numerals, the peso sign via the `latin-ext` subset) and Fragment Mono for study
+  codes and audit keys only. No serif, no all-caps tracked labels, no eyebrows above headings. Colours
+  are **BPI's**: red `#9A191E` and gold `#D5B625`, sampled from the current logo, on a white page.
+  Red carries the header band and primary actions; gold appears only on the red band (gold on white
+  fails contrast). Links, citation chips and chart bars stay slate blue on purpose. Don't introduce a
+  component library, Tailwind or gradients, and don't use the BPI logo itself without the owner's
+  say-so. Tokens live on `:root` in `frontend/app/globals.css`; every text colour must keep 4.5:1 in
+  both themes. Themes: light by default whatever the device prefers; dark applies only with
+  `data-theme="dark"`, chosen in the header switch (`components/ThemeToggle.tsx` sets `data-theme`
+  on `<html>` before first paint and saves the choice). Print always uses the light tokens.
 - The browser calls `/api/*` on its own origin; `next.config.mjs` proxies to `BACKEND_URL`. Don't
   hard-code `localhost:8000` in the frontend.
 - Copy is plain English for BU readers: short sentences, no hype.

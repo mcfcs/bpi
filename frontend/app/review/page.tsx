@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { TierBadge } from "@/components/Citation";
+import { CiteChip, TierBadge } from "@/components/Citation";
 import { SignedIn } from "@/components/SiteHeader";
 import { LoadError } from "@/components/LoadError";
 import { useApi } from "@/lib/useApi";
@@ -49,20 +49,20 @@ function Queue() {
   return (
     <>
       <section className="page-head">
-        <p className="eyebrow">Checkpoint 1 · S&amp;I review</p>
         <title>Review queue · Evidence brief</title>
         <h1>Review queue</h1>
         <p>
           New reports wait here until an analyst checks the study card. Nothing is searchable until it is approved. The
           robustness tier is computed from method, sample size and fieldwork date; you can override it with a reason.
         </p>
+        <p className="checkpoint">Human checkpoint 1 of 4: an analyst approves every study.</p>
       </section>
 
       {loadError && <LoadError message={loadError} onRetry={reload} />}
       {queue === null ? (
         !loadError && <p className="loading" role="status">Loading…</p>
       ) : queue.length === 0 ? (
-        <p className="notice">Nothing waiting for review.</p>
+        <p className="empty">Nothing waiting for review. New reports appear here when you add one below.</p>
       ) : (
         <div className="table-wrap">
           <table>
@@ -74,16 +74,15 @@ function Queue() {
                 <th>Fieldwork ended</th>
                 <th>Computed tier</th>
                 <th className="num">Findings</th>
-                <th>Added</th>
+                <th className="num">Added</th>
               </tr>
             </thead>
             <tbody>
               {queue.map((s) => (
                 <tr key={s.id}>
                   <td>
-                    <span className="mono small">{s.code}</span>{" "}
-                    <Link href={`/review/${s.id}`}>{s.title}</Link>
-                    <div className="muted small">{s.owner_team} · {s.access_level}</div>
+                    <Link className="cell-title" href={`/review/${s.id}`}>{s.title}</Link>
+                    <span className="sub"><CiteChip code={s.code} /> {s.owner_team} · {s.access_level}</span>
                   </td>
                   <td>{s.method_type ?? <span className="error">missing</span>}</td>
                   <td className="num">{n(s.sample_size)}</td>
@@ -96,7 +95,7 @@ function Queue() {
                     )}
                   </td>
                   <td className="num">{s.finding_count}</td>
-                  <td className="small muted">{dateTime(s.created_at)}</td>
+                  <td className="num muted" style={{ whiteSpace: "nowrap" }}>{dateTime(s.created_at)}</td>
                 </tr>
               ))}
             </tbody>
@@ -104,7 +103,7 @@ function Queue() {
         </div>
       )}
 
-      <section className="section" style={{ marginTop: 40 }}>
+      <section className="section" style={{ marginTop: 56 }}>
         <div className="section-head">
           <h2>Add a report</h2>
         </div>
@@ -112,7 +111,7 @@ function Queue() {
           Paste the report text. The study card and findings are extracted for you to check. Use synthetic or approved
           material only.
         </p>
-        <form onSubmit={ingest} style={{ maxWidth: 820 }}>
+        <form onSubmit={ingest} className="panel" style={{ maxWidth: 860 }}>
           <div className="field">
             <label htmlFor="report">Report text</label>
             <textarea id="report" rows={10} value={text} onChange={(e) => setText(e.target.value)} required minLength={40} />

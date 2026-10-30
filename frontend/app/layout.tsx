@@ -1,32 +1,27 @@
 import type { Metadata } from "next";
-import { IBM_Plex_Mono, Newsreader, Public_Sans } from "next/font/google";
+import { Archivo, Fragment_Mono } from "next/font/google";
 import { SessionProvider } from "@/components/Session";
 import { SiteHeader } from "@/components/SiteHeader";
 import { THEME_INIT_SCRIPT } from "@/components/ThemeToggle";
 import "./globals.css";
 
-const serif = Newsreader({
-  subsets: ["latin"],
-  variable: "--font-serif",
-  display: "swap",
+// Archivo: a grotesque drawn for print and screen, with tabular figures, the peso sign and a width
+// axis (headings use a slightly narrower cut). latin-ext carries the peso sign (U+20B1).
+const sans = Archivo({
+  subsets: ["latin", "latin-ext"],
+  axes: ["wdth"],
   style: ["normal", "italic"],
-  adjustFontFallback: false,
-  fallback: ["Georgia", "serif"],
-});
-const sans = Public_Sans({
-  subsets: ["latin"],
   variable: "--font-sans",
   display: "swap",
-  adjustFontFallback: false,
-  fallback: ["sans-serif"],
+  fallback: ["Segoe UI", "system-ui", "sans-serif"],
 });
-const mono = IBM_Plex_Mono({
+// Study codes only.
+const mono = Fragment_Mono({
   subsets: ["latin"],
-  weight: ["400", "500", "600"],
+  weight: "400",
   variable: "--font-mono",
   display: "swap",
-  adjustFontFallback: false,
-  fallback: ["monospace"],
+  fallback: ["ui-monospace", "monospace"],
 });
 
 export const metadata: Metadata = {
@@ -37,7 +32,7 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     // The inline script sets data-theme on <html> before React hydrates, hence suppressHydrationWarning.
-    <html lang="en" className={`${serif.variable} ${sans.variable} ${mono.variable}`} suppressHydrationWarning>
+    <html lang="en" className={`${sans.variable} ${mono.variable}`} suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
       </head>

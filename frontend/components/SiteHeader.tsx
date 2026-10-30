@@ -25,8 +25,19 @@ export function SiteHeader() {
     <header className="site-header">
       <div className="shell">
         <Link href="/" className="wordmark">
-          <strong>Evidence brief</strong>
-          <span>Strategy &amp; Insights</span>
+          {/* The favicon's mark (app/icon.svg), gold on the band. */}
+          <svg width="20" height="26" viewBox="9 7 14 18" aria-hidden>
+            <g fill="var(--bpi-gold)">
+              <rect x="9" y="7" width="3.5" height="18" />
+              <rect x="9" y="7" width="14" height="3.5" />
+              <rect x="9" y="14.25" width="10" height="3.5" />
+              <rect x="9" y="21.5" width="14" height="3.5" />
+            </g>
+          </svg>
+          <span>
+            <strong>Evidence brief</strong>
+            <small>Strategy &amp; Insights</small>
+          </span>
         </Link>
         <nav className="nav" aria-label="Main">
           {links.filter((l) => l.show).map((l) => (
@@ -67,19 +78,15 @@ export function SignedIn({ children, siOnly = false }: { children: React.ReactNo
   if (error) return <p className="error" role="alert">{error}</p>;
   if (!profile) {
     return (
-      <section className="page-head">
-        <p className="eyebrow">Demo sign-in</p>
+      <section className="page-head" style={{ maxWidth: "none" }}>
         <h1>Choose who you are</h1>
-        <p>Each persona sees only the studies their team may read. All data is synthetic.</p>
-        <ul className="list-plain" style={{ maxWidth: 640, marginTop: 20 }}>
+        <p>This is a demo. Each persona sees only the studies their team may read, and all data is synthetic.</p>
+        <ul className="personas">
           {personas.map((p) => (
-            <li key={p.email} className="actions" style={{ justifyContent: "space-between" }}>
-              <span>
-                <strong>{p.display_name}</strong>{" "}
-                <span className="muted">· {p.team_name} · {ROLE_LABELS[p.role]}</span>
-              </span>
-              <button className="btn" aria-label={`Sign in as ${p.display_name}`} onClick={() => signIn(p.email).catch(() => undefined)}>
-                Sign in
+            <li key={p.email}>
+              <button type="button" aria-label={`Sign in as ${p.display_name}`} onClick={() => signIn(p.email).catch(() => undefined)}>
+                <strong>{p.display_name}</strong>
+                <span>{p.team_name} · {ROLE_LABELS[p.role]}</span>
               </button>
             </li>
           ))}

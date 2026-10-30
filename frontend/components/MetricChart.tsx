@@ -86,7 +86,7 @@ export function MetricChart({ chart }: { chart: ChartSpec }) {
             <tspan key={i} x={0} dy={i === 0 ? top : 13}>{line}</tspan>
           ))}
         </text>
-        <text textAnchor="end" fill="var(--muted)" fontSize={narrow ? 10 : 10.5} fontFamily="var(--mono)" dy={12}>
+        <text textAnchor="end" fill="var(--muted)" fontSize={11} fontFamily="var(--sans)" dy={12}>
           {datum?.detail}
         </text>
       </g>
@@ -100,8 +100,8 @@ export function MetricChart({ chart }: { chart: ChartSpec }) {
       y={Number(y) + Number(height) / 2}
       dy={4}
       fill="var(--ink)"
-      fontSize={narrow ? 11 : 11.5}
-      fontFamily="var(--mono)"
+      fontSize={narrow ? 11.5 : 12}
+      fontFamily="var(--sans)"
     >
       {String(value ?? "")}
     </text>
@@ -126,7 +126,7 @@ export function MetricChart({ chart }: { chart: ChartSpec }) {
               ticks={ticks}
               interval="preserveStartEnd"
               tickFormatter={(v: number) => (chart.unit === "%" ? `${v}%` : String(v))}
-              tick={{ fill: "var(--muted)", fontSize: 11, fontFamily: "var(--mono)" }}
+              tick={{ fill: "var(--muted)", fontSize: 11, fontFamily: "var(--sans)" }}
               tickLine={false}
               axisLine={{ stroke: "var(--rule)" }}
             />
@@ -161,9 +161,9 @@ export function MetricChart({ chart }: { chart: ChartSpec }) {
               {data.map((d) => (
                 <tr key={d.finding_id}>
                   <td>{d.label}</td>
-                  <td className="num mono">{fmtValue(d.value, d.unit)}</td>
+                  <td className="num">{fmtValue(d.value, d.unit)}</td>
                   <td>
-                    <span className="mono">{d.study_code}</span> <span className="muted">{d.study_title}</span>
+                    <span className="code">{d.study_code}</span> <span className="muted">{d.study_title}</span>
                   </td>
                   <td>
                     <TierBadge tier={d.tier} sample={`n=${n(d.base_n)}`} when={d.fieldwork_end?.slice(0, 4) ?? "n.d."} />

@@ -10,10 +10,14 @@ import type { CoverageCheck } from "@/lib/types";
 import { dateTime } from "@/lib/format";
 
 const COVERAGE = {
-  covered: { mark: "●", label: "Covered", note: "Tier A or B survey evidence exists." },
-  partial: { mark: "◐", label: "Partial", note: "Only qualitative or Tier C evidence." },
-  gap: { mark: "○", label: "Gap", note: "No approved study found." },
+  covered: { label: "Covered", note: "Tier A or B survey evidence exists." },
+  partial: { label: "Partial", note: "Only qualitative or Tier C evidence." },
+  gap: { label: "Gap", note: "No approved study found." },
 } as const;
+
+function CoverageTag({ coverage }: { coverage: keyof typeof COVERAGE }) {
+  return <span className={`status coverage-${coverage}`}>{COVERAGE[coverage].label}</span>;
+}
 
 function Result({ check }: { check: CoverageCheck }) {
   const [submission, setSubmission] = useState<string | null>(check.submitted_at ? `Sent ${dateTime(check.submitted_at)}.` : null);
@@ -48,21 +52,20 @@ function Result({ check }: { check: CoverageCheck }) {
     <section className="section" aria-label="Coverage result" id="coverage-result" style={{ scrollMarginTop: 16 }}>
       <div className="section-head">
         <h2>{check.title}</h2>
-        <span className="tag">{dateTime(check.created_at)}</span>
+        <span className="tag nums">Checked {dateTime(check.created_at)}</span>
       </div>
       {check.result.objectives.map((o) => (
         <div className="row" key={o.text}>
           <div className="text">
-            <p className="note-title">
-              <span aria-hidden>{COVERAGE[o.coverage].mark}</span> {COVERAGE[o.coverage].label}
+            <p className="claim-text" style={{ fontWeight: 550, marginBottom: 8 }}>{o.text}</p>
+            <p className="hint" style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 8, marginTop: 0 }}>
+              <CoverageTag coverage={o.coverage} /> {COVERAGE[o.coverage].note}
             </p>
-            <p className="claim-text">{o.text}</p>
-            <p className="hint">{COVERAGE[o.coverage].note}</p>
           </div>
           <aside aria-label="Evidence">
             <ul className="sources">
               <li className="label">Evidence</li>
-              {o.finding_ids.length === 0 && <li className="muted">None found.</li>}
+              {o.finding_ids.length === 0 && <li className="empty small">No approved study covers this.</li>}
               {uniqueByStudy(o.finding_ids.map((id) => check.findings?.[id])).map(({ source }) => (
                 <li key={source.study_id}><Citation source={source} /></li>
               ))}
@@ -70,9 +73,9 @@ function Result({ check }: { check: CoverageCheck }) {
           </aside>
         </div>
       ))}
-      <div style={{ maxWidth: "var(--measure)", marginTop: 8 }}>
+      <div className="panel panel-quiet" style={{ maxWidth: "var(--measure)", marginTop: 8 }}>
         <h3 style={{ marginBottom: 6 }}>Recommended new scope</h3>
-        <p>{check.result.recommended_new_scope}</p>
+        <p style={{ margin: 0 }}>{check.result.recommended_new_scope}</p>
       </div>
       <div className="actions" style={{ marginTop: 16 }}>
         <button className="btn btn-primary" onClick={submit} disabled={sending || !!submission}>Send to S&amp;I commissioning</button>
@@ -131,15 +134,16 @@ function Commission() {
   return (
     <>
       <section className="page-head">
-        <p className="eyebrow">Checkpoint 4 · commissioning</p>
         <title>Before you commission · Evidence brief</title>
         <h1>Before you commission</h1>
         <p>
           List your research objectives. Each one is checked against approved studies your team can read, so new
           fieldwork covers only what is missing. You decide whether to send the result to S&amp;I.
         </p>
+        <p className="checkpoint">Human checkpoint 4 of 4: nothing is commissioned until you send it.</p>
       </section>
-      <form onSubmit={run} style={{ maxWidth: 820 }}>
+      <div className="split">
+      <form onSubmit={run} className="panel">
         <div className="field">
           <label htmlFor="title">Request title</label>
           <input id="title" value={title} onChange={(e) => setTitle(e.target.value)} required minLength={3}
@@ -155,18 +159,31 @@ function Commission() {
           {busy ? "Checking existing studies…" : "Check coverage"}
         </button>
       </form>
+      <aside className="side-panel" aria-label="What the result means">
+        <h2>What the result means</h2>
+        <ul className="coverage-key">
+          {(Object.keys(COVERAGE) as (keyof typeof COVERAGE)[]).map((k) => (
+            <li key={k}>
+              <CoverageTag coverage={k} />
+              <span>{COVERAGE[k].note}</span>
+            </li>
+          ))}
+        </ul>
+        <p style={{ margin: "14px 0 0" }}>Every objective lists the studies behind its result, so S&amp;I can check it.</p>
+      </aside>
+      </div>
 
       {check && <Result key={check.id} check={check} />}
 
       {previous.length > 0 && (
-        <section className="section" style={{ marginTop: 40 }}>
+        <section className="section" style={{ marginTop: 56 }}>
           <div className="section-head"><h2>Earlier checks</h2></div>
-          <ul className="list-plain" style={{ maxWidth: 820 }}>
+          <ul className="list-plain" style={{ maxWidth: 920 }}>
             {previous.map((p) => (
               <li key={p.id} className="actions" style={{ justifyContent: "space-between" }}>
-                <button className="btn btn-quiet" onClick={() => open(p.id)}>{p.title}</button>
-                <span className="mono small muted">
-                  {p.submitted_at ? `sent · ` : ""}{dateTime(p.created_at)}
+                <button className="btn btn-quiet" onClick={() => open(p.id)}>{p.title.trim() || "Untitled check"}</button>
+                <span className="small muted nums">
+                  {p.submitted_at ? `Sent · ` : ""}{dateTime(p.created_at)}
                 </span>
               </li>
             ))}
