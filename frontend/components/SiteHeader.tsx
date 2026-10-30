@@ -13,6 +13,7 @@ export function SiteHeader() {
 
   const links = [
     { href: "/", label: "Ask a question", show: true },
+    { href: "/studies", label: "Studies", show: true },
     { href: "/commission", label: "Before you commission", show: true },
     { href: "/access", label: "Access", show: true },
     { href: "/analyst", label: isSi ? "Analyst desk" : "Ask an analyst", show: true },
