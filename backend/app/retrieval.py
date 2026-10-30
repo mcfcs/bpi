@@ -46,6 +46,7 @@ class Source:
     similarity: float = 0.0
     score: float = 0.0
     attached: bool = False  # a verbatim added because its theme was retrieved
+    study_summary: str | None = None  # read for the method label ("6 FGDs"), not sent as evidence
 
     @property
     def is_quant(self) -> bool:
@@ -103,6 +104,8 @@ class Source:
             regions=regions,
             segment=segment,
             fieldwork_end=self.fieldwork_end,
+            evidence="quant" if self.is_quant else "qual",
+            subgroup=tuple(sorted((k, str(v)) for k, v in (self.subgroup or {}).items() if v)),
         )
 
 
@@ -111,7 +114,7 @@ SOURCE_COLUMNS = """
     f.metric_key, f.value, f.unit, f.base_n, f.subgroup, f.direction,
     s.code as study_code, s.title as study_title, s.method_type, s.sample_size, s.fieldwork_end,
     s.population, s.effective_tier, s.robustness_tier, s.tier_override, s.access_level,
-    t.name as owner_team
+    t.name as owner_team, s.summary as study_summary
 """
 
 

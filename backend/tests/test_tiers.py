@@ -24,9 +24,11 @@ def test_seeded_studies_get_the_expected_tiers():
     assert compute_tier("quant", 1200, date(2026, 3, 20), TODAY) == "A"
     # Study B: quant, n=800, fieldwork ended Feb 2025 (20 months) -> 3 + 1 + 0
     assert compute_tier("quant", 800, date(2025, 2, 14), TODAY) == "B"
-    # Study C: qual, 42 participants -> 1 + 0 + 1; qual never earns sample points
+    # Study C: qual, fieldwork 13 months ago -> C. Qualitative tiers follow recency only.
     assert compute_tier("qual", 42, date(2025, 9, 12), TODAY) == "C"
-    assert compute_tier("qual", 5000, date(2026, 9, 1), TODAY) == "C"
+    # A recent qualitative study reaches B, never A, and group size changes nothing.
+    assert compute_tier("qual", 5000, date(2026, 9, 1), TODAY) == "B"
+    assert compute_tier("qual", 6, date(2026, 9, 1), TODAY) == "B"
 
 
 def test_recency_lowers_an_old_studys_tier():

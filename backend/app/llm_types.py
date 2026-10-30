@@ -25,12 +25,41 @@ class PromptGroup:
 
 
 @dataclass
+class Reader:
+    """Who the brief is prepared for. Frames relevance (which metrics come first); it never changes
+    which findings are included: retrieval under RLS has already decided that."""
+
+    name: str
+    team: str
+    role: str                                   # profile role, e.g. bu_user
+    role_label: str                             # "Business-unit user", or the reader's own description
+    focus_prefixes: tuple[str, ...] = ()        # metric families the team owns (config.TEAM_METRIC_FOCUS)
+    team_study_codes: tuple[str, ...] = ()      # retrieved studies the reader's team owns
+
+    def owns(self, source: Source) -> bool:
+        return source.owner_team == self.team or bool(
+            source.metric_key and any(source.metric_key.startswith(p) for p in self.focus_prefixes))
+
+
+@dataclass
+class QualContrast:
+    """A qualitative theme whose direction runs against survey findings on the same topic. It is
+    shown as colour in "What people say", never as a divergence (refs are prompt refs)."""
+
+    qual_ref: str
+    quant_refs: list[str]
+    topic: str
+
+
+@dataclass
 class BriefRequest:
     question: str
     findings: list[tuple[str, Source]]   # (ref, source), most relevant first
     groups: list[PromptGroup]
     chartable: list[str]
     computed_gaps: list[str]
+    reader: Reader | None = None
+    qual_contrasts: list[QualContrast] = field(default_factory=list)
 
 
 class LLM(Protocol):
