@@ -162,9 +162,13 @@ def create_app(settings: Settings | None = None, *, db: Database | None = None, 
                 "(select json_build_object('id', e.id::text, 'status', e.status, 'reason', e.reason, 'response', e.response) "
                 " from public.escalations e where e.brief_id = b.id order by e.created_at desc limit 1) as escalation "
                 "from public.briefs b where b.id = %s", [brief_id]).fetchone()
+            # Escalation thread (consultation 2): every escalation on this brief, oldest first.
+            # "escalation" above stays the latest one for compatibility.
+            thread = governance.brief_escalations(conn, brief_id) if row else []
         if row is None:
             raise HTTPException(404, "Brief not found.")
-        return {**row["payload"], "id": row["id"], "created_at": row["created_at"].isoformat(), "escalation": row["escalation"]}
+        return {**row["payload"], "id": row["id"], "created_at": row["created_at"].isoformat(), "escalation": row["escalation"],
+                "escalations": thread}
 
     # ------------------------------------------------------------------ studies and review (checkpoint 1)
     @app.get("/api/studies/{study_id}")

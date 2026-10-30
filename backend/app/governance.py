@@ -100,6 +100,18 @@ def create_escalation(conn: psycopg.Connection, user_id: str, brief_id: str | No
     return _jsonable(row)
 
 
+def brief_escalations(conn: psycopg.Connection, brief_id: str) -> list[dict]:
+    """Every escalation raised from a brief, oldest first, with the analyst's (appended) replies.
+    RLS limits rows to the caller's own escalations, or all of them for S&I."""
+    rows = conn.execute(
+        "select e.id::text as id, e.status, e.reason, e.note, e.response, rp.display_name as responded_by, "
+        "e.responded_at, e.created_at from public.escalations e "
+        "left join public.profiles rp on rp.id = e.responded_by where e.brief_id = %s order by e.created_at",
+        [brief_id],
+    ).fetchall()
+    return [_jsonable(r) for r in rows]
+
+
 def conflict_keys(unresolved_conflicts: list[dict] | None) -> set[tuple[str, tuple[str, ...]]]:
     """(topic, finding ids) per unresolved conflict: what makes two automatic escalations the same."""
     return {(n["topic"], tuple(sorted(n["finding_ids"]))) for n in unresolved_conflicts or []}

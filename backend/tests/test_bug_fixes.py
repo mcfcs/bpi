@@ -125,6 +125,20 @@ def test_8_a_second_reply_is_appended_and_audited(client, db):
     assert [d["follow_up"] for d in details] == [False, True] and details[1]["reply_excerpt"] == "Second answer."
 
 
+def test_8_the_brief_carries_its_escalation_thread(client):
+    brief = ask(client, "carla", SME_QUESTION)
+    headers = auth(client, "carla")
+    first = client.post("/api/escalations", headers=headers, json={"brief_id": brief["id"], "note": "First question."}).json()
+    second = client.post("/api/escalations", headers=headers, json={"brief_id": brief["id"], "note": "Second question."}).json()
+    client.post(f"/api/escalations/{first['id']}/respond", headers=auth(client, "ana"), json={"response": "Answered."})
+    stored = client.get(f"/api/briefs/{brief['id']}", headers=headers).json()
+    assert [e["id"] for e in stored["escalations"]] == [first["id"], second["id"]]          # oldest first
+    assert stored["escalations"][0]["response"] == "Answered." and stored["escalations"][0]["responded_by"] == "Ana Reyes"
+    assert stored["escalation"]["id"] == second["id"]                                       # latest, as before
+    assert set(stored["escalations"][0]) == {"id", "status", "reason", "note", "response", "responded_by",
+                                             "responded_at", "created_at"}
+
+
 # 9 --------------------------------------------------------------------------------------------
 def test_9_access_cannot_be_granted_with_a_past_expiry(client, study_ids):
     created = client.post("/api/access-requests", headers=auth(client, "carla"), json={
