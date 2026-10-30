@@ -1,9 +1,10 @@
 """Heuristic study-card extraction for demos without Claude credentials.
 
 It reads semi-structured reports like those in data/synthetic/reports: a details block (Method,
-Sample, Fieldwork, Coverage, Segment), key-finding bullets and quoted verbatims. Prose reports need
-the Claude extractor. Either way an S&I analyst checks every field at review (checkpoint 1) before
-anything becomes searchable.
+Sample, Fieldwork, Coverage, Segment), key-finding bullets and quoted verbatims. PDF reports are
+first turned into the same form by `documents.normalise_report_text` (running headers and footers
+dropped, wrapped bullets and quotations joined). Prose reports need the Claude extractor. Either
+way an S&I analyst checks every field at review (checkpoint 1) before anything becomes searchable.
 """
 
 from __future__ import annotations
@@ -63,13 +64,22 @@ def _method(text: str) -> str | None:
 
 def _locations(text: str) -> list[str]:
     names: list[str] = []
-    lowered = f" {text.lower()} "
+    original = f" {text} "
+    lowered = original.lower()
     for key in sorted(geography.ALIASES, key=len, reverse=True):
-        if re.search(rf"(?<![a-z]){re.escape(key)}(?![a-z])", lowered):
-            display = next((r for r in geography.REGION_ISLAND_GROUP if r.lower() == key), key.title())
+        match = re.search(rf"(?<![a-z]){re.escape(key)}(?![a-z])", lowered)
+        if match:
+            # Keep the report's own spelling ("Cagayan de Oro", not "Cagayan De Oro").
+            as_written = original[match.start():match.end()]
+            display = next((r for r in geography.REGION_ISLAND_GROUP if r.lower() == key),
+                           as_written if not as_written.islower() else key.title())
             if not any(key in n.lower() for n in names):
                 names.append("Nationwide" if key in geography.NATIONWIDE else display)
-            lowered = lowered.replace(key, " ")
+            # Blank out every occurrence in both strings, keeping offsets aligned.
+            for m in reversed(list(re.finditer(re.escape(key), lowered))):
+                blank = " " * (m.end() - m.start())
+                lowered = lowered[:m.start()] + blank + lowered[m.end():]
+                original = original[:m.start()] + blank + original[m.end():]
     return names
 
 

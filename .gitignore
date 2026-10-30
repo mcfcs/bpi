@@ -25,3 +25,8 @@ frontend/.env.local
 
 # Downloaded embedding models
 backend/.cache/
+
+# Third-party public report PDFs (downloaded by backend/scripts/fetch_public_reports.py; never commit)
+data/public/pdfs/
+# Locally rendered synthetic report PDFs (backend/scripts/build_synthetic_pdfs.py)
+data/synthetic/pdfs/

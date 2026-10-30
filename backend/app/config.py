@@ -120,6 +120,24 @@ def chart_title(metric_key: str) -> str:
     return label
 
 
+# ---------------------------------------------------------------------------
+# Study documents (app/documents.py). Proposed defaults, not validated by S&I.
+# ---------------------------------------------------------------------------
+DOCUMENT_CONFIG: dict = {
+    "max_upload_bytes": 25_000_000,  # PDF uploads larger than this are refused
+    "min_text_chars": 200,           # less extractable text than this: treat as scanned (needs OCR first)
+    # A finding is pinned to a page only when this share of its word trigrams appears on that page;
+    # below it the page is left empty for the analyst to fill in at review rather than guessed.
+    "min_page_match": 0.6,
+    "download_link_seconds": 120,    # lifetime of a signed "open the report at page N" link
+}
+
+# Where public and synthetic report material lives. Public PDFs are downloaded by
+# backend/scripts/fetch_public_reports.py and are git-ignored; never commit third-party PDFs.
+PUBLIC_DATA_DIR = REPO_DIR / "data" / "public"
+SYNTHETIC_DATA_DIR = REPO_DIR / "data" / "synthetic"
+
+
 def _load_env_file(path: Path) -> None:
     """Load KEY=VALUE lines into the environment without overriding values that are already set."""
     if not path.exists():

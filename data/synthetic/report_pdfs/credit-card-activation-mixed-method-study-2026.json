@@ -1,0 +1,19 @@
+{
+  "_note": "Synthetic report spec: mixed method (survey plus in-depth interviews). Not real BPI data.",
+  "title": "Credit Card Activation Mixed-Method Study 2026",
+  "summary": "An online survey of new cardholders who had not activated their card within 30 days, followed by in-depth interviews on why.",
+  "owner_team": "Cards & Payments",
+  "access_level": "restricted",
+  "method_type": "mixed",
+  "sample_size": 600,
+  "interviews": 20,
+  "fieldwork_start": "2026-05-18",
+  "fieldwork_end": "2026-06-19",
+  "population": {"age_min": 21, "age_max": 45, "regions": ["NCR", "Cebu"], "segment": "New credit cardholders"},
+  "findings": [
+    {"text": "38% of new cardholders who had not activated their card said they did not know the activation steps (base n=600).", "finding_type": "quant_stat", "metric_key": "card:activation_unclear", "value": 38, "unit": "%", "base_n": 600, "direction": "high"},
+    {"text": "Annual fee worries were cited by 27% of new cardholders who had not activated their card (base n=600).", "finding_type": "quant_stat", "metric_key": "barrier:fees", "value": 27, "unit": "%", "base_n": 600, "direction": "neutral"},
+    {"text": "Interviewees described waiting for a first large purchase before activating, treating the card as a backup.", "finding_type": "qual_theme", "metric_key": "card:backup_use", "direction": "high"},
+    {"text": "I kept the card in the drawer for emergencies. I didn't see why I should activate it before I needed it.", "finding_type": "verbatim", "metric_key": "card:backup_use", "subgroup": {"segment": "Nurse, 29", "region": "Cebu City"}}
+  ]
+}
