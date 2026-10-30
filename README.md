@@ -72,15 +72,26 @@ Sign in as one of the demo personas (each sees only what their team may read):
 | Dino Cruz | SME Banking | Approver: decides access requests for SME Banking studies |
 | Carla Mendoza | Cards & Payments | Business unit: sees SME Banking's survey only as a restricted match |
 
-Questions that exercise the client's rules:
+Questions that exercise the client's rules (from the two S&I consultations):
 
+- *What stops Gen Z customers from finishing digital card applications?* (as Carla): the
+  consultation's own example. ID verification leads; fees read as segment statements ("a driver of
+  drop-off among 20–40 in Metro Manila; not among 41–60 nationwide") rather than "the studies
+  disagree"; the Visayas focus groups add colour with emotion cues and are never set against the survey.
 - *Why do SME owners drop off during online loan applications?* (as Ben): Tier A headline, a fees
-  context difference (age, region, period, method), charts, and the Cebu and Iloilo focus groups under
+  context difference by age, region and period, charts, and the Cebu and Iloilo focus groups under
   "What people say".
 - *How do market vendors feel about accepting QR payments?*: qualitative only, so there is no
-  headline, the disclaimer is shown and confidence is Low.
+  headline; themes are synthesised across groups, the disclaimer is shown and confidence is Low.
 - *Do young professionals prefer cashback or travel rewards on credit cards?* (as Carla): an
-  unresolved conflict, Low confidence, routed to an analyst automatically.
+  unresolved conflict that says what each study found, Low confidence, routed to an analyst once.
+- *How has satisfaction with the mobile app changed between survey waves?*: two trends in the same
+  study, explained with the respondents of each wave, not called a conflict.
+- *Are long ATM queues a problem outside Metro Manila?*: Metro Manila compared with provincial and
+  rural areas.
+
+Every brief also has Executive / Analyst / Plain-language summaries (same facts and citations), a
+"Prepared for" line for the reader's team, and an Ask-an-analyst draft generated from the brief.
 
 ### Using Claude
 
