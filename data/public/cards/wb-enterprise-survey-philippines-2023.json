@@ -1,0 +1,25 @@
+{
+  "slug": "wb-enterprise-survey-philippines-2023",
+  "code": "PUB-WB-ES23",
+  "title": "World Bank Enterprise Survey: Philippines 2023 (public source)",
+  "summary": "World Bank survey of formal private firms with five or more employees on their business environment, including bank accounts, how they finance investment and their biggest obstacles.",
+  "method_type": "quant",
+  "sample_size": 1002,
+  "fieldwork_end": "2024-02-29",
+  "population": {"age_min": null, "age_max": null, "regions": ["Nationwide"], "segment": "Formal private firms with 5+ employees"},
+  "label_notes": "Pages are 1-based PDF page indexes. Values come from the appendix table (pp.11-12), whose columns are Philippines 2023 all firms, small, medium, large, then East Asia & Pacific and lower-middle-income comparators. Small-firm base (424) is from Figure 2 (p.4).",
+  "findings": [
+    {"text": "79.8% of formal private firms in the Philippines had a checking or savings account.", "finding_type": "quant_stat", "metric_key": "firm:bank_account", "value": 79.8, "unit": "%", "base_n": 1002, "direction": "high", "page": 11,
+     "quote": "Percent of firms with a checking or savings account 79.8"},
+    {"text": "Among small firms (5-19 employees), 78.2% had a checking or savings account.", "finding_type": "quant_stat", "metric_key": "firm:bank_account", "value": 78.2, "unit": "%", "base_n": 424, "subgroup": {"segment": "Small firms (5-19 employees)"}, "direction": "high", "page": 11,
+     "quote": "Percent of firms with a checking or savings account 79.8 78.2"},
+    {"text": "Firms financed 68.0% of their investment internally; banks financed 19.8%.", "finding_type": "quant_stat", "metric_key": "firm:investment_bank_financed", "value": 19.8, "unit": "%", "base_n": 1002, "direction": "neutral", "page": 11,
+     "quote": "Proportion of investment financed by banks (%) 19.8"},
+    {"text": "28.9% of firms used banks to finance investments.", "finding_type": "quant_stat", "metric_key": "firm:uses_bank_finance", "value": 28.9, "unit": "%", "base_n": 1002, "direction": "neutral", "page": 11,
+     "quote": "Percent of firms using banks to finance investments 28.9"},
+    {"text": "Access to finance was named the biggest business obstacle by 12.8% of firms, third after electricity (18.1%) and practices of the informal sector (13.6%).", "finding_type": "quant_stat", "metric_key": "barrier:access_to_finance", "value": 12.8, "unit": "%", "base_n": 1002, "direction": "low", "page": 12,
+     "quote": "Access to finance 12.8 13.9 9.1 14.9"},
+    {"text": "Only 15% of small firms had a bank loan, against 31% of medium and 37% of large firms.", "finding_type": "quant_stat", "metric_key": "firm:bank_loan", "value": 15, "unit": "%", "base_n": 424, "subgroup": {"segment": "Small firms (5-19 employees)"}, "direction": "low", "page": 7,
+     "quote": "Small (5-19) Medium (20-99) Large (100+)"}
+  ]
+}

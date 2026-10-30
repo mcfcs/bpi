@@ -1,0 +1,27 @@
+{
+  "slug": "bsp-financial-inclusion-survey-2021",
+  "code": "PUB-BSP-FIS21",
+  "title": "BSP 2021 Financial Inclusion Survey (public source)",
+  "summary": "Bangko Sentral ng Pilipinas' nationally representative survey of Filipino adults on accounts, savings, loans, payments and digital access, with supporting focus groups and interviews. Reference year 2021.",
+  "method_type": "mixed",
+  "sample_size": 1200,
+  "fieldwork_end": "2022-02-09",
+  "population": {"age_min": 15, "age_max": 99, "regions": ["Nationwide"], "segment": "Filipino adults"},
+  "label_notes": "Labelled by reading the PDF. Pages are 1-based PDF page indexes (the report's own page numbers differ). Method is 'mixed' because the report pairs the survey with FGDs and IDIs; every finding below is from the survey. sample_size is the survey sample; base_n is left empty where the report gives only a share of adults as the base.",
+  "findings": [
+    {"text": "56% of Filipino adults had a formal account in 2021, up from 29% in 2019.", "finding_type": "quant_stat", "metric_key": "account:formal_ownership", "value": 56, "unit": "%", "base_n": 1200, "direction": "high", "page": 10,
+     "quote": "Account penetration significantly increased to 56% in 2021 from 29% in"},
+    {"text": "36% of Filipino adults had an e-money account in 2021, up from 8% in 2019, making e-money the most-owned type of account.", "finding_type": "quant_stat", "metric_key": "account:emoney_ownership", "value": 36, "unit": "%", "base_n": 1200, "direction": "high", "page": 10,
+     "quote": "percentage of Filipinos with e-money account grew more than four times to 36% in 2021"},
+    {"text": "Among adults aged 30-39, 65% had an account, more than twice the 27% of adults aged 15-19.", "finding_type": "quant_stat", "metric_key": "account:formal_ownership", "value": 65, "unit": "%", "base_n": null, "subgroup": {"age_band": "30-39"}, "direction": "high", "page": 11,
+     "quote": "the share of adults aged 30 to 39 years old with an account (65%) was more than twice that of younger adults aged 15 to 19 years old (27%)"},
+    {"text": "Lack of documentary requirements was cited by 40% of unbanked adults as a reason for not having an account, second to not having enough money (45%).", "finding_type": "quant_stat", "metric_key": "barrier:documents", "value": 40, "unit": "%", "base_n": null, "subgroup": {"segment": "Unbanked adults"}, "direction": "high", "page": 12,
+     "quote": "Lack of enough money and lack of documentary requirements were the topmost reasons for not having an account, as reported by 45% and 40% of the unbanked, respectively"},
+    {"text": "54% of unbanked adults were unaware of the basic deposit account, the BSP's low-cost account designed to address cost and document barriers.", "finding_type": "quant_stat", "metric_key": "account:bda_unaware", "value": 54, "unit": "%", "base_n": null, "subgroup": {"segment": "Unbanked adults"}, "direction": "high", "page": 12,
+     "quote": "54% of unbanked adults were still unaware of the basic deposit account (BDA)"},
+    {"text": "45% of Filipino adults had an outstanding loan in 2021, up from 33% in 2019; family and friends were the most common source.", "finding_type": "quant_stat", "metric_key": "credit:has_loan", "value": 45, "unit": "%", "base_n": 1200, "direction": "high", "page": 14,
+     "quote": "the share of adults with outstanding loans jumped to 45%, from 33% in 2019"},
+    {"text": "Only 4% of borrowers took their loans from banks in 2021, barely up from 3% in 2019.", "finding_type": "quant_stat", "metric_key": "credit:bank_source", "value": 4, "unit": "%", "base_n": null, "subgroup": {"segment": "Borrowers"}, "direction": "low", "page": 15,
+     "quote": "the share of borrowers sourcing their loans from banks only stood at four percent (4%) in 2021"}
+  ]
+}

@@ -1,0 +1,25 @@
+{
+  "slug": "bsp-consumer-expectations-survey-q4-2025",
+  "code": "PUB-BSP-CES25Q4",
+  "title": "BSP Consumer Expectations Survey Q4 2025 (public source)",
+  "summary": "Bangko Sentral ng Pilipinas' quarterly survey of household sentiment on the economy, family finances, saving, borrowing and the use of overseas remittances.",
+  "method_type": "quant",
+  "sample_size": 5489,
+  "fieldwork_end": "2025-10-13",
+  "population": {"age_min": null, "age_max": null, "regions": ["Nationwide"], "segment": "Households"},
+  "label_notes": "Pages are 1-based PDF page indexes. Confidence, saving-intention and borrowing-intention indices are diffusion indices (share of optimists minus pessimists), recorded with unit 'score' because they are not shares of respondents.",
+  "findings": [
+    {"text": "Household confidence fell in Q4 2025: the overall current-quarter confidence index dropped from -9.8 in Q3 2025 to -22.2.", "finding_type": "quant_stat", "metric_key": "sentiment:consumer_confidence", "value": -22.2, "unit": "score", "base_n": 5489, "direction": "low", "page": 3,
+     "quote": "overall current-quarter confidence index (CI) turned more negative from -9.8 percent in Q3 2025 to -22.2 percent in Q4 2025"},
+    {"text": "Households linked the weaker confidence mainly to graft and corruption in government, higher inflation, lower household income and bad weather.", "finding_type": "quant_stat", "metric_key": "sentiment:confidence_drivers", "value": null, "unit": null, "base_n": 5489, "direction": null, "page": 3,
+     "quote": "mainly due to concerns over: (a) graft and corruption in the government, (b) higher inflation, (c) lower household income, and (d) unfavorable weather conditions"},
+    {"text": "The saving intention index turned positive, from -8.8 in Q3 2025 to 4.6 in Q4 2025.", "finding_type": "quant_stat", "metric_key": "saving:intention_index", "value": 4.6, "unit": "score", "base_n": 5489, "direction": "neutral", "page": 8,
+     "quote": "saving intention index reverted to positive territory from -8.8 percent in Q3 2025 to 4.6 percent in Q4 2025"},
+    {"text": "Among households planning to save, 29.7% intended to set aside at least 10% of monthly gross family income, up from 23.9% in Q3 2025.", "finding_type": "quant_stat", "metric_key": "saving:sets_aside_10pct", "value": 29.7, "unit": "%", "base_n": null, "subgroup": {"segment": "Households planning to save"}, "direction": "neutral", "page": 8,
+     "quote": "set aside at least 10 percent of their monthly gross family income rose from 23.9 percent in Q3 2025 to 29.7 percent in Q4 2025"},
+    {"text": "Of households receiving overseas remittances, 36.4% put part of them into savings and 29.0% used them for debt payments.", "finding_type": "quant_stat", "metric_key": "remittance:to_savings", "value": 36.4, "unit": "%", "base_n": 321, "subgroup": {"segment": "Households receiving OFW remittances"}, "direction": "high", "page": 10,
+     "quote": "remittances to education (63.9 percent) and savings (36.4 percent) declined"},
+    {"text": "Borrowing intentions stayed deeply negative: the borrowing intention index for the next quarter was -71.7 (from -74.1 in Q3 2025).", "finding_type": "quant_stat", "metric_key": "credit:borrowing_intention_index", "value": -71.7, "unit": "score", "base_n": 5489, "direction": "low", "page": 11,
+     "quote": "turned less negative from -74.1 percent and -66.2 percent in the Q3 2025 survey to -71.7 percent and -64.5 percent"}
+  ]
+}

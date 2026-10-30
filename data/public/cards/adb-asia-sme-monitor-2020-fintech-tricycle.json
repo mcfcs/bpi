@@ -1,0 +1,27 @@
+{
+  "slug": "adb-asia-sme-monitor-2020-fintech-tricycle",
+  "code": "PUB-ADB-SME20",
+  "title": "ADB Asia SME Monitor 2020: Fintech Loans to Tricycle Drivers (public source)",
+  "summary": "Asian Development Bank baseline survey of self-employed tricycle drivers in Metro Manila, comparing drivers with IoT-secured fintech vehicle loans and conventional drivers on income, financing, bank accounts and saving.",
+  "method_type": "quant",
+  "sample_size": 2487,
+  "fieldwork_end": "2019-12-31",
+  "population": {"age_min": null, "age_max": null, "regions": ["NCR"], "segment": "Self-employed tricycle drivers"},
+  "label_notes": "Pages are 1-based PDF page indexes. Fieldwork is 'November-December 2019'; the end of December is used. Drivers were randomly sampled within two groups (conventional drivers in Manila/Quezon City and fintech-loan customers across NCR), so totals describe this sample, not all MSMEs.",
+  "findings": [
+    {"text": "Only 23% of tricycle drivers had a bank account, below the 2017 Philippine average of 34.5%; drivers with fintech loans had a higher rate (29.5%).", "finding_type": "quant_stat", "metric_key": "account:bank_ownership", "value": 23, "unit": "%", "base_n": 2487, "direction": "low", "page": 35,
+     "quote": "Among tricycle drivers, 23% had bank accounts, well below the Philippine average of 34.5% in 2017"},
+    {"text": "Among drivers with a bank account, 60% had a debit card, but only 5% had a credit card and 8% used online or mobile banking.", "finding_type": "quant_stat", "metric_key": "digital:mobile_banking_use", "value": 8, "unit": "%", "base_n": null, "subgroup": {"segment": "Drivers with a bank account"}, "direction": "low", "page": 35,
+     "quote": "Among bank account owners, 60% have a debit card, but only 5% have a credit card and 8% use online/mobile banking"},
+    {"text": "44% of drivers said they personally saved or set aside money.", "finding_type": "quant_stat", "metric_key": "saving:any", "value": 44, "unit": "%", "base_n": 2487, "direction": "high", "page": 36,
+     "quote": "Among drivers, 44% said they personally saved or set aside money"},
+    {"text": "33% of drivers kept savings as cash at home, while only 7% saved in an account at a formal financial institution.", "finding_type": "quant_stat", "metric_key": "saving:formal_institution", "value": 7, "unit": "%", "base_n": 2487, "direction": "low", "page": 36,
+     "quote": "While 33% said they were saving as cash at home, only 7% used an account at a formal financial institution"},
+    {"text": "10% of drivers used informal savings groups such as paluwagan.", "finding_type": "quant_stat", "metric_key": "saving:informal_group", "value": 10, "unit": "%", "base_n": 2487, "direction": "low", "page": 36,
+     "quote": "with 10% of drivers using informal savings groups"},
+    {"text": "Among conventional drivers who own their tricycle, 43.5% financed it through a motorcycle or tricycle dealer and 0.1% through a commercial bank.", "finding_type": "quant_stat", "metric_key": "credit:bank_source", "value": 0.1, "unit": "%", "base_n": null, "subgroup": {"segment": "Conventional drivers who own their tricycle"}, "direction": "low", "page": 32,
+     "quote": "Commercial bank 2 0 0.0 2 0.1 0.00"},
+    {"text": "Drivers with fintech loans reported an average daily net salary of P731, against P551 for conventional drivers.", "finding_type": "quant_stat", "metric_key": "income:daily_net_salary", "value": null, "unit": null, "base_n": 2487, "direction": null, "page": 28,
+     "quote": "Fintech customers report an average of P731 of daily net salary compared to P551 for conventional customers"}
+  ]
+}

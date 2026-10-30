@@ -68,6 +68,19 @@ def test_generated_reports_read_back_through_the_offline_extractor():
         assert [f.text for f in card.findings] == [f["text"] for f in study["findings"]]
 
 
+def test_offline_extractor_falls_back_to_prose_for_study_details():
+    """Real reports have no labelled details block; the card fields come from explicit sentences."""
+    prose = ("# Household Finance Survey\n\nThis nationally representative survey of adults covers accounts and "
+             "loans. The survey has a sample size of 1,200 adults aged 15 and above, selected by random sampling "
+             "from respondents in all regions. The survey was conducted from 13 January to 9 February 2022, "
+             "with 2021 as reference year. A questionnaire was administered face to face.\n")
+    card = extract(prose)
+    assert (card.method_type, card.sample_size, card.fieldwork_end) == ("quant", 1200, "2022-02-09")
+    assert card.population.regions == ["Nationwide"]
+    vague = extract("# Notes\n\nSome notes about loans without a method or dates.\n")
+    assert (vague.method_type, vague.sample_size, vague.fieldwork_end) == (None, None, None)
+
+
 def test_locate_page_handles_split_words_and_refuses_weak_matches():
     pages = ["Intro text about nothing in particular.",
              "Outside NCR, s ome women admitted keeping money aside at home for emergencies.",

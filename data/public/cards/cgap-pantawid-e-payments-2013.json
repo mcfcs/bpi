@@ -1,0 +1,25 @@
+{
+  "slug": "cgap-pantawid-e-payments-2013",
+  "code": "PUB-CGAP-G2P13",
+  "title": "CGAP: E-payments at Scale in the Pantawid (4Ps) Programme (public source)",
+  "summary": "CGAP and Better Than Cash Alliance case study of how the Philippines' 4Ps conditional cash transfer moved to card and other e-payments, from interviews with government, the paying bank, payment conduits and recipients.",
+  "method_type": "qual",
+  "sample_size": 22,
+  "fieldwork_end": "2013-08-31",
+  "population": {"age_min": null, "age_max": null, "regions": ["NCR", "Central Luzon"], "segment": "4Ps programme staff, payment providers and cash-transfer recipients"},
+  "label_notes": "Pages are 1-based PDF page indexes. sample_size counts the 22 named key informants in Annex 1 (p.36); recipient group interviews and field staff are not counted because the report does not give their number. Interviews were 'conducted in the Philippines in August 2013' (p.4 footnote).",
+  "findings": [
+    {"text": "Recipients interviewed said security guards helped them use ATMs at first and that they now transact on their own; few had used a bank or ATM before 4Ps.", "finding_type": "qual_theme", "metric_key": "support:in_person_help", "direction": "high", "page": 5,
+     "quote": "Recipients commonly shared that security guards would help them transact when they first started using the ATMs"},
+    {"text": "Recipients outside NCR described travelling up to two hours, and sometimes paying twice the PhP 100 maximum, to reach a pay point; NCR recipients could walk or pay PhP 15-30 to reach an ATM.", "finding_type": "qual_theme", "metric_key": "access:distance_to_paypoint", "direction": "high", "page": 5,
+     "quote": "Outside of NCR, groups reported traveling up to two hours"},
+    {"text": "Outside NCR, some women described keeping money aside at home for emergencies, but did not think of it as savings.", "finding_type": "qual_theme", "metric_key": "saving:informal_home", "direction": "high", "page": 5,
+     "quote": "Outside NCR, some women admitted “keeping money aside” at home for emergencies"},
+    {"text": "Programme staff and payment providers were reluctant to use 4Ps payments to offer bank accounts or saving, and largely disagreed that the poor can and do save.", "finding_type": "qual_theme", "metric_key": "inclusion:provider_attitudes", "direction": "high", "page": 6,
+     "quote": "by and large disagreeing with the notion that the poor can and do save"},
+    {"text": "The paying bank saw no direct business case in 4Ps recipients, who were not treated as bank clients; the cash card could only be used to withdraw cash.", "finding_type": "qual_theme", "metric_key": "inclusion:provider_attitudes", "direction": "high", "page": 25,
+     "quote": "Recipients are not considered clients of the bank"},
+    {"text": "Maybe they will become banked eventually, but we have to understand that these are the poorest of the poor.", "finding_type": "verbatim", "metric_key": "inclusion:provider_attitudes", "subgroup": {"segment": "CCT programme manager, Land Bank of the Philippines"}, "page": 24,
+     "quote": "Maybe they will become banked eventually, but we have to understand that these are the poorest of the poor."}
+  ]
+}
