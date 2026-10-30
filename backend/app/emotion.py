@@ -92,3 +92,8 @@ def detect_many(texts: Iterable[str | None], limit: int = 2) -> list[dict]:
     order = list(LEXICON)
     ranked = sorted(totals, key=lambda k: (-totals[k], order.index(k)))
     return [_cue(k) for k in ranked[:limit]]
+
+
+def all_cues() -> list[dict]:
+    """Every emotion the lexicon knows, in lexicon order (for matching labels a sentence names)."""
+    return [_cue(key) for key in LEXICON]

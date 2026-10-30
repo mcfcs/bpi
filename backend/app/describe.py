@@ -243,7 +243,15 @@ def _subgroup_phrase(source: Source) -> str:
     if not parts:
         parts.append("across the whole sample")
     value = fmt_value(source.value, source.unit)
+    # A tracker's value is the latest wave's level; a trend reads as the change ("61% → 72%"),
+    # taken from the reviewed finding text, never from the model.
+    change = _TREND_CHANGE.search(source.text or "") if _is_tracker(source) else None
+    if change:
+        value = f"{change.group(1)}% → {change.group(2)}%"
     return " ".join(parts) + (f" ({value})" if value else "")
+
+
+_TREND_CHANGE = re.compile(r"from (\d+(?:\.\d+)?)%.{0,40}?\bto (\d+(?:\.\d+)?)%")
 
 
 def segment_statement(group: DivergenceGroup, sources: dict[str, Source], *, short: bool = False) -> str:
@@ -301,7 +309,7 @@ def explain_group(group: DivergenceGroup, sources: dict[str, Source]) -> str:
                 f"{geography.where_phrase((study.population or {}).get('regions'))} ({method_short(study)}, {fieldwork_label(study)}). "
                 f"{hi[:1].upper() + hi[1:]} {join_words(_subgroup_phrase(s) for s in high)}; "
                 f"{lo} {join_words(_subgroup_phrase(s) for s in low)}"
-                + (f" ({area})" if area else "")
+                + (f". The split is {area}" if area else "")
                 + f". Each {'trend' if trends else 'pattern'} holds for its own group.").replace("  ", " ")
     a, b = members[0], members[1]
     gap = abs(months_between(a.fieldwork_end, b.fieldwork_end)) if a.fieldwork_end and b.fieldwork_end else None
@@ -515,10 +523,10 @@ def build_summaries(brief: EvidenceBrief, sources: dict[str, Source], groups: li
         analyst_parts.append("Qualitative support, not compared with the survey figures: " + join_words(
             f"{s.study_code} ({method_detail(s)}, {fieldwork_label(s)})" for s in qual_studies) + ".")
     for g in context:
-        analyst_parts.append(f"{topic_label(g.topic)} differs by {join_words(g.differs_by)} between the groups asked.")
+        analyst_parts.append(f"On {lower_label(topic_label(g.topic))}, the groups asked differ by {join_words(g.differs_by)}.")
     for g in patterns:
-        analyst_parts.append(f"{topic_label(g.topic)} moves in two directions within {sources[g.finding_ids[0]].study_code} "
-                             f"(by {join_words(g.differs_by)}).")
+        analyst_parts.append(f"{sources[g.finding_ids[0]].study_code} shows two trends on "
+                             f"{lower_label(topic_label(g.topic))}, by {join_words(g.differs_by)}.")
     for g in conflicts:
         analyst_parts.append(f"Unresolved, with an analyst: {topic_label(g.topic)} in "
                              f"{join_words(sorted({sources[i].study_code for i in g.finding_ids}))}.")

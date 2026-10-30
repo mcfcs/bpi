@@ -12,12 +12,13 @@ Restricted findings never reach the LLM: the only content passed to it is what s
 
 from __future__ import annotations
 
+import re
 from collections.abc import Callable
 from datetime import date
 
 from psycopg.types.json import Jsonb
 
-from . import audit, charts, divergence, governance, retrieval, topicality
+from . import audit, charts, divergence, emotion, governance, retrieval, topicality
 from .auth import CurrentUser
 from .confidence import compute_confidence
 from .config import ROLE_LABELS, TEAM_METRIC_FOCUS, retrieval_config, topicality_config
@@ -39,7 +40,9 @@ from .validators import (
 
 NO_SOURCES_MESSAGE = ("No approved study you can read answers this. Try describing it another way, "
                       "or ask an analyst whether S&I has covered it.")
-ESCALATION_NOTE ="Routed automatically: the brief contains an unresolved conflict between studies."
+# A synthesised theme names the feelings it found: "Feelings voiced include frustration and worry."
+_FEELINGS_NAMED = re.compile(r"Feelings voiced include ([^.]+)\.")
+ESCALATION_NOTE = "Routed automatically: the brief contains an unresolved conflict between studies."
 
 
 def _map_ids(brief: EvidenceBrief, mapping: dict[str, str]) -> EvidenceBrief:
@@ -157,8 +160,22 @@ class BriefService:
         def claim_emotions(claim) -> list[dict]:
             if claim.kind != "qualitative_insight":
                 return []
+            # A synthesised theme names the feelings it found across the groups ("Feelings voiced
+            # include frustration and worry."); the tags must show exactly those, not a re-count over
+            # the claim's own quotes, which can rank differently.
+            named = _FEELINGS_NAMED.search(claim.text)
+            if named:
+                wanted = named.group(1).lower()
+                return [e for e in emotion.all_cues() if e["label"].lower() in wanted]
             ids = [e.finding_id for e in claim.evidence] + list(claim.verbatim_ids)
             return emotions_for(by_id[i].text for i in ids if i in by_id)
+
+        # Gaps that name studies must name ones this brief cites (a retrieved but uncited study
+        # appearing in a gap reads as a source the reader cannot find).
+        cited_sources = [by_id[i] for i in cited if i in by_id]
+        computed_texts = {g["text"] for g in gap_items}
+        gap_items = compute_gap_items(cited_sources, self.today()) if cited_sources else gap_items
+        brief.gaps = [g["text"] for g in gap_items] + [g for g in brief.gaps if g not in computed_texts]
         payload = {
             "question": question,
             "generated_by": generated_by,

@@ -193,6 +193,14 @@ def create_app(settings: Settings | None = None, *, db: Database | None = None, 
             # Escalation thread (consultation 2): every escalation on this brief, oldest first.
             # "escalation" above stays the latest one for compatibility.
             thread = governance.brief_escalations(conn, brief_id) if row else []
+            # A conflict already with an analyst from an earlier brief is linked, not re-raised, so
+            # this brief has no escalation row of its own: show the open one (when RLS lets the
+            # reader see it) instead of nothing.
+            if row is not None and row["escalation"] is None and row["payload"].get("unresolved_conflicts"):
+                linked = governance.open_conflict_escalation(
+                    conn, governance.conflict_keys(row["payload"]["unresolved_conflicts"]))
+                if linked is not None:
+                    row = {**row, "escalation": {**linked, "response": None}}
         if row is None:
             raise HTTPException(404, "Brief not found.")
         return {**row["payload"], "id": row["id"], "created_at": row["created_at"].isoformat(), "escalation": row["escalation"],

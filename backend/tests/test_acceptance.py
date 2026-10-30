@@ -129,3 +129,31 @@ def test_5_unresolved_conflict_pair_is_flagged_low_and_escalated(client):
     assert any(e["brief_id"] == brief["id"] and e["status"] == "open" for e in desk)
     stored = client.get(f"/api/briefs/{brief['id']}", headers=auth(client, "carla")).json()
     assert stored["escalation"]["status"] == "open"
+
+
+def test_a_conflict_already_with_an_analyst_shows_on_later_briefs(client):
+    """Asking again links to the open escalation instead of raising a new one; the later brief must
+    still show it (the bug hunt saw escalation: null)."""
+    carla = auth(client, "carla")
+    first = client.post("/api/briefs", headers=carla, json={"question": CARDS_QUESTION}).json()
+    second = client.post("/api/briefs", headers=carla, json={"question": CARDS_QUESTION}).json()
+    assert first["escalation"] and second["escalation"]["id"] == first["escalation"]["id"]
+    stored = client.get(f"/api/briefs/{second['id']}", headers=carla).json()
+    assert stored["escalation"]["id"] == first["escalation"]["id"]
+    assert stored["escalation"]["status"] == "open"
+
+
+def test_gaps_name_only_cited_studies(client):
+    brief = client.post("/api/briefs", headers=auth(client, "ben"), json={"question": SME_QUESTION}).json()
+    import re as _re
+    for gap in brief["gap_items"]:
+        for code in _re.findall(r"SI-\d{4}-\d{3}", gap["text"] + " " + (gap.get("ask") or "")):
+            assert code in {s["study_code"] for s in brief["sources"].values()}, gap
+
+
+def test_emotion_tags_match_the_feelings_a_claim_names(client):
+    brief = client.post("/api/briefs", headers=auth(client, "ben"), json={"question": QR_QUESTION}).json()
+    for claim in brief["claims"]:
+        if "Feelings voiced include" in claim["text"]:
+            named = claim["text"].split("Feelings voiced include", 1)[1].lower()
+            assert claim["emotions"] and all(e["label"].lower() in named for e in claim["emotions"])

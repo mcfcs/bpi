@@ -14,6 +14,7 @@ from datetime import date, datetime, time, timezone
 import psycopg
 
 from . import audit
+from .describe import lower_label
 from .review import _jsonable
 
 
@@ -218,7 +219,7 @@ def draft_escalation(brief: dict) -> dict:
     confounded = next((d for d in differences if d["kind"] == "context_difference" and len(d["differs_by"]) >= 2), None)
     gap_ask = next((g["ask"] for g in gaps if g["ask"]), None)
     if conflict:
-        suggested = (f"{' and '.join(conflict['study_codes'])} report different results on {_lower(conflict['label'])} "
+        suggested = (f"{' and '.join(conflict['study_codes'])} report different results on {lower_label(conflict['label'])} "
                      f"for the same group and period. Which should {team} rely on, and is there a known reason for "
                      f"the difference (questionnaire, sample source, timing)?")
     elif confounded:

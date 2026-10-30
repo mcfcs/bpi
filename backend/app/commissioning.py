@@ -30,7 +30,7 @@ from psycopg.types.json import Jsonb
 
 from . import audit, divergence, retrieval, topicality
 from .config import COVERAGE_STATE_CONFIG, Settings, coverage_config, retrieval_config, topicality_config
-from .describe import join_words, topic_label
+from .describe import join_words, lower_label, topic_label
 from .embeddings import Embedder
 from .llm_types import LLM, LLMError
 from .tiers import months_between
@@ -157,7 +157,7 @@ def assess_objectives(conn: psycopg.Connection, objectives: list[str], embedder:
         conflicts = [g for g in divergence.analyze([s.ctx() for s in findings if s.finding_type != "verbatim"])
                      if g.kind == "unresolved_conflict"]
         if conflicts:
-            labels = join_words(sorted({topic_label(g.topic).lower() for g in conflicts}))
+            labels = join_words(sorted({lower_label(topic_label(g.topic)) for g in conflicts}))
             caveats.append({"code": "conflict",
                             "text": f"Studies of the same group report different results on {labels}; an S&I analyst "
                                     f"should check them before they are reused."})

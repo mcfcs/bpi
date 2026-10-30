@@ -217,7 +217,9 @@ def test_tracker_brief_explains_two_trends_with_the_respondents(client):
     text = pattern["explanation"]
     assert "two trends in the same study, SI-2026-025" in text
     assert "mobile banking app users aged 18–65 nationwide" in text
-    assert "improving among mobile banking app users aged 18–34 (72%)".lower() in text.lower()
+    # A trend reads as the change between waves, not the latest level alone.
+    assert "improving among mobile banking app users aged 18–34 (61% → 72%)".lower() in text.lower()
+    assert "(66% → 54%)" in text
     assert brief["unresolved_conflicts"] == [] and brief["escalation"] is None
     assert not BANNED.search(brief_text(brief) + text)
 
