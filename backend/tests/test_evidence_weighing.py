@@ -40,15 +40,16 @@ def test_mixed_method_with_mid_sized_survey_is_tier_b():
     assert _by_code()["Credit Card Activation Mixed-Method Study 2026"]["tier"] == "B"
 
 
-def test_qualitative_studies_are_always_tier_c_whatever_their_age():
-    """S&I to confirm: method points (qual 1) plus the best recency (+1) never reach B (3), so a
-    focus-group study from this year and a 2013 case study carry the same tier. Recency changes the
-    score (2 vs 0) but not the label, so readers cannot see the difference."""
+def test_qualitative_studies_are_tiered_by_recency():
+    """Consultation 2: for qualitative work S&I look at recency, not sample size. Recent focus groups
+    (within QUAL_TIER_CONFIG's 12 months) are B, older ones C, so this year's groups and a 2013 case
+    study no longer carry the same label. Qualitative never reaches A. (Earlier this test pinned
+    "qualitative is always C" as a question for S&I; the consultation answered it.)"""
     rows = _by_code()
-    recent, old = rows["SI-2026-033"], rows["PUB-CGAP-G2P13"]
-    assert recent["tier"] == old["tier"] == "C"
-    assert recent["score"] > old["score"]
-    assert all(r["tier"] == "C" for r in rows.values() if r["method_type"] == "qual")
+    recent, old = rows["SI-2026-033"], rows["PUB-CGAP-G2P13"]   # fieldwork May 2026 vs 2013
+    assert recent["tier"] == "B"
+    assert old["tier"] == "C"
+    assert all(r["tier"] in ("B", "C") for r in rows.values() if r["method_type"] == "qual")
 
 
 def test_sample_size_bands_ignore_design_and_scale():

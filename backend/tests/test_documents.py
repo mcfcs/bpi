@@ -279,9 +279,12 @@ def test_catalogue_filters(client):
     qual = client.get("/api/studies?method=qual", headers=headers).json()
     assert qual and all(s["method_type"] == "qual" for s in qual)
     team = client.get("/api/studies?team=Cards%20%26%20Payments", headers=headers).json()
-    assert [s["code"] for s in team] == ["SI-2026-027"]
+    # The filter, not a fixed list: the synthetic corpus grows (card studies were added later).
+    assert team and all(s["owner_team"] == "Cards & Payments" for s in team)
+    assert "SI-2026-027" in {s["code"] for s in team}
     year = client.get("/api/studies?year=2025", headers=headers).json()
-    assert {s["code"] for s in year} == {"SI-2025-009", "SI-2025-031"}
+    assert year and all(s["year"] == 2025 for s in year)
+    assert {"SI-2025-009", "SI-2025-031"} <= {s["code"] for s in year}
     assert client.get("/api/studies?provenance=public", headers=headers).json() == []   # tests run without public PDFs
     assert client.get("/api/studies?method=survey", headers=headers).status_code == 422
 
