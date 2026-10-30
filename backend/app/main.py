@@ -296,6 +296,21 @@ def create_app(settings: Settings | None = None, *, db: Database | None = None, 
                 "select id::text as id, title, created_at, adapter, submitted_at from public.commissioning_checks "
                 "where created_by = auth.uid() order by created_at desc limit 20").fetchall()
 
+    # S&I's inbox: every check a requester chose to send (RLS lets S&I read all checks). Declared
+    # before /api/commissioning/{check_id} so "submitted" is not taken for an id.
+    @app.get("/api/commissioning/submitted")
+    def submitted_checks(user: CurrentUser = Depends(require_si)):
+        with as_user(user) as conn:
+            return conn.execute(
+                "select c.id::text as id, c.title, c.created_at, c.submitted_at, c.adapter, "
+                "p.display_name as requested_by, t.name as requester_team, "
+                "(select count(*) from jsonb_array_elements(c.result->'objectives') o "
+                " where o->>'coverage' = 'gap') as new_problems, "
+                "jsonb_array_length(c.result->'objectives') as objectives "
+                "from public.commissioning_checks c "
+                "join public.profiles p on p.id = c.created_by join public.teams t on t.id = p.team_id "
+                "where c.submitted_at is not null order by c.submitted_at desc limit 100").fetchall()
+
     def _check_with_findings(conn, check_id: str) -> tuple[dict, dict]:
         check = commissioning.load_check(conn, check_id)
         if check is None:

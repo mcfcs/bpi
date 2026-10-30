@@ -84,3 +84,17 @@ def test_webhook_failures_are_reported_and_audited(make_client, db):
 
 def test_noop_adapter_contract():
     assert NoopAdapter().submit({"id": "abc"}).status == "stored"
+
+
+def test_si_sees_submitted_checks_in_an_inbox(client):
+    """Bug hunt 30 Oct: "Send to S&I commissioning" said "Saved for S&I" but no S&I view listed it."""
+    ben = auth(client, "ben")
+    check = client.post("/api/commissioning/coverage", headers=ben, json={
+        "title": "SME digital lending refresh",
+        "objectives": ["Understand why SME owners abandon online loan applications"]}).json()
+    assert client.get("/api/commissioning/submitted", headers=auth(client, "ana")).json() == []
+    assert client.post(f"/api/commissioning/{check['id']}/submit", headers=ben).status_code == 200
+    inbox = client.get("/api/commissioning/submitted", headers=auth(client, "ana")).json()
+    assert [(c["id"], c["requested_by"], c["requester_team"]) for c in inbox] == [
+        (check["id"], "Ben Santos", "SME Banking")]
+    assert client.get("/api/commissioning/submitted", headers=ben).status_code == 403
