@@ -25,3 +25,4 @@ frontend/.env.local
 
 # Downloaded embedding models
 backend/.cache/
+.claude/worktrees/
