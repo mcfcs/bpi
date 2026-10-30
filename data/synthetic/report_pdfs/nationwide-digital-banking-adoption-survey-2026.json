@@ -1,0 +1,20 @@
+{
+  "_note": "Synthetic report spec. Rendered to a PDF by backend/app/report_pdf.py and sent through PDF ingestion into the S&I review queue. Not real BPI data.",
+  "title": "Nationwide Digital Banking Adoption Survey 2026",
+  "summary": "A nationally representative survey of adults on how they use mobile wallets and bank apps, what stops them opening accounts online, and which fees put them off.",
+  "owner_team": "Strategy & Insights",
+  "access_level": "open",
+  "method_type": "quant",
+  "sample_size": 2400,
+  "fieldwork_start": "2026-06-22",
+  "fieldwork_end": "2026-07-31",
+  "population": {"age_min": 18, "age_max": 65, "regions": ["Nationwide"], "segment": "Adults with a mobile phone"},
+  "findings": [
+    {"text": "58% of adults used a mobile wallet to pay or send money in the past month (base n=2,400).", "finding_type": "quant_stat", "metric_key": "digital:wallet_monthly_use", "value": 58, "unit": "%", "base_n": 2400, "direction": "high"},
+    {"text": "Among adults aged 18-29, 74% used a mobile wallet in the past month (base n=610).", "finding_type": "quant_stat", "metric_key": "digital:wallet_monthly_use", "value": 74, "unit": "%", "base_n": 610, "subgroup": {"age_band": "18-29"}, "direction": "high"},
+    {"text": "Fees on transfers to other banks were cited by 41% of adults as a reason to keep cash (base n=2,400).", "finding_type": "quant_stat", "metric_key": "barrier:fees", "value": 41, "unit": "%", "base_n": 2400, "direction": "high"},
+    {"text": "Being asked for documents they do not have was cited by 36% of adults who had not opened a bank account online (base n=1,150).", "finding_type": "quant_stat", "metric_key": "barrier:documents", "value": 36, "unit": "%", "base_n": 1150, "direction": "high"},
+    {"text": "29% of adults said they would open a savings account online if it took under ten minutes (base n=2,400).", "finding_type": "quant_stat", "metric_key": "channel_pref:online_account_opening", "value": 29, "unit": "%", "base_n": 2400, "direction": "neutral"},
+    {"text": "In Mindanao, 47% cited fees on transfers to other banks as a reason to keep cash (base n=520).", "finding_type": "quant_stat", "metric_key": "barrier:fees", "value": 47, "unit": "%", "base_n": 520, "subgroup": {"region": "Mindanao"}, "direction": "high"}
+  ]
+}

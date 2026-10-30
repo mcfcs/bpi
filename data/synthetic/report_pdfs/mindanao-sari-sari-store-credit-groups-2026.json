@@ -1,0 +1,21 @@
+{
+  "_note": "Synthetic report spec: focus groups (qualitative), recent fieldwork. Not real BPI data.",
+  "title": "Mindanao Sari-sari Store Credit Focus Groups 2026",
+  "summary": "Five focus groups with sari-sari store owners in Davao City and General Santos on supplier credit, informal lending and digital loans.",
+  "owner_team": "Strategy & Insights",
+  "access_level": "open",
+  "method_type": "qual",
+  "sample_size": 36,
+  "groups": 5,
+  "fieldwork_start": "2026-08-10",
+  "fieldwork_end": "2026-08-28",
+  "population": {"age_min": 24, "age_max": 62, "regions": ["Davao City", "General Santos"], "segment": "Sari-sari store owners"},
+  "findings": [
+    {"text": "Participants described supplier credit as their main source of working capital because it needs no paperwork.", "finding_type": "qual_theme", "metric_key": "barrier:documents", "direction": "high"},
+    {"text": "Participants described digital loan apps as fast but worried about hidden charges and harassment over late payments.", "finding_type": "qual_theme", "metric_key": "barrier:fees", "direction": "high"},
+    {"text": "Several groups said they would trust a bank loan more if a person from the bank visited the store.", "finding_type": "qual_theme", "metric_key": "support:contact_person", "direction": "high"},
+    {"text": "My supplier gives me goods on credit for two weeks and never asks for my papers.", "finding_type": "verbatim", "metric_key": "barrier:documents", "subgroup": {"segment": "Sari-sari store owner, 45", "region": "Davao City"}},
+    {"text": "The app approved me in five minutes, but the charges were more than I expected when I paid back.", "finding_type": "verbatim", "metric_key": "barrier:fees", "subgroup": {"segment": "Sari-sari store owner, 31", "region": "General Santos"}},
+    {"text": "If someone from the bank came here and saw my store, I would apply.", "finding_type": "verbatim", "metric_key": "support:contact_person", "subgroup": {"segment": "Sari-sari store owner, 52", "region": "Davao City"}}
+  ]
+}

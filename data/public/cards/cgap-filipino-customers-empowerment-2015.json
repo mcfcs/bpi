@@ -1,0 +1,29 @@
+{
+  "slug": "cgap-filipino-customers-empowerment-2015",
+  "code": "PUB-CGAP-EMP15",
+  "title": "CGAP: Filipino Financial Customers' Views on Empowerment (public source)",
+  "summary": "CGAP focus groups and interviews with low-income financial customers in Metro Manila, Rizal and Bulacan on choosing providers, using services (including ATMs and digital services) and speaking up.",
+  "method_type": "qual",
+  "sample_size": 63,
+  "fieldwork_end": "2015-05-31",
+  "population": {"age_min": null, "age_max": null, "regions": ["NCR", "Rizal", "Bulacan"], "segment": "Low-income financial customers, mostly microfinance clients"},
+  "label_notes": "Pages are 1-based PDF page indexes. Sample = 51 FGD participants + 12 unique interviewees (p.2). Fieldwork dates are not stated; the report date (May 2015) is used as fieldwork_end and should be confirmed. Theme texts avoid stating incidence, as the assistant requires for qualitative evidence; the report's own percentages are in the quotes.",
+  "findings": [
+    {"text": "Participants described comparing providers and asking friends about their experience before choosing where to borrow; a few felt unable to make informed choices.", "finding_type": "qual_theme", "metric_key": "choice:compare_providers", "direction": "high", "page": 3,
+     "quote": "I shop around FSPs for terms that are easy and affordable"},
+    {"text": "Participants described a borrowing path from family and friends to informal moneylenders, and wanting to stop using moneylenders once they had a formal provider because of the high rates.", "finding_type": "qual_theme", "metric_key": "credit:informal_lenders", "direction": "high", "page": 5,
+     "quote": "many customers expressed a wish to stop taking loans from informal moneylenders because of their usurious rates"},
+    {"text": "Participants who used digital financial services had mostly started through government programmes such as 4Ps or through employers, not by their own choice.", "finding_type": "qual_theme", "metric_key": "digital:onboarding_route", "direction": "high", "page": 5,
+     "quote": "customers with experience in remittances became DFS users not by personal choice but through their affiliation with government programs"},
+    {"text": "Participants said they learned to use ATMs from family members, friends or the branch security guard, and rarely used telephone hotlines.", "finding_type": "qual_theme", "metric_key": "support:in_person_help", "direction": "high", "page": 6,
+     "quote": "Security guard—ever present and available, the guard usually becomes the source of information on how to use the ATM"},
+    {"text": "Participants said they would rather leave a provider that serves them poorly than complain, believing one voice cannot change how institutions work.", "finding_type": "qual_theme", "metric_key": "voice:complaints", "direction": "high", "page": 9,
+     "quote": "Filipinos, being generally non-confrontational, would rather just leave than have their individual voices heard"},
+    {"text": "I was accompanied by my niece when I first withdrew money using my ATM card. She was my teacher.", "finding_type": "verbatim", "metric_key": "support:in_person_help", "subgroup": {"segment": "Financial customer, FGD participant"}, "page": 6,
+     "quote": "I was accompanied by my niece when I first withdrew money using my ATM card. She was my teacher."},
+    {"text": "Hard life and cash shortage keeps me borrowing money. I hope that I will not be in debt forever.", "finding_type": "verbatim", "metric_key": "credit:informal_lenders", "subgroup": {"segment": "Financial customer, FGD participant"}, "page": 5,
+     "quote": "Hard life and cash shortage keeps me borrowing money. I hope that I will not be in debt forever."},
+    {"text": "I am only one voice; to be heard, there may be a need for a collective voice.", "finding_type": "verbatim", "metric_key": "voice:complaints", "subgroup": {"segment": "Financial customer, FGD participant"}, "page": 7,
+     "quote": "I am only one voice; to be heard, there may be a need for a collective voice."}
+  ]
+}

@@ -38,6 +38,10 @@ from .schemas import (
 )
 from .synthesis import BriefService
 
+# Study documents: catalogue, report PDFs, page citations and PDF ingestion (app/documents*.py).
+from . import documents  # noqa: E402
+from .documents_api import register_document_routes  # noqa: E402
+
 PROFILE_SQL = """
     select p.id::text as id, p.email, p.display_name, p.role, p.team_id::text as team_id, t.name as team_name
     from public.profiles p join public.teams t on t.id = p.team_id
@@ -164,7 +168,10 @@ def create_app(settings: Settings | None = None, *, db: Database | None = None, 
     # ------------------------------------------------------------------ briefs
     @app.post("/api/briefs")
     def ask(body: AskBody, user: CurrentUser = Depends(current_user)):
-        return briefs.ask(user, body.question)
+        brief = briefs.ask(user, body.question)
+        with as_user(user) as conn:   # page numbers and report links for citations ("SI-2026-014 · p.4")
+            documents.attach_citations(conn, brief.get("sources") or {})
+        return brief
 
     @app.get("/api/briefs")
     def my_briefs(user: CurrentUser = Depends(current_user)):
@@ -181,6 +188,8 @@ def create_app(settings: Settings | None = None, *, db: Database | None = None, 
                 "(select json_build_object('id', e.id::text, 'status', e.status, 'reason', e.reason, 'response', e.response) "
                 " from public.escalations e where e.brief_id = b.id order by e.created_at desc limit 1) as escalation "
                 "from public.briefs b where b.id = %s", [brief_id]).fetchone()
+            if row is not None:   # page numbers and report links, re-checked against current access
+                documents.attach_citations(conn, row["payload"].get("sources") or {})
         if row is None:
             raise HTTPException(404, "Brief not found.")
         return {**row["payload"], "id": row["id"], "created_at": row["created_at"].isoformat(), "escalation": row["escalation"]}
@@ -190,6 +199,8 @@ def create_app(settings: Settings | None = None, *, db: Database | None = None, 
     def get_study(study_id: str, user: CurrentUser = Depends(current_user)):
         with as_user(user) as conn:
             detail = review.study_detail(conn, study_id, today())
+            if detail is not None:   # provenance, the report document and each finding's page
+                documents.augment_study_detail(conn, detail)
         if detail is None:
             raise HTTPException(404, "Study not found, or you do not have access to it.")
         if not user.is_si:
@@ -291,6 +302,7 @@ def create_app(settings: Settings | None = None, *, db: Database | None = None, 
     def get_check(check_id: str, user: CurrentUser = Depends(current_user)):
         with as_user(user) as conn:
             check, findings = _check_with_findings(conn, check_id)
+            documents.attach_citations(conn, findings)
         return {**check, "findings": findings}
 
     @app.post("/api/commissioning/{check_id}/submit")
@@ -334,5 +346,9 @@ def create_app(settings: Settings | None = None, *, db: Database | None = None, 
                 "left join public.profiles p on p.id = a.actor_id order by a.id desc limit %s",
                 [min(max(limit, 1), 1000)]).fetchall()
         return rows
+
+    # ------------------------------------------------------------------ study documents
+    register_document_routes(app, settings=settings, db=db, llm=llm, offline=offline, embedder=embedder,
+                             today=today, current_user=current_user, require_si=require_si)
 
     return app

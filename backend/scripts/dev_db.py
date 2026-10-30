@@ -4,6 +4,11 @@ with the synthetic corpus. Writes DATABASE_URL and demo settings to backend/.env
     python scripts/dev_db.py           start (or reuse) the server, migrate, seed
     python scripts/dev_db.py --stop    stop the server
     python scripts/dev_db.py --reset   delete the local data and start again
+    python scripts/dev_db.py --fetch-public   first download the public research PDFs (data/public)
+    python scripts/dev_db.py --no-public      leave out public research studies
+
+Public research reports are seeded as "Public source" studies only when their PDFs are already in
+data/public/pdfs/ (see scripts/fetch_public_reports.py); without them the synthetic demo is unchanged.
 
 For a Supabase project, apply supabase/migrations with the Supabase CLI instead.
 """
@@ -50,6 +55,8 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--stop", action="store_true")
     parser.add_argument("--reset", action="store_true")
+    parser.add_argument("--fetch-public", action="store_true", help="download public report PDFs first")
+    parser.add_argument("--no-public", action="store_true", help="do not seed public research studies")
     args = parser.parse_args()
     pgdata = data_dir()
 
@@ -62,6 +69,11 @@ def main() -> int:
         shutil.rmtree(pgdata, ignore_errors=True)
         print(f"Deleted {pgdata}.")
 
+    if args.fetch_public and not args.no_public:
+        from scripts.fetch_public_reports import fetch
+        fetched = fetch()
+        print(f"Public reports: {sum(1 for s in fetched.values() if s == 'ok')} of {len(fetched)} available.")
+
     pgdata.mkdir(parents=True, exist_ok=True)
     server = pgserver.get_server(str(pgdata), cleanup_mode=None)  # keeps running after this script exits
     uri = server.get_uri()
@@ -73,13 +85,16 @@ def main() -> int:
     embedder = build_embedder()
     db = Database(uri, max_size=2)
     try:
-        result = seed(db, date.today(), embedder=embedder)
+        result = seed(db, date.today(), embedder=embedder, include_public=not args.no_public)
         # Seeding skips studies that already exist, so re-embed everything: stored vectors must
         # come from the same model as query vectors.
         count = reembed_all(db, embedder)
     finally:
         db.close()
     print(f"Seeded {len(result['studies'])} approved studies; {len(result['pending'])} new report(s) in the review queue.")
+    if not args.no_public:
+        print(f"Public research studies: {len(result['public'])} "
+              f"({', '.join(result['public']) or 'none; run with --fetch-public to download the PDFs'}).")
     print(f"Embedded {count} findings with {embedder.name}.")
     print(f"Wrote {write_env(uri)}")
     return 0

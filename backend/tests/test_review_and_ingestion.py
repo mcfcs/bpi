@@ -49,7 +49,8 @@ def test_ingested_reports_wait_for_review_and_then_become_searchable(client, db)
 
 def test_review_screen_edits_population_and_findings(client, db):
     headers = auth(client, "ana")
-    (pending,) = [q for q in client.get("/api/review/queue", headers=headers).json() if q["method_type"] == "qual"]
+    (pending,) = [q for q in client.get("/api/review/queue", headers=headers).json()
+                  if q["source_name"] == "cebu-sme-digital-onboarding-groups-2026.md"]
     detail = client.get(f"/api/studies/{pending['id']}", headers=headers).json()
     assert {"method_type", "sample_size", "fieldwork_end", "population", "robustness_tier", "tier_override",
             "tier_override_reason", "effective_tier", "tier_breakdown", "findings"} <= set(detail)

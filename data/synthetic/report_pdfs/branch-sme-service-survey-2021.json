@@ -1,0 +1,17 @@
+{
+  "_note": "Synthetic report spec: a small, old survey, so its computed tier is C. Not real BPI data.",
+  "title": "Branch SME Service Survey 2021",
+  "summary": "A short intercept survey of SME customers visiting Metro Manila branches about loan paperwork and waiting times.",
+  "owner_team": "SME Banking",
+  "access_level": "restricted",
+  "method_type": "quant",
+  "sample_size": 180,
+  "fieldwork_start": "2021-02-15",
+  "fieldwork_end": "2021-03-12",
+  "population": {"age_min": 25, "age_max": 60, "regions": ["NCR"], "segment": "SME customers visiting branches"},
+  "findings": [
+    {"text": "52% of SME customers said loan paperwork was the slowest part of borrowing (base n=180).", "finding_type": "quant_stat", "metric_key": "barrier:documents", "value": 52, "unit": "%", "base_n": 180, "direction": "high"},
+    {"text": "Fees were cited by 12% of SME customers as a reason they had not applied for a loan (base n=180).", "finding_type": "quant_stat", "metric_key": "barrier:fees", "value": 12, "unit": "%", "base_n": 180, "direction": "low"},
+    {"text": "44% of SME customers said they would prefer a named relationship manager to an online form (base n=180).", "finding_type": "quant_stat", "metric_key": "support:contact_person", "value": 44, "unit": "%", "base_n": 180, "direction": "high"}
+  ]
+}

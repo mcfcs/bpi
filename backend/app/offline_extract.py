@@ -1,9 +1,10 @@
 """Heuristic study-card extraction for demos without Claude credentials.
 
 It reads semi-structured reports like those in data/synthetic/reports: a details block (Method,
-Sample, Fieldwork, Coverage, Segment), key-finding bullets and quoted verbatims. Prose reports need
-the Claude extractor. Either way an S&I analyst checks every field at review (checkpoint 1) before
-anything becomes searchable.
+Sample, Fieldwork, Coverage, Segment), key-finding bullets and quoted verbatims. PDF reports are
+first turned into the same form by `documents.normalise_report_text` (running headers and footers
+dropped, wrapped bullets and quotations joined). Prose reports need the Claude extractor. Either
+way an S&I analyst checks every field at review (checkpoint 1) before anything becomes searchable.
 """
 
 from __future__ import annotations
@@ -63,13 +64,22 @@ def _method(text: str) -> str | None:
 
 def _locations(text: str) -> list[str]:
     names: list[str] = []
-    lowered = f" {text.lower()} "
+    original = f" {text} "
+    lowered = original.lower()
     for key in sorted(geography.ALIASES, key=len, reverse=True):
-        if re.search(rf"(?<![a-z]){re.escape(key)}(?![a-z])", lowered):
-            display = next((r for r in geography.REGION_ISLAND_GROUP if r.lower() == key), key.title())
+        match = re.search(rf"(?<![a-z]){re.escape(key)}(?![a-z])", lowered)
+        if match:
+            # Keep the report's own spelling ("Cagayan de Oro", not "Cagayan De Oro").
+            as_written = original[match.start():match.end()]
+            display = next((r for r in geography.REGION_ISLAND_GROUP if r.lower() == key),
+                           as_written if not as_written.islower() else key.title())
             if not any(key in n.lower() for n in names):
                 names.append("Nationwide" if key in geography.NATIONWIDE else display)
-            lowered = lowered.replace(key, " ")
+            # Blank out every occurrence in both strings, keeping offsets aligned.
+            for m in reversed(list(re.finditer(re.escape(key), lowered))):
+                blank = " " * (m.end() - m.start())
+                lowered = lowered[:m.start()] + blank + lowered[m.end():]
+                original = original[:m.start()] + blank + original[m.end():]
     return names
 
 
@@ -94,6 +104,74 @@ def _subgroup(text: str) -> ExtractedSubgroup | None:
     if not age and not region_name:
         return None
     return ExtractedSubgroup(age_band=f"{age.group(1)}-{age.group(2)}" if age else None, region=region_name, segment=None)
+
+
+# ---------------------------------------------------------------------------
+# Prose fallback: reports without a labelled details block (most real PDFs). Cautious on purpose:
+# it fills a field only from a sentence that clearly states it, and the analyst checks it at review.
+# Findings are not guessed from prose; they need Claude or the analyst.
+# ---------------------------------------------------------------------------
+
+PROSE_WINDOW = 25_000   # method and sample are described near the start of a report
+SAMPLE_PROSE = re.compile(
+    r"(\d{1,3}(?:,\d{3})+|\d{2,6})\s+(?:[A-Za-z-]+\s+){0,3}?"
+    r"(adults|respondents|households|firms|drivers|participants|financial customers|customers|"
+    r"interviewees|businesses|enterprises|MSMEs|borrowers|owners)\b", re.IGNORECASE)
+SAMPLE_CUES = re.compile(r"sample|responses|interviewed|participated|involving|surveyed|completed", re.IGNORECASE)
+FIELDWORK_CUES = re.compile(r"\b(?:conducted|fieldwork|field work|survey period|interviewed|carried out|collected)\b",
+                            re.IGNORECASE)
+QUAL_CUES = ("focus group", "fgd", "in-depth interview", "qualitative", "case study", "ethnograph")
+QUANT_CUES = ("survey", "questionnaire", "respondents", "quantitative", "random sampl")
+
+
+def _sentences(text: str) -> list[str]:
+    flat = re.sub(r"\s+", " ", text)
+    return [s.strip() for s in re.split(r"(?<=[.!?])\s+(?=[A-Z0-9\"“])", flat) if s.strip()]
+
+
+def _prose_method(text: str) -> str | None:
+    t = text[:PROSE_WINDOW].lower()
+    qual = sum(t.count(c) for c in QUAL_CUES)
+    quant = sum(t.count(c) for c in QUANT_CUES)
+    if qual >= 3 and quant >= 3:
+        return "mixed"
+    if quant > qual:
+        return "quant"
+    return "qual" if qual else None
+
+
+def _prose_sample(sentences: list[str]) -> int | None:
+    candidates = []
+    for sentence in sentences:
+        for m in SAMPLE_PROSE.finditer(sentence):
+            n = int(m.group(1).replace(",", ""))
+            if 1900 <= n <= 2100 and "," not in m.group(1):
+                continue   # a year, not a sample
+            window = sentence[max(0, m.start() - 80): m.end() + 40]
+            candidates.append((0 if SAMPLE_CUES.search(window) else 1, len(candidates), n))
+    return min(candidates)[2] if candidates else None
+
+
+def _prose_fieldwork(sentences: list[str], text: str) -> date | None:
+    for sentence in sentences:
+        if FIELDWORK_CUES.search(sentence):
+            found = _dates(sentence)
+            if found:
+                return max(found)
+    cover = _dates(text[:400])   # last resort: the report date on the cover (flagged at review)
+    return max(cover) if cover else None
+
+
+def _prose_regions(sentences: list[str], text: str) -> list[str]:
+    head = text[:PROSE_WINDOW].lower()
+    if "nationally representative" in head or "nationwide" in head:
+        return ["Nationwide"]
+    for sentence in sentences:
+        if SAMPLE_CUES.search(sentence) and SAMPLE_PROSE.search(sentence):
+            found = [r for r in _locations(sentence.replace("National Capital Region", "NCR")) if r != "Nationwide"]
+            if found:
+                return found
+    return []
 
 
 def _section(text: str, heading: str) -> list[str]:
@@ -177,6 +255,18 @@ def extract(report_text: str) -> StudyCardExtraction:
             ) if attribution.strip() else None,
             direction=None,
         ))
+
+    if "method" not in fields or "sample" not in fields or "fieldwork" not in fields:
+        sentences = _sentences(report_text[:PROSE_WINDOW])
+        if "method" not in fields:
+            method_type = method_type or _prose_method(report_text)
+        if "sample" not in fields:
+            sample_size = sample_size or _prose_sample(sentences)
+        if "fieldwork" not in fields and not fieldwork:
+            end = _prose_fieldwork(sentences, report_text)
+            fieldwork = [end] if end else []
+        if "coverage" not in fields and not population.regions:
+            population.regions = _prose_regions(sentences, report_text)
 
     summary_lines = _section(report_text, "Summary")
     return StudyCardExtraction(
