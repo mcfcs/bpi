@@ -5,7 +5,10 @@ asks a business question in plain language; the system retrieves approved resear
 user is permitted to see and returns an evidence brief with citations, charts and a computed
 confidence level.
 
-**All data in this repository is synthetic.** Never load real BPI data into it.
+**All BPI data in this repository is synthetic.** Never load real BPI data, names or figures into
+it. The only real material is a small set of *public* third-party research reports (see
+[Data sources](#data-sources-and-labelling)), always labelled "Public source", never presented as BPI
+research, and never committed as PDFs.
 
 ## What is where
 
@@ -14,9 +17,11 @@ confidence level.
 | `supabase/migrations/` | Postgres schema for Supabase: tables, RLS, `can_read()`, hybrid search, audit log |
 | `supabase/local/supabase_shim.sql` | Local stand-in for Supabase's `auth` schema and roles (plain Postgres only) |
 | `backend/app/` | FastAPI service: retrieval, divergence, synthesis, validators, charts, review, commissioning |
-| `backend/tests/` | 84 tests against a real Postgres + pgvector, including the acceptance tests |
+| `backend/tests/` | 119 tests against a real Postgres + pgvector, including the acceptance tests |
+| `backend/eval/` | Retrieval eval, extraction eval (`extraction_eval.py`) and the tier table (`evidence_weighing.py`) |
 | `frontend/` | Next.js app: the brief, review queue (checkpoint 1), access, analyst desk, commissioning, audit log |
-| `data/synthetic/` | The demo corpus (`corpus.json`) and two raw reports that go through ingestion |
+| `data/synthetic/` | The demo corpus (`corpus.json`), two raw text reports and four report specs (`report_pdfs/`) that go through ingestion |
+| `data/public/` | Public research: `manifest.json` (source, licence, sha256) and hand-labelled study cards; PDFs are downloaded, not committed |
 | `docs/` | Hackathon brief and consultation notes |
 
 ## Run it locally
@@ -104,6 +109,87 @@ brief is written from templates instead and the brief says so.
    send its access token. Token verification is HS256 with the project JWT secret; projects using
    asymmetric signing keys need JWKS verification added in `app/auth.py`.
 
+## Data sources and labelling
+
+Every study carries a `provenance`, shown wherever it is listed or cited:
+
+| Provenance | What | Where |
+|---|---|---|
+| `synthetic` | Invented BPI-style studies for the demo. Every generated report page is footed "Synthetic demonstration data. Not real BPI data." | `data/synthetic/` |
+| `public` | Freely downloadable third-party research on Philippine financial inclusion, payments and MSMEs, shown as "Public source" with its publisher | `data/public/` |
+| `internal` | Reports an S&I analyst uploads (`POST /api/ingest/pdf`). In this repository, only ever synthetic test files | the database |
+
+**Real BPI data must never be loaded**, including through the upload endpoint.
+
+**Synthetic report PDFs.** `app/report_pdf.py` renders a multi-page report for each study in
+`corpus.json` (cover, method and sample, key findings two per page with a chart, verbatims for
+qualitative work) and records the page each finding lands on. It is data-driven, so studies added
+to `corpus.json` get a PDF automatically. Seeding stores the PDF with the study and each finding's
+page. The four specs in `data/synthetic/report_pdfs/` (a strong nationwide survey, a small 2021
+survey, focus groups, a mixed-method study) are rendered and sent through PDF ingestion, so the
+review queue holds real PDFs. `python scripts/build_synthetic_pdfs.py` writes copies to
+`data/synthetic/pdfs/` (git-ignored) to open by eye.
+
+**Public research reports.** `data/public/manifest.json` lists six reports (BSP Financial Inclusion
+Survey 2021, BSP Consumer Expectations Survey Q4 2025, World Bank Enterprise Survey Philippines 2023,
+ADB Asia SME Monitor 2020 on fintech loans to tricycle drivers, and two CGAP qualitative studies)
+with the official URL, licence text and sha256. Each has a study card in `data/public/cards/`,
+labelled by reading the PDF, whose findings carry the page number and a short quote. Third-party
+PDFs are not committed:
+
+```bash
+cd backend
+.venv/Scripts/python scripts/fetch_public_reports.py          # download into data/public/pdfs/ and verify
+.venv/Scripts/python scripts/dev_db.py                        # seeds public studies whose PDFs are present
+.venv/Scripts/python scripts/dev_db.py --fetch-public         # fetch first, then seed
+.venv/Scripts/python scripts/dev_db.py --no-public            # synthetic demo only
+```
+
+adb.org refuses scripted downloads; the script prints the URL so you can save the file by hand,
+then `--check` verifies it. Licences vary (CC BY 3.0 IGO, BSP terms with attribution, World Bank
+non-commercial, and "all rights reserved" for the CGAP reports): they are used here for internal
+evaluation with short attributed quotations only. Check the manifest before any wider use. Tests
+never need the network or these PDFs.
+
+## Report documents and page citations
+
+The client's point was that reports cite their sources but nobody can open the report itself. Each
+study can now hold its PDF (`study_documents`), readable exactly when the study is (`can_read()`
+or S&I; pending and rejected studies' documents are S&I-only), and each finding stores its `page`.
+
+- `GET /api/studies`: the catalogue. Readable studies in full (summary, sample, tier, document);
+  restricted ones as metadata only (code, title, owner team, method, year) with the caller's
+  access-request status. Filters: `method`, `team`, `year`, `provenance`.
+- `GET /api/studies/{id}`: now includes `provenance`, `publisher`, `document`, and per finding
+  `page`, `source_excerpt`, `cite_label` ("SI-2026-014 · p.4") and `document_url` (`...#page=4`).
+- `GET /api/studies/{id}/document`: the PDF, or 404 if the caller cannot read the study. Every
+  download is written to the audit log.
+- `POST /api/studies/{id}/document/link?page=N`: a two-minute signed link (bound to the caller and
+  the study) for opening the PDF in a new tab at `#page=N`, since a plain link cannot send the
+  Authorization header.
+- Brief and coverage-check source views gain `page`, `cite_label`, `document_url` and `provenance`.
+- `POST /api/ingest/pdf` (S&I, multipart: `file`, `owner_team_id`, `access_level`, `source_url`):
+  text per page (pypdf), study card (Claude when configured, otherwise the offline extractor),
+  findings pinned to the page their text is on, document stored, study waits for review. Scanned
+  PDFs without a text layer are refused with a message asking for OCR. Pasted text
+  (`POST /api/ingest`) still works.
+
+## Weighing evidence
+
+`python -m eval.evidence_weighing` prints how `app/tiers.py` ranks every study above (corpus, review
+queue PDFs, public reports). With today's rules: large recent surveys are A (the n=5,489 BSP
+household survey, the n=1,200 SME survey, the n=2,400 nationwide spec); older large surveys drop to
+B (BSP Financial Inclusion 2021, ADB 2019); a small 2021 survey is C; every qualitative study is C.
+Outcomes S&I should look at, recorded as tests in `tests/test_evidence_weighing.py`:
+
+- Qualitative work can never rise above C (1 method point + at most 1 for recency < 3), so a
+  focus-group study from this year and a 2013 case study carry the same label.
+- Sample points stop at n >= 1,000 and ignore design: an n=640 online pulse and a 5,489-household
+  probability sample are both A when recent.
+- Tiers are per study: survey findings in a mixed-method report get mixed (2) rather than quant (3)
+  method points, so the nationally representative BSP survey (B, score 3) ranks below a Metro
+  Manila tricycle-driver survey (B, score 4).
+
 ## How a brief is built
 
 1. **Retrieve** (`app/retrieval.py`): hybrid pgvector and full-text search (`match_findings`,
@@ -189,6 +275,9 @@ findings never reach the LLM.
   the evaluation set in `backend/eval/`, raises paraphrase recall from 0.69 to 0.90 and Taglish
   recall from 0.81 to 0.88 with no off-topic matches. Its floors were tuned on 24 synthetic
   questions; recalibrate on real ones (`python -m eval.retrieval_eval --sweep`).
-- The offline extractor reads the semi-structured synthetic reports only; prose reports need Claude.
+- The offline extractor reads the semi-structured synthetic reports and PDFs; for real prose reports
+  it fills only the study details (method, sample, fieldwork, coverage) and finds almost no findings,
+  which need Claude or the analyst. `python -m eval.extraction_eval` scores it against the six
+  hand-labelled public reports (add `--claude` when credentials are set).
 - The Claude path is not exercised by the automated tests, which use the deterministic writer and
   scripted fakes to check the validators.

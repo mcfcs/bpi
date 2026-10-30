@@ -184,7 +184,7 @@ def render_study_report(study: dict, *, notice: str = SYNTHETIC_NOTICE) -> Rende
 
     def para(body: str, size: float = 10.5, height: float = 5.6, style: str = "", color=INK):
         text(size, style, color)
-        pdf.multi_cell(0, height, clean(body), new_x="LMARGIN", new_y="NEXT")
+        pdf.multi_cell(0, height, clean(body), new_x="LMARGIN", new_y="NEXT", align="L")
         pdf.ln(2.5)
 
     def heading(title: str):
@@ -210,7 +210,7 @@ def render_study_report(study: dict, *, notice: str = SYNTHETIC_NOTICE) -> Rende
         ensure_room(len(lines) * 5.6 + 3)
         page = pdf.page_no()
         pdf.cell(5, 5.6, "-")
-        pdf.multi_cell(165, 5.6, clean(body), new_x="LMARGIN", new_y="NEXT")
+        pdf.multi_cell(165, 5.6, clean(body), new_x="LMARGIN", new_y="NEXT", align="L")
         pdf.ln(2.5)
         return page
 
@@ -221,7 +221,7 @@ def render_study_report(study: dict, *, notice: str = SYNTHETIC_NOTICE) -> Rende
         ensure_room(len(lines) * 5.6 + 4)
         page = pdf.page_no()
         pdf.set_x(28)
-        pdf.multi_cell(160, 5.6, clean(quote), new_x="LMARGIN", new_y="NEXT")
+        pdf.multi_cell(160, 5.6, clean(quote), new_x="LMARGIN", new_y="NEXT", align="L")
         pdf.ln(3)
         return page
 
@@ -259,7 +259,7 @@ def render_study_report(study: dict, *, notice: str = SYNTHETIC_NOTICE) -> Rende
     pdf.cell(0, 6, "STRATEGY & INSIGHTS RESEARCH REPORT", new_x="LMARGIN", new_y="NEXT")
     pdf.ln(4)
     text(24, "B", INK)
-    pdf.multi_cell(0, 11, clean(study["title"]), new_x="LMARGIN", new_y="NEXT")
+    pdf.multi_cell(0, 11, clean(study["title"]), new_x="LMARGIN", new_y="NEXT", align="L")
     pdf.ln(6)
     text(11, "", MUTED)
     _, end = _fieldwork_window(study)
@@ -277,7 +277,7 @@ def render_study_report(study: dict, *, notice: str = SYNTHETIC_NOTICE) -> Rende
     pdf.set_x(24)
     text(9, "", INK)
     pdf.multi_cell(160, 5, "Generated for the S&I evidence assistant prototype. Names, figures and quotations are "
-                           "invented and must not be cited as research.", new_x="LMARGIN", new_y="NEXT")
+                           "invented and must not be cited as research.", new_x="LMARGIN", new_y="NEXT", align="L")
     pdf.set_line_width(0.2)
 
     # ---------------------------------------------------------------- details, summary, method
