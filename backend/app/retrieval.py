@@ -12,6 +12,7 @@ from decimal import Decimal
 
 import psycopg
 
+from . import topicality
 from .config import DIRECTION_FALLBACK, RETRIEVAL_CONFIG, retrieval_config
 from .divergence import FindingCtx, parse_age_band
 from .embeddings import Embedder, to_pgvector
@@ -45,6 +46,7 @@ class Source:
     access_level: str
     similarity: float = 0.0
     score: float = 0.0
+    facet_weight: float = 1.0  # topicality.facet_multiplier against the question (1.0: no facet match)
     attached: bool = False  # a verbatim added because its theme was retrieved
     study_summary: str | None = None  # read for the method label ("6 FGDs"), not sent as evidence
 
@@ -144,13 +146,25 @@ def search(conn: psycopg.Connection, question: str, embedder: Embedder, *,
     ).fetchall()
     if not rows:
         return []
-    best = max(row["similarity"] for row in rows)
-    hits = {row["finding_id"]: row for row in rows if row["similarity"] >= cfg["relative_floor"] * best}
-    sources = load_sources(conn, "f.id = any(%s::uuid[])", [list(hits)])
-    for source in sources:
+    hits = {row["finding_id"]: row for row in rows}
+    candidates = load_sources(conn, "f.id = any(%s::uuid[])", [list(hits)])
+    # Facet rerank: loan and card applications share most of their words, so cosine alone puts card
+    # findings next to loan ones (and card rewards next to card drop-off). Matching the question's
+    # product and topic raises a finding's score and the similarity the relative floor compares.
+    # The absolute floor (in match_findings) stays on raw cosine, so nothing below it ever gets in and
+    # a question that matches nothing still gets nothing.
+    wanted = topicality.facets(question)
+    for source in candidates:
         hit = hits[source.finding_id]
         source.similarity = hit["similarity"]
-        source.score = hit["score"] * cfg["tier_boost"].get(source.effective_tier, 1.0)
+        source.facet_weight = topicality.facet_multiplier(wanted, source, cfg["facet_boost"])
+    if not candidates:
+        return []
+    best = max(s.similarity * s.facet_weight for s in candidates)
+    sources = [s for s in candidates if s.similarity * s.facet_weight >= cfg["relative_floor"] * best]
+    for source in sources:
+        source.score = (hits[source.finding_id]["score"] * source.facet_weight
+                        * cfg["tier_boost"].get(source.effective_tier, 1.0))
     sources.sort(key=lambda s: s.score, reverse=True)
     return sources
 
@@ -185,13 +199,20 @@ def attach_verbatims(conn: psycopg.Connection, sources: list[Source], per_theme:
     return sources + added
 
 
-def restricted_matches(conn: psycopg.Connection, query_embedding: list[float], config: dict | None = None) -> list[dict]:
-    """Studies that match but the caller cannot read: metadata only, plus the caller's request status."""
+def restricted_matches(conn: psycopg.Connection, query_embedding: list[float], config: dict | None = None,
+                       question: str | None = None) -> list[dict]:
+    """Studies that match but the caller cannot read: metadata only, plus the caller's request status.
+
+    With `question`, a study must also share the question's concept (topicality.concept_words,
+    checked in the database against its findings' text) unless its similarity reaches
+    restricted_bypass_similarity: similarity alone hinted card-rewards studies for any card question."""
     cfg = {**RETRIEVAL_CONFIG, **(config or {})}
+    concept = " ".join(topicality.concept_words(question)) if question else ""
     rows = conn.execute(
         "select study_id::text as study_id, code, title, owner_team, similarity "
-        "from public.restricted_study_matches(%s::extensions.vector, %s, %s)",
-        [to_pgvector(query_embedding), cfg["restricted_limit"], cfg["restricted_min_similarity"]],
+        "from public.restricted_study_matches(%s::extensions.vector, %s, %s, %s, %s)",
+        [to_pgvector(query_embedding), cfg["restricted_limit"], cfg["restricted_min_similarity"],
+         concept or None, cfg["restricted_bypass_similarity"]],
     ).fetchall()
     if not rows:
         return []

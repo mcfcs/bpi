@@ -110,7 +110,8 @@ class BriefService:
                     sources = [s for s in sources if topicality.overlap(question, s)]
                 sources = retrieval.attach_verbatims(conn, sources)
                 if sources or not focus or not topicality_config(self.embedder.name)["filter_off_topic"]:
-                    restricted = retrieval.restricted_matches(conn, vector, retrieval_config(self.embedder.name))
+                    restricted = retrieval.restricted_matches(conn, vector, retrieval_config(self.embedder.name),
+                                                              question=question)
             points = charts.load_points(conn, {
                 s.metric_key for s in sources if s.finding_type == "quant_stat" and s.is_quant and s.metric_key
             })

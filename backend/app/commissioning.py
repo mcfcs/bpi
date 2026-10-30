@@ -162,7 +162,8 @@ def assess_objectives(conn: psycopg.Connection, objectives: list[str], embedder:
                             "text": f"Studies of the same group report different results on {labels}; an S&I analyst "
                                     f"should check them before they are reused."})
         # Only catalogue metadata is visible for these, so they are a hint ("may also cover"), not evidence.
-        restricted = retrieval.restricted_matches(conn, embedder.embed_query(text), retrieval_config(embedder.name))
+        restricted = retrieval.restricted_matches(conn, embedder.embed_query(text), retrieval_config(embedder.name),
+                                                  question=text)
         if restricted:
             caveats.append({"code": "restricted_match",
                             "text": "A restricted study may also cover this ("

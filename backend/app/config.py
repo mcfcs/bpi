@@ -31,9 +31,20 @@ RETRIEVAL_CONFIG: dict = {
     # Rerank multiplier on the fused hybrid score. Lower tiers rank lower but are never excluded:
     # qualitative studies still supply the "why".
     "tier_boost": {"A": 1.3, "B": 1.15, "C": 1.0},
+    # Facet rerank (topicality.facet_multiplier): a finding whose product (loan, card, ...) or topic
+    # (drop-off, rewards, ...) matches one the question names gets 1 + this per matching facet, on
+    # its score and on the similarity the relative floor compares. A facet the question doesn't name
+    # counts for nothing, so generic questions are unaffected. The absolute floor stays on raw cosine,
+    # so a facet match never lets in a finding below it (off-topic questions stay empty). Chosen mid-plateau
+    # (0.25-0.5) on the tune half of eval/questions.json; proposed default, not validated by S&I.
+    "facet_boost": {"product": 0.4, "topic": 0.4},
     "verbatims_per_theme": 3,
     "restricted_min_similarity": 0.2,
     "restricted_limit": 5,
+    # A restricted-study hint for a question with a concept beyond its product must share a concept
+    # word with the study's findings (checked in the database) unless its similarity reaches this.
+    # 2.0: never bypassed (lexical embedder). Proposed default, not validated by S&I.
+    "restricted_bypass_similarity": 2.0,
 }
 
 # "Before you commission". Stricter than question answering: a finding counts toward an objective only
@@ -51,7 +62,9 @@ EMBEDDER_FLOORS: dict[str, dict[str, dict]] = {
     # at zero hits (their best match peaked at 0.355) with micro F1 0.86-0.87; 0.38 is the middle.
     # Restricted-study hints and coverage are stricter; coverage is not separately evaluated yet.
     "fastembed:sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2": {
-        "retrieval": {"min_similarity": 0.38, "relative_floor": 0.7, "restricted_min_similarity": 0.42},
+        # restricted_bypass_similarity matches the coverage topicality bypass (TOPICALITY_CONFIG).
+        "retrieval": {"min_similarity": 0.38, "relative_floor": 0.7, "restricted_min_similarity": 0.42,
+                      "restricted_bypass_similarity": 0.7},
         "coverage": {"min_similarity": 0.5, "relative_floor": 0.8},
     },
 }
@@ -208,6 +221,59 @@ TOPICALITY_CONFIG: dict[str, dict] = {
 
 def topicality_config(embedder_name: str = "hashing") -> dict:
     return TOPICALITY_CONFIG.get(embedder_name, TOPICALITY_CONFIG["default"])
+
+
+# Product and topic facets for the retrieval rerank (RETRIEVAL_CONFIG["facet_boost"]). SME loan and
+# credit card applications share most of their vocabulary (application, drop off, fees, ID, approval),
+# so a loan question pulled card studies and a card drop-off question pulled card-reward studies.
+# Facets say which product and which topic a finding is about, so findings that match the question on
+# both rank and survive the relative floor ahead of findings that only share words.
+#
+# A finding's facets come from its metric family (METRIC_FACETS); findings without a known family are
+# read with the same lexicon as questions (study title, theme and text). Patterns are regular
+# expressions matched case-insensitively on word boundaries. Proposed vocabulary, not validated by
+# S&I; extend it when a new product or metric family is added.
+FACET_LEXICON: dict[str, dict[str, tuple[str, ...]]] = {
+    "product": {
+        "loan": (r"loans?", r"lending", r"lend(?:er|ers)?", r"borrow(?:er|ers|ing)?", r"collateral",
+                 r"pledged assets?", r"smes?", r"msmes?", r"small business(?:es)?",
+                 r"business (?:owners?|clients?|borrowers?)", r"entrepreneurs?", r"negosyante",
+                 r"micro-?enterprises?", r"credit(?! ?cards?)"),
+        "card": (r"(?:credit )?cards?", r"cardholders?"),
+        "payments": (r"qr", r"scan[- ]to[- ]pay", r"cashless", r"e-?wallets?", r"physical money",
+                     r"cash payments?", r"market vendors?", r"vendors?", r"stall owners?", r"tindera", r"palengke"),
+        "app": (r"mobile app", r"banking app", r"app ng bangko"),
+        "atm": (r"atms?", r"cash machines?"),
+        "deposits": (r"savings?(?: accounts?)?", r"checking accounts?", r"bank accounts?", r"deposits?"),
+    },
+    "topic": {
+        # Not finishing an application, and the barriers named as reasons for it.
+        "dropoff": (r"drop(?:s|ped|ping)?[- ]?offs?", r"abandon\w*", r"quit\w*", r"g[ai]ve up", r"giving up",
+                    r"finish\w*", r"complet\w*", r"halfway", r"partway", r"put(?:ting)? off", r"discourag\w*",
+                    r"deter\w*", r"tinatapos", r"natatapos", r"onboarding", r"sign[- ]?ups?", r"stops?",
+                    r"paperwork", r"documents?", r"documentation", r"requirements?", r"ID", r"verification",
+                    r"selfie", r"one-time pin", r"otp", r"approval", r"collateral", r"glitch\w*", r"errors?"),
+        "rewards": (r"rewards?", r"perks?", r"benefits?", r"cash ?back", r"miles", r"travel", r"points", r"rebates?"),
+        "support": (r"contact person", r"relationship manager", r"someone to call", r"makakausap", r"dedicated"),
+        "satisfaction": (r"satisf\w*", r"happy", r"masaya", r"redesign"),
+        "access": (r"queues?", r"lines?", r"pila", r"reach", r"distance", r"far", r"nearest"),
+    },
+}
+
+# Metric key prefix -> (product, topic); the longest matching prefix wins. None: no facet on that
+# dimension. Public studies reuse some families with other meanings ("support:in_person_help"), so
+# those are listed by full key or left to the lexicon.
+METRIC_FACETS: dict[str, tuple[str | None, str | None]] = {
+    "barrier:": ("loan", "dropoff"),
+    "barrier:access_to_finance": ("loan", None),
+    "support:contact_person": ("loan", "support"),
+    "channel_pref:": ("loan", None),
+    "card_dropoff:": ("card", "dropoff"),
+    "reward_pref:": ("card", "rewards"),
+    "qr:": ("payments", None),
+    "app_trend:": ("app", "satisfaction"),
+    "atm:": ("atm", "access"),
+}
 
 
 ROLE_LABELS: dict[str, str] = {

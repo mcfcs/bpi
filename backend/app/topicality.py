@@ -10,12 +10,17 @@ stem normalisation the hashing embedder uses).
 Lexical overlap misses true paraphrases ("scan-to-pay" for QR), so how it is used depends on the
 embedder (TOPICALITY_CONFIG): with the lexical hashing embedder it filters evidence; with a
 semantic embedder it only lowers confidence unless the similarity is very high.
+
+Facets (facets, source_facets, facet_multiplier) are a coarser, embedder-independent signal used by
+retrieval's rerank: which product (loan, card, payments, app, ATM) and which topic (drop-off,
+rewards, ...) a question and a finding are about. See FACET_LEXICON in config.py.
 """
 
 from __future__ import annotations
 
 import re
 from collections.abc import Iterable
+from functools import lru_cache
 
 from .embeddings import tokens
 
@@ -32,7 +37,12 @@ segments team teams feel feels think thinks say says said use uses using get get
 do does did ang mga ng sa ba na ko mo nila sila kami tayo po lang may yung kung para
 apply applying application applications applicant applicants affect affects impact matter matters
 problem problems issue issues reason reasons
+test tests testing pulse panel tracker benchmark interview interviews
+appetite interest interested demand gauge willing willingness bangko
 """.split())
+# The last two lines: study-design words, which sit in study titles ("Value Proposition Test") and so
+# matched every finding of a study, and demand frames ("test appetite for", "gauge demand for",
+# "measure interest in") that wrap the concept rather than name it.
 
 _PRE = (
     (re.compile(r"\bdrop(?:s|ped|ping)?[- ]?offs?\b", re.I), " dropoff "),
@@ -41,7 +51,8 @@ _PRE = (
 )
 _EXTRA_SYNONYMS = {"online": "digital", "app": "digital", "apps": "digital", "mobile": "digital",
                    "e-wallet": "digital", "ewallet": "digital", "renewal": "renew", "renewals": "renew",
-                   "slow": "delay", "slowed": "delay", "delays": "delay", "waiting": "wait"}
+                   "slow": "delay", "slowed": "delay", "delays": "delay", "waiting": "wait",
+                   "happy": "satisfaction", "masaya": "satisfaction", "satisfi": "satisfaction"}
 
 # Signs that the "question" is code or an injection attempt rather than a question.
 JUNK = re.compile(r"(--\s*$|;\s*--|/\*|\*/|<\s*/?\s*script|\bdrop\s+table\b|\bunion\s+select\b|\bselect\s+\S+\s+from\b|\x00)",
@@ -58,6 +69,10 @@ def _norm(word: str) -> str:
     if len(word) > 4 and word[-1] == word[-2] and word[-1] not in "aeiouls":
         word = word[:-1]
     return word
+
+
+# Channel words ("online", "app", "mobile" all normalise to this): how something is done, not what.
+_CHANNEL_TERMS = frozenset({_norm("digital")})
 
 
 def _sequence(text: str | None) -> list[str]:
@@ -110,9 +125,82 @@ def finding_terms(source) -> set[str]:
     return terms(source.text) | (terms(metric_label(source.metric_key)) if source.metric_key else set())
 
 
+def concept_terms(question: str) -> set[str]:
+    """The question's specific terms minus the products and channels it names (FACET_LEXICON
+    products, "online"/"app"): what it asks *about* those products. "Measure interest in crypto
+    savings accounts among overseas Filipino workers" -> {crypto, oversea, worker}."""
+    return specific_terms(_product_pattern().sub(" ", question)) - _CHANNEL_TERMS
+
+
 def overlap(question: str, source) -> set[str]:
-    """The question's specific terms, or two-word phrases, that the finding also contains."""
-    return (specific_terms(question) & source_terms(source)) | (phrases(question) & source_phrases(source))
+    """The question's specific terms, or two-word phrases, that the finding also contains.
+
+    When the question names a concept beyond its product, a shared term counts only if it is part of
+    that concept: sharing "savings account", "credit card" or "SME owner" with a finding about
+    something else is the false hit this module exists to stop. A shared topic facet also counts
+    ("topic:dropoff"), since "not finishing", "giving up" and "abandoned" name one concept in
+    different words. A question that names only a product ("What do we know about QR payments?")
+    keeps any overlap."""
+    shared = (specific_terms(question) & source_terms(source)) | (phrases(question) & source_phrases(source))
+    concept = concept_terms(question)
+    if not concept:
+        return shared
+    topics = facets(question)["topic"] & source_facets(source)["topic"]
+    return {t for t in shared if any(word in concept for word in t.split(" "))} | {f"topic:{t}" for t in topics}
+
+
+def concept_words(question: str) -> list[str]:
+    """The question's own words that carry its concept terms, for a full-text check where only the
+    database can see the text (restricted studies)."""
+    concept = concept_terms(question)
+    words = re.findall(r"[A-Za-z0-9][A-Za-z0-9'-]*", _product_pattern().sub(" ", question))
+    return list(dict.fromkeys(w for w in words if terms(w) & concept))
+
+
+@lru_cache(maxsize=1)
+def _product_pattern() -> re.Pattern:
+    from .config import FACET_LEXICON
+
+    patterns = [p for group in FACET_LEXICON["product"].values() for p in group]
+    return re.compile(r"\b(?:" + "|".join(patterns) + r")\b", re.IGNORECASE)
+
+
+@lru_cache(maxsize=1)
+def _facet_patterns() -> dict[str, dict[str, re.Pattern]]:
+    from .config import FACET_LEXICON
+
+    return {dim: {name: re.compile(r"\b(?:" + "|".join(patterns) + r")\b", re.IGNORECASE)
+                  for name, patterns in lexicon.items()}
+            for dim, lexicon in FACET_LEXICON.items()}
+
+
+def facets(text: str | None) -> dict[str, frozenset[str]]:
+    """The products and topics a text names, e.g. {"product": {"card"}, "topic": {"dropoff"}}."""
+    text = text or ""
+    return {dim: frozenset(name for name, rx in patterns.items() if rx.search(text))
+            for dim, patterns in _facet_patterns().items()}
+
+
+def source_facets(source) -> dict[str, frozenset[str]]:
+    """A finding's products and topics: from its metric family when known (reviewed vocabulary),
+    otherwise read from the study title, theme and text with the question lexicon."""
+    from .config import METRIC_FACETS
+
+    key = getattr(source, "metric_key", None)
+    prefix = max((p for p in METRIC_FACETS if key and key.startswith(p)), key=len, default=None)
+    if prefix:
+        product, topic = METRIC_FACETS[prefix]
+        return {"product": frozenset({product} if product else ()), "topic": frozenset({topic} if topic else ())}
+    theme = (source.theme or "").replace("_", " ")
+    return facets(" ".join(p for p in (source.study_title, theme, source.text) if p))
+
+
+def facet_multiplier(question_facets: dict[str, frozenset[str]], source, weights: dict[str, float]) -> float:
+    """1 plus the weight of each facet dimension on which the finding matches the question. A
+    dimension the question doesn't name adds nothing, so it never penalises a generic question."""
+    own = source_facets(source)
+    return 1.0 + sum(w for dim, w in weights.items()
+                     if question_facets.get(dim) and question_facets[dim] & own.get(dim, frozenset()))
 
 
 def is_junk(question: str) -> bool:

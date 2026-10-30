@@ -1,0 +1,20 @@
+{
+  "_note": "Coverage-check cases for eval/coverage_eval.py. 'negative' objectives name a product the corpus covers (savings accounts, cards, loans) but a concept no study measures: they must come back as 'gap' with no restricted-study hint. 'positive' objectives are covered by the listed studies. 'needs' lists studies that are only seeded when their public PDFs are present. 'restricted' is the exact list of restricted-study hints expected for that persona.",
+  "cases": [
+    {"kind": "negative", "who": "ben", "objective": "Measure interest in crypto savings accounts among overseas Filipino workers", "needs": ["PUB-WB-ES23"], "expect": {"coverage": ["gap"], "restricted": []}},
+    {"kind": "negative", "who": "ben", "objective": "Test appetite for a pet insurance add-on among young cardholders", "expect": {"coverage": ["gap"], "restricted": []}},
+    {"kind": "negative", "who": "carla", "objective": "Test appetite for a pet insurance add-on among young cardholders", "expect": {"coverage": ["gap"], "restricted": []}},
+    {"kind": "negative", "who": "ben", "objective": "Measure how often SME owners renew loans digitally", "expect": {"coverage": ["gap"], "restricted": []}},
+    {"kind": "negative", "who": "ben", "objective": "Size the market for crop insurance among rice farmers", "expect": {"coverage": ["gap"], "restricted": []}},
+    {"kind": "negative", "who": "carla", "objective": "Gauge demand for a metal credit card design among premium clients", "expect": {"coverage": ["gap"], "restricted": []}},
+
+    {"kind": "positive", "who": "ben", "objective": "Understand why SME owners abandon online loan applications", "expect": {"coverage": ["covered"], "studies": ["SI-2025-009"]}},
+    {"kind": "positive", "who": "ben", "objective": "Explore whether SME owners want a named contact person during a loan application", "expect": {"coverage": ["partial", "covered"], "studies": ["SI-2025-031"]}},
+    {"kind": "positive", "who": "carla", "objective": "Find out whether young professionals prefer cashback or travel rewards on credit cards", "expect": {"coverage": ["covered"], "studies": ["SI-2026-021", "SI-2026-027"]}},
+    {"kind": "positive", "who": "ben", "objective": "Find out whether young professionals prefer cashback or travel rewards on credit cards", "expect": {"coverage": ["covered"], "studies": ["SI-2026-021"], "restricted": ["SI-2026-027"]}},
+    {"kind": "positive", "who": "carla", "objective": "Understand why young applicants do not finish credit card applications", "expect": {"coverage": ["covered"], "studies": ["SI-2026-041"], "restricted": []}},
+    {"kind": "positive", "who": "carla", "objective": "Measure satisfaction with the mobile app among older users", "expect": {"coverage": ["covered"], "studies": ["SI-2026-025"]}},
+    {"kind": "positive", "who": "ben", "objective": "Find out whether long ATM queues are a problem in the provinces", "expect": {"coverage": ["covered"], "studies": ["SI-2026-039"]}},
+    {"kind": "positive", "who": "carla", "objective": "Explore how market vendors feel about accepting QR payments", "expect": {"coverage": ["partial", "covered"], "studies": ["SI-2026-033"]}}
+  ]
+}
