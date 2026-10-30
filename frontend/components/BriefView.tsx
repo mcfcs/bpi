@@ -3,13 +3,16 @@
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import { Info, Lock, Printer } from "lucide-react";
-import { useState } from "react";
-import { api, ApiError } from "@/lib/api";
-import type { Brief, ChartSpec, Claim, ContextNote, Escalation, RestrictedMatch, SourceView } from "@/lib/types";
-import { dateTime, DIFFERS_LABELS, monthYear, n, provenanceLabel } from "@/lib/format";
-import { CiteChip, Meter, SourceChip, SourceList, TierBadge, uniqueByStudy, type CitationItem } from "./Citation";
+import { useEffect } from "react";
+import type { Brief, ChartSpec, Claim, QualContrast, RestrictedMatch, SourceView } from "@/lib/types";
+import { dateTime, n, provenanceLabel } from "@/lib/format";
+import { CiteChip, Meter, MethodLine, SourceChip, SourceList, TierBadge, type CitationItem } from "./Citation";
+import { EmotionTags } from "./Emotion";
 import { CiteLink } from "./ReportLink";
 import { RequestAccess } from "./RequestAccess";
+import { AnalystPanel } from "./brief/AnalystPanel";
+import { AudienceAnswer } from "./brief/AudienceAnswer";
+import { ConflictRow, NoteRow, PatternRow } from "./brief/Segments";
 
 // recharts is the heaviest dependency; load it only for briefs that have charts.
 const MetricChart = dynamic(() => import("./MetricChart").then((m) => m.MetricChart), {
@@ -52,44 +55,72 @@ function Verbatim({ source }: { source: SourceView | undefined }) {
       <footer>
         {who && <span>{who}</span>}
         <SourceChip source={source} />
+        {source.emotion && <EmotionTags emotions={[source.emotion]} className="emotions inline" />}
       </footer>
     </blockquote>
   );
 }
 
-function ClaimRow({ claim, sources, variant, first = true }: { claim: Claim; sources: Record<string, SourceView>; variant: "headline" | "breakdown" | "qual"; first?: boolean }) {
+/**
+ * A group view that runs against a survey figure on the same topic, shown with who said it and what
+ * the survey measured. Different people and a different method, so it is colour, never a conflict.
+ */
+function SurveyContext({ contrast, sources }: { contrast: QualContrast; sources: Record<string, SourceView> }) {
+  const qual = sources[contrast.finding_id];
+  // One finding per study, preferring the study-level figure over a subgroup.
+  const surveys = new Map<string, SourceView>();
+  for (const id of contrast.quant_finding_ids) {
+    const s = sources[id];
+    if (!s) continue;
+    const seen = surveys.get(s.study_id);
+    if (!seen || (seen.subgroup && !s.subgroup)) surveys.set(s.study_id, s);
+  }
+  if (!qual || surveys.size === 0) return null;
   return (
-    <div className="row">
-      <div className="text">
-        <p className={variant === "headline" ? "headline-text" : "claim-text"}>{claim.text}</p>
-        {claim.qual_only && variant !== "qual" && <span className="chip qual-tag">Indicative, qualitative</span>}
-        {variant === "qual" && claim.verbatim_ids.map((id) => <Verbatim key={id} source={sources[id]} />)}
-      </div>
-      <SourceList items={citations(claim, sources)} showLabel={first} />
+    <div className="survey-context">
+      <p className="sc-who">
+        <strong>Said by</strong> {qual.population_label}
+        <span className="muted"> ({[qual.method_detail ?? qual.method_label, qual.fieldwork_label].filter(Boolean).join(", ")})</span>
+      </p>
+      <p className="sc-label"><strong>What the survey measured</strong></p>
+      <ul>
+        {[...surveys.values()].map((s) => (
+          <li key={s.finding_id}>
+            {s.text}{" "}
+            <span className="muted small">
+              {s.population_label} · {[s.method_detail, s.fieldwork_label].filter(Boolean).join(" · ")}
+            </span>{" "}
+            <SourceChip source={s} />
+          </li>
+        ))}
+      </ul>
+      <p className="hint">
+        Different people, asked a different way: the groups show how some participants see it; the survey
+        measures how common it is. Read together, not as a conflict.
+      </p>
     </div>
   );
 }
 
-function NoteRow({ note, brief, conflict }: { note: ContextNote; brief: Brief; conflict?: boolean }) {
-  const label = brief.topic_labels?.[note.topic] ?? note.topic;
+/** The contrast sentence the writer appends repeats what SurveyContext shows; leave it to the box. */
+const CONTRAST_SENTENCE = /\s*This view comes from [\s\S]*$/;
+
+function ClaimRow({ claim, brief, variant, first = true }: { claim: Claim; brief: Brief; variant: "headline" | "breakdown" | "qual"; first?: boolean }) {
+  const { sources } = brief;
+  const contrast = variant === "qual"
+    ? brief.qual_contrasts?.find((c) => claim.evidence.some((e) => e.finding_id === c.finding_id))
+    : undefined;
+  const text = contrast ? claim.text.replace(CONTRAST_SENTENCE, "") : claim.text;
   return (
     <div className="row">
-      <div className={conflict ? "text conflict" : "text"}>
-        {conflict && <p className="conflict-label">Unresolved conflict</p>}
-        <p className="note-title">
-          {label}
-          {note.differs_by.length > 0 && (
-            <span className="differs" aria-label={`Differs by ${note.differs_by.join(", ")}`}>
-              <span className="muted small" style={{ fontWeight: 400 }}>differs by</span>
-              {note.differs_by.map((d) => (
-                <span key={d} className="chip">{DIFFERS_LABELS[d]}</span>
-              ))}
-            </span>
-          )}
-        </p>
-        <p>{note.explanation}</p>
+      <div className="text">
+        <p className={variant === "headline" ? "headline-text" : "claim-text"}>{text}</p>
+        {variant === "qual" && <EmotionTags emotions={claim.emotions} />}
+        {claim.qual_only && variant !== "qual" && <span className="chip qual-tag">Indicative, qualitative</span>}
+        {contrast && <SurveyContext contrast={contrast} sources={sources} />}
+        {variant === "qual" && claim.verbatim_ids.map((id) => <Verbatim key={id} source={sources[id]} />)}
       </div>
-      <SourceList items={uniqueByStudy(note.finding_ids.map((id) => brief.sources[id]))} />
+      <SourceList items={citations(claim, sources)} showLabel={first} />
     </div>
   );
 }
@@ -143,15 +174,19 @@ function ChartSources({ chart, sources }: { chart: ChartSpec; sources: Record<st
               ) : (
                 <CiteChip code={b.study_code} page={pages[0] ?? null} title={b.study_title} />
               )}
-              <TierBadge tier={b.tier} sample={`n=${n(b.sample_size)}`} when={b.fieldwork_end?.slice(0, 4) ?? "n.d."} />
+              {source?.method_detail ? (
+                <TierBadge tier={b.tier} basis={source.tier_basis} />
+              ) : (
+                <TierBadge tier={b.tier} sample={`n=${n(b.sample_size)}`} when={b.fieldwork_end?.slice(0, 4) ?? "n.d."} />
+              )}
             </div>
             <Link className="title" href={`/studies/${b.study_id}`}>{b.study_title}</Link>
+            {source?.method_detail && <MethodLine source={source} />}
             <div className="source-meta">
               {[
                 source?.provenance === "public" ? provenanceLabel(source) : "",
-                b.method_type === "quant" ? "Quantitative" : "Mixed method",
+                source?.method_detail ? "" : b.method_type === "quant" ? "Quantitative" : "Mixed method",
                 b.region_label,
-                `fieldwork ${monthYear(b.fieldwork_end)}`,
                 pages.length > 1 ? `pages ${pages.join(", ")}` : "",
               ].filter(Boolean).join(" · ")}
             </div>
@@ -162,99 +197,20 @@ function ChartSources({ chart, sources }: { chart: ChartSpec; sources: Record<st
   );
 }
 
-const ESCALATION_REASONS: Record<string, string> = {
-  user_request: "You asked an analyst to check this brief.",
-  unresolved_conflict: "Sent to an analyst automatically: studies of the same population disagree.",
-  low_confidence: "Sent to an analyst automatically: confidence is low.",
-};
-
-/**
- * Ask an analyst about this brief: the question form, then the escalation's status and the analyst's
- * reply, then a follow-up once the reply is in. Shown on every brief, conflict or not.
- */
-function AnalystPanel({ brief }: { brief: Brief }) {
-  const [escalation, setEscalation] = useState<Escalation | null>(brief.escalation);
-  // The reply a follow-up was asked about. A brief carries only its latest escalation, so keep the
-  // earlier reply on screen for this visit; every reply stays under Ask an analyst.
-  const [earlier, setEarlier] = useState<string | null>(null);
-  const [open, setOpen] = useState(false);
-  const [note, setNote] = useState("");
-  const [error, setError] = useState<string | null>(null);
-  const [busy, setBusy] = useState(false);
-
-  const waiting = escalation?.status === "open";
-  const followUp = escalation != null && !waiting;
-  const reply = escalation?.response ?? null;
-
-  async function submit(event: React.FormEvent) {
-    event.preventDefault();
-    setError(null);
-    setBusy(true);
-    try {
-      const created = await api<Escalation>("/api/escalations", { method: "POST", json: { brief_id: brief.id, note } });
-      setEarlier(reply);
-      setEscalation({ ...created, response: null });
-      setNote("");
-      setOpen(false);
-    } catch (e) {
-      setError(e instanceof ApiError ? e.message : "Could not send.");
-    } finally {
-      setBusy(false);
-    }
-  }
-
+/** "Prepared for Carla Mendoza · Cards & Payments", then how the brief was framed for that team. */
+function PreparedFor({ brief }: { brief: Brief }) {
+  const p = brief.prepared_for;
+  if (!p) return null;
+  // The note opens by repeating who it is for; the line above already says so.
+  const rest = (p.note ?? "").replace(/^Prepared for [^.]*?\)\.\s*/, "").replace(/^Prepared for [^.]*\.\s*/, "");
   return (
-    <section className="side-panel analyst-panel" aria-labelledby="analyst-title">
-      <div className="analyst-head">
-        <h2 id="analyst-title">Ask an analyst</h2>
-        {escalation && (
-          <span className={waiting ? "status status-wait" : escalation.status === "answered" ? "status status-ok" : "status"}>
-            {waiting ? "Waiting for S&I" : escalation.status === "answered" ? "Answered" : "Closed"}
-          </span>
-        )}
-      </div>
+    <div className="prepared-for">
       <p>
-        {escalation
-          ? ESCALATION_REASONS[escalation.reason] ?? "Sent to S&I."
-          : "Not sure the evidence answers your question? An S&I analyst can check the brief and reply here."}
+        Prepared for <strong>{p.name}</strong> · {p.team}
+        {p.role_label && <span className="muted"> · {p.role_label}</span>}
       </p>
-      {earlier && (
-        <blockquote className="analyst-reply">
-          <span className="who">Earlier reply</span>
-          {earlier}
-        </blockquote>
-      )}
-      {reply && (
-        <blockquote className="analyst-reply">
-          <span className="who">Analyst&rsquo;s reply</span>
-          {reply}
-        </blockquote>
-      )}
-      {open ? (
-        <form onSubmit={submit}>
-          <div className="field">
-            <label htmlFor="escalation-note">{followUp ? "Your follow-up question" : "What should the analyst check?"}</label>
-            <textarea id="escalation-note" rows={3} value={note} onChange={(e) => setNote(e.target.value)} required autoFocus />
-          </div>
-          {error && <p className="error" role="alert">{error}</p>}
-          <div className="actions">
-            <button className="btn btn-primary" disabled={busy || note.trim().length < 3}>{busy ? "Sending…" : "Send to S&I"}</button>
-            <button type="button" className="btn btn-quiet" onClick={() => setOpen(false)}>Cancel</button>
-          </div>
-        </form>
-      ) : (
-        !waiting && (
-          <button type="button" className="btn" onClick={() => setOpen(true)}>
-            {followUp ? "Ask a follow-up" : "Ask an analyst"}
-          </button>
-        )
-      )}
-      {escalation && (
-        <p className="hint analyst-foot">
-          Every question and reply is kept under <Link href="/analyst">Ask an analyst</Link>.
-        </p>
-      )}
-    </section>
+      {rest && <p className="hint">{rest}</p>}
+    </div>
   );
 }
 
@@ -263,7 +219,16 @@ export function BriefView({ brief }: { brief: Brief }) {
   const headline = brief.claims.filter((c) => c.kind === "headline");
   const breakdown = brief.claims.filter((c) => c.kind === "breakdown");
   const qual = brief.claims.filter((c) => c.kind === "qualitative_insight");
+  const patterns = brief.study_patterns ?? [];
   const level = brief.confidence.level;
+  const trends = patterns.length > 0 && patterns.every((p) => /two trends/i.test(p.explanation));
+
+  // The brief loads after navigation, so the browser's own jump to #analyst or #confidence has
+  // already happened against an empty page; do it once the content is here.
+  useEffect(() => {
+    const id = window.location.hash.slice(1);
+    if (id) document.getElementById(id)?.scrollIntoView({ block: "start" });
+  }, [brief.id]);
 
   return (
     <article>
@@ -277,6 +242,7 @@ export function BriefView({ brief }: { brief: Brief }) {
           {brief.generated_by && <span>Drafted by {brief.generated_by}, checked by rules</span>}
           {brief.dropped_claims > 0 && <span>{brief.dropped_claims} claim(s) removed by the checks</span>}
         </div>
+        <PreparedFor brief={brief} />
         {brief.generator_note && <p className="hint">{brief.generator_note}</p>}
         <div className="brief-glance">
           <a href="#confidence" className="glance-confidence">
@@ -292,9 +258,11 @@ export function BriefView({ brief }: { brief: Brief }) {
         </div>
       </header>
 
+      <AudienceAnswer brief={brief} />
+
       <Section title="Headline">
         {headline.length > 0 ? (
-          headline.map((c, i) => <ClaimRow key={i} claim={c} sources={sources} variant="headline" first={i === 0} />)
+          headline.map((c, i) => <ClaimRow key={i} claim={c} brief={brief} variant="headline" first={i === 0} />)
         ) : (
           <p className="headline-text" style={{ maxWidth: "var(--measure)" }}>
             {brief.no_headline_message ?? "No single headline: the quantitative evidence does not support one summary statement."}
@@ -306,7 +274,7 @@ export function BriefView({ brief }: { brief: Brief }) {
       {(breakdown.length > 0 || brief.charts.length > 0) && (
         <Section title="Breakdown" tag="by segment, age and region">
           {breakdown.map((c, i) => (
-            <ClaimRow key={i} claim={c} sources={sources} variant="breakdown" first={i === 0} />
+            <ClaimRow key={i} claim={c} brief={brief} variant="breakdown" first={i === 0} />
           ))}
           {brief.charts.map((chart) => (
             <div className="row" key={chart.metric_key}>
@@ -319,19 +287,10 @@ export function BriefView({ brief }: { brief: Brief }) {
         </Section>
       )}
 
-      {qual.length > 0 && (
-        <Section title="What people say" tag="Indicative · qualitative">
-          {brief.disclaimer && <p className="disclaimer"><Info size={16} strokeWidth={1.75} aria-hidden />{brief.disclaimer}</p>}
-          {qual.map((c, i) => (
-            <ClaimRow key={i} claim={c} sources={sources} variant="qual" first={i === 0} />
-          ))}
-        </Section>
-      )}
-
       {brief.context_notes.length > 0 && (
         <Section
-          title="Context differences"
-          intro="Where studies point in different directions because they asked different people, at a different time or by a different method."
+          title="It depends on who was asked"
+          intro="Each line is one group's result, with who was asked, where and when. Survey results come first; group discussions support them below."
         >
           {brief.context_notes.map((note) => (
             <NoteRow key={note.topic} note={note} brief={brief} />
@@ -339,19 +298,37 @@ export function BriefView({ brief }: { brief: Brief }) {
         </Section>
       )}
 
+      {patterns.length > 0 && (
+        <Section
+          title={trends ? "Two trends in the same study" : "Two patterns in the same study"}
+          intro="One study found different results for different groups of the people it asked. Each holds for its own group."
+        >
+          {patterns.map((note) => (
+            <PatternRow key={note.topic + note.finding_ids.join()} note={note} brief={brief} />
+          ))}
+        </Section>
+      )}
+
+      {qual.length > 0 && (
+        <Section title="What people say" tag="Indicative · qualitative">
+          {brief.disclaimer && <p className="disclaimer"><Info size={16} strokeWidth={1.75} aria-hidden />{brief.disclaimer}</p>}
+          {qual.some((c) => c.emotions?.length) && (
+            <p className="section-intro">Feelings are read from participants&rsquo; own words. They show how people sounded, not how many feel that way.</p>
+          )}
+          {qual.map((c, i) => (
+            <ClaimRow key={i} claim={c} brief={brief} variant="qual" first={i === 0} />
+          ))}
+        </Section>
+      )}
+
       {brief.unresolved_conflicts.length > 0 && (
         <Section
           title="Unresolved conflicts"
-          intro="These studies sampled the same population in the same period and still disagree. Treat the related claims with caution."
+          intro="These studies asked the same kind of people in the same period and still report different results. Treat the related claims with caution."
         >
           {brief.unresolved_conflicts.map((note) => (
-            <NoteRow key={note.topic + note.finding_ids.join()} note={note} brief={brief} conflict />
+            <ConflictRow key={note.topic + note.finding_ids.join()} note={note} brief={brief} />
           ))}
-          {brief.escalation?.reason === "unresolved_conflict" && (
-            <p className="notice small">
-              Sent to an S&amp;I analyst automatically. <a href="#confidence">See the status and any reply</a>.
-            </p>
-          )}
         </Section>
       )}
 
