@@ -1,4 +1,6 @@
 export type Tier = "A" | "B" | "C";
+export type Provenance = "synthetic" | "public" | "internal";
+export type MethodType = "quant" | "qual" | "mixed";
 export type Role = "bu_user" | "bu_approver" | "si_analyst";
 
 export interface Profile {
@@ -32,6 +34,15 @@ export interface SourceView {
   population_label: string;
   tier: Tier | null;
   tier_overridden: boolean;
+  /** Report page the finding was read from; null when the extractor could not place it. */
+  page: number | null;
+  source_excerpt: string | null;
+  /** "SI-2026-014 · p.3", or the bare code when there is no page. */
+  cite_label: string | null;
+  /** Set only when the study has a report PDF. Needs a signed link to open (see openReport). */
+  document_url: string | null;
+  provenance: Provenance | null;
+  publisher: string | null;
 }
 
 export interface Evidence {
@@ -92,7 +103,7 @@ export interface RestrictedMatch {
 export interface Escalation {
   id: string;
   status: "open" | "answered" | "closed";
-  reason: string;
+  reason: "user_request" | "unresolved_conflict" | "low_confidence" | string;
   response?: string | null;
 }
 
@@ -147,7 +158,55 @@ export interface FindingRow {
   base_n: number | null;
   subgroup: Record<string, string> | null;
   direction: "high" | "low" | "neutral" | null;
+  page?: number | null;
+  source_excerpt?: string | null;
+  cite_label?: string | null;
+  document_url?: string | null;
 }
+
+export interface StudyDocument {
+  id: string;
+  filename: string;
+  page_count: number | null;
+  byte_size: number;
+  source_kind: Provenance | string;
+  license: string | null;
+  source_url: string | null;
+  url: string;
+}
+
+interface StudyListBase {
+  id: string;
+  code: string;
+  title: string;
+  owner_team: string;
+  access_level: "open" | "restricted";
+  method_type: MethodType | null;
+  year: number | null;
+  provenance: Provenance;
+  publisher: string | null;
+  has_document: boolean;
+  request_status: "pending" | "approved" | "denied" | null;
+}
+
+/** A catalogue row the caller may read: the full card. */
+export interface ReadableStudy extends StudyListBase {
+  can_read: true;
+  summary: string | null;
+  sample_size: number | null;
+  fieldwork_end: string | null;
+  population: StudyDetail["population"];
+  effective_tier: Tier | null;
+  finding_count: number;
+  document: StudyDocument | null;
+}
+
+/** A restricted study: catalogue metadata only, never its findings. */
+export interface RestrictedStudy extends StudyListBase {
+  can_read: false;
+}
+
+export type StudyListItem = ReadableStudy | RestrictedStudy;
 
 export interface StudyDetail {
   id: string;
@@ -163,9 +222,12 @@ export interface StudyDetail {
   created_at: string;
   reviewed_at: string | null;
   review_note: string | null;
-  method_type: "quant" | "qual" | "mixed" | null;
+  method_type: MethodType | null;
   sample_size: number | null;
   fieldwork_end: string | null;
+  provenance?: Provenance;
+  publisher?: string | null;
+  document?: StudyDocument | null;
   population: { age_min: number | null; age_max: number | null; regions: string[]; segment: string | null } | null;
   robustness_tier: Tier | null;
   tier_override: Tier | null;
