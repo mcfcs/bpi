@@ -129,7 +129,9 @@ def chart_title(metric_key: str) -> str:
     label = metric_label(metric_key)
     for prefix, template in METRIC_CHART_TITLES.items():
         if metric_key.startswith(prefix):
-            return template.format(label=label, label_lower=label[:1].lower() + label[1:])
+            first = label.split()[0] if label.split() else ""
+            lower = label if first[:2].isupper() else label[:1].lower() + label[1:]   # keep "ID ..."
+            return template.format(label=label, label_lower=lower)
     return label
 
 

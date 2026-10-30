@@ -227,7 +227,10 @@ def create_app(settings: Settings | None = None, *, db: Database | None = None, 
     @app.patch("/api/review/studies/{study_id}")
     def patch_study(study_id: str, body: StudyPatch, user: CurrentUser = Depends(require_si)):
         with as_user(user) as conn:
-            return review.update_study(conn, study_id, body, today())
+            detail = review.update_study(conn, study_id, body, today())
+            if detail is not None:   # keep the report link and page numbers on the edited card
+                documents.augment_study_detail(conn, detail)
+            return detail
 
     @app.patch("/api/review/findings/{finding_id}")
     def patch_finding(finding_id: str, body: FindingPatch, user: CurrentUser = Depends(require_si)):
@@ -238,7 +241,10 @@ def create_app(settings: Settings | None = None, *, db: Database | None = None, 
     def decide_study(study_id: str, body: ReviewDecision, user: CurrentUser = Depends(require_si)):
         with as_user(user) as conn:
             review.decide_study(conn, study_id, body.approve, body.note, user.id)
-            return review.study_detail(conn, study_id, today())
+            detail = review.study_detail(conn, study_id, today())
+            if detail is not None:
+                documents.augment_study_detail(conn, detail)
+            return detail
 
     @app.post("/api/ingest")
     def ingest(body: IngestBody, user: CurrentUser = Depends(require_si)):

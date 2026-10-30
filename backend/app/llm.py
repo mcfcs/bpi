@@ -312,7 +312,8 @@ class OfflineLLM:
         restricted = [o for o in objectives if any(c["code"] == "restricted_match" for c in o.get("caveats") or [])]
         sentences = []
         if gaps:
-            sentences.append(f"New problems, not yet researched: {join_words(q(o) for o in gaps)}. These need new research.")
+            sentences.append(f"New research is needed for {join_words(q(o) for o in gaps)}: no approved study covers "
+                             f"{'it' if len(gaps) == 1 else 'them'} yet.")
         if stale:
             sentences.append("Refresh older evidence for " + join_words(
                 f"{q(o)} ({o['evidence_summary']})" for o in stale) + ".")

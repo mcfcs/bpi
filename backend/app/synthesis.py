@@ -79,7 +79,7 @@ def prepared_for(reader: Reader, sources: list[Source], cited: set[str]) -> dict
     labels = list(dict.fromkeys(topic_label(s.topic) for s in owned if s.topic and s.metric_key))
     note = f"Prepared for {reader.name}, {reader.team} ({reader.role_label})."
     if labels:
-        note += f" Figures your team owns are listed first: {', '.join(labels[:4])}."
+        note += f" Topics your team owns are listed first: {', '.join(labels[:4])}."
     if reader.team_study_codes:
         note += f" Studies your team owns in this brief: {', '.join(reader.team_study_codes)}."
     return {"name": reader.name, "team": reader.team, "role": reader.role, "role_label": reader.role_label,

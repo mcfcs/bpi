@@ -130,6 +130,17 @@ Models download to `%LOCALAPPDATA%\si-evidence-assistant\models`; the dev databa
 
 ## Known gaps not to forget
 
+From the final browser QA (30 Oct), not yet fixed:
+- "Are long ATM queues a problem outside Metro Manila?": the headline is the Metro Manila figure;
+  the provincial figures are only in Breakdown. Headline choice should honour a place in the question.
+- Cashback brief: the two disputed figures also appear as plain breakdown claims and as two chart bars
+  with the same label; the Plain-language summary leads on cashback while the headline is on travel.
+  Mark claims and bars that belong to an unresolved conflict.
+- Analyst desk shows a follow-up as a new card instead of threading it under the first question.
+- Asking again joins the open escalation, but the new brief doesn't say "joined an existing check".
+- Public study cards (World Bank PUB-WB-ES23): several "Wording in the report" excerpts are table
+  fragments that don't show the figure; re-label `data/public/cards/*.json` excerpts.
+- A study's sources list shows one card per study, so a two-trends section lists one source.
 - Chart bars carry no `page` / `provenance`; restricted catalogue rows show year only.
 - Ticked analyst gaps are stored inside the escalation note (no column yet).
 - Scanned PDFs are refused (no OCR); Textract is in the AWS plan.

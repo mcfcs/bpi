@@ -341,4 +341,4 @@ def test_coverage_check_names_genuinely_new_problems(client):
     assert check["result"]["new_problems"] == objectives[1:]
     assert check["result"]["objectives"][1]["coverage_label"] == "New problem: not yet researched"
     scope = check["result"]["recommended_new_scope"]
-    assert "New problems, not yet researched" in scope and "?." not in scope
+    assert "New research is needed for" in scope and "no approved study covers" in scope and "?." not in scope

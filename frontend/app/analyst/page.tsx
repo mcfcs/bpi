@@ -11,7 +11,7 @@ import type { EscalationRow, SubmittedCheck } from "@/lib/types";
 import { dateTime, stateLabel } from "@/lib/format";
 
 const REASONS = {
-  user_request: "Asked by the user",
+  user_request: "Question from a business team",
   unresolved_conflict: "Unresolved conflict, routed automatically",
   low_confidence: "Low confidence",
 } as const;

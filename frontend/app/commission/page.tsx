@@ -309,11 +309,11 @@ function Commission() {
 
       {check && <Result key={check.id} check={check} canSend={canSend} />}
 
-      {previous.length > 0 && (
+      {previous.filter((p) => p.id !== check?.id).length > 0 && (
         <section className="section" style={{ marginTop: 56 }}>
           <div className="section-head"><h2>Earlier checks</h2></div>
           <ul className="list-plain" style={{ maxWidth: 920 }}>
-            {previous.map((p) => (
+            {previous.filter((p) => p.id !== check?.id).map((p) => (
               <li key={p.id} className="actions" style={{ justifyContent: "space-between" }}>
                 <button className="btn btn-quiet" onClick={() => open(p.id)}>{p.title.trim() || "Untitled check"}</button>
                 <span className="small muted nums">

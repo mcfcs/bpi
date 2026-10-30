@@ -416,7 +416,8 @@ def compute_gap_items(sources: list[Source], today: date) -> list[dict]:
     nationwide_quant = [s for s in studies if s.is_quant and geography.is_nationwide((s.population or {}).get("regions"))]
     if nationwide_quant and not any(s.is_quant and (s.subgroup or {}).get("region") for s in findings):
         gaps.append({"code": "no_region_breakdown",
-                     "text": "The nationwide surveys are not broken down by region, so island groups cannot be compared directly.",
+                     "text": ("The nationwide survey is" if len(nationwide_quant) == 1 else "The nationwide surveys are")
+                             + " not broken down by region, so island groups cannot be compared directly.",
                      "ask": f"Can {join_words(sorted({s.study_code for s in nationwide_quant}))} be broken down by region?"})
     dated = [s.fieldwork_end for s in studies if s.fieldwork_end]
     if dated and months_between(max(dated), today) > 18:

@@ -148,7 +148,7 @@ a:hover { text-decoration-thickness: 2px; }
 
 .persona { display: flex; align-items: center; gap: 8px; }
 .persona select {
-  width: auto; max-width: 240px; field-sizing: content; height: 36px; padding: 0 30px 0 12px; font-size: 0.86rem;
+  width: auto; max-width: 340px; field-sizing: content; height: 36px; padding: 0 30px 0 12px; font-size: 0.86rem;
   background-color: rgb(255 255 255 / 0.12); color: var(--band-ink); border-color: rgb(255 255 255 / 0.28);
 }
 .persona select option { color: #18191B; background: #FFFFFF; }
@@ -316,7 +316,7 @@ button.cite[aria-busy="true"] { cursor: progress; opacity: 0.7; }
   border: 1px solid var(--control); border-radius: 10px; background: var(--surface);
   transition: border-color 120ms, box-shadow 120ms;
 }
-.composer:focus-within { border-color: var(--link); box-shadow: 0 0 0 3px var(--link-wash); }
+.composer:focus-within { border-color: var(--link); outline: 2px solid var(--link); outline-offset: 2px; }
 .composer textarea {
   display: block; border: 0; background: transparent; resize: none; min-height: 112px;
   padding: 18px 20px 6px; font-size: 1.12rem; line-height: 1.5;

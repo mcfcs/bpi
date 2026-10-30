@@ -170,7 +170,7 @@ function Queue() {
                     <Link className="cell-title" href={`/review/${s.id}`}>{s.title}</Link>
                     <span className="sub"><CiteChip code={s.code} /> {s.owner_team} · {s.access_level}</span>
                   </td>
-                  <td>{s.method_type ?? <span className="error">missing</span>}</td>
+                  <td>{s.method_type ? ({ quant: "Survey", qual: "Qualitative", mixed: "Mixed method" } as Record<string, string>)[s.method_type] ?? s.method_type : <span className="error">missing</span>}</td>
                   <td className="num">{n(s.sample_size)}</td>
                   <td>{s.fieldwork_end ? monthYear(s.fieldwork_end) : <span className="error">missing</span>}</td>
                   <td>

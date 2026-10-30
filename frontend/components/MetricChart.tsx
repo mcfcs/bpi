@@ -68,7 +68,9 @@ export function MetricChart({ chart }: { chart: ChartSpec }) {
     tipLabel: `${fmtValue(b.value, b.unit)} · n=${n(b.base_n)} · ${b.tier ?? "–"}`,
   }));
   const { top, ticks } = axis(Math.max(...data.map((d) => d.value)), chart.unit);
-  const labelWidth = narrow ? 124 : 168;
+  // Size the label column to the longest label (bounded) so long groups are not clipped.
+  const longest = Math.max(...data.map((d) => Math.max(d.label.length, (d.detail ?? "").length)));
+  const labelWidth = Math.round(Math.min(narrow ? 170 : 280, Math.max(narrow ? 124 : 168, (narrow ? 22 : longest) * 6.6 + 16)));
   const rowHeight = narrow ? 58 : 46;
   const summary = data.map((d) => `${d.label}: ${fmtValue(d.value, d.unit)}, base ${n(d.base_n)}, tier ${d.tier}`).join("; ");
 
@@ -77,7 +79,10 @@ export function MetricChart({ chart }: { chart: ChartSpec }) {
     const datum = index != null ? data[index] : undefined;
     const label = datum?.label ?? payload?.value ?? "";
     const cut = label.indexOf(", ");
-    const lines = narrow && cut > 0 ? [label.slice(0, cut + 1), label.slice(cut + 2)] : [label];
+    const space = label.lastIndexOf(" ", Math.ceil(label.length / 2));
+    const lines = !narrow ? [label]
+      : cut > 0 ? [label.slice(0, cut + 1), label.slice(cut + 2)]
+      : label.length > 22 && space > 0 ? [label.slice(0, space), label.slice(space + 1)] : [label];
     const top = -2 - (lines.length - 1) * 13;
     return (
       <g transform={`translate(${Number(x) - 8},${Number(y)})`}>
