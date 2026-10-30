@@ -3,136 +3,137 @@
 Current state of the project for whoever picks it up next (human or agent). Update this at the end
 of every working session: what changed, what is running, what is next.
 
-_Last updated: 29 Oct 2026._
+_Last updated: 30 Oct 2026._
 
 ## Where things stand
 
-- **Prototype is feature-complete for the DataWave brief**: ask → cited brief with charts and
-  computed confidence; four human checkpoints (study review, access decisions, ask an analyst,
-  commissioning hand-off); RLS-enforced permissions; append-only audit log.
-- **Deadlines:** submission 13 Nov 2026 (pitch deck + prototype); top-5 pitch 27 Nov. Second
-  consultation 4 Nov — bring the open questions below.
-- **Tests:** 88 backend tests pass (`cd backend && .venv/Scripts/python -m pytest`, ~20 s).
-  Frontend typechecks and builds.
-- **Runs on the tailnet:** `./scripts/tailnet.ps1` → `http://100.102.10.69:10012` (this PC's
-  Tailscale IP). Firewall rule "BPI Evidence Assistant (Tailscale) 10012" is installed.
+- **Prototype covers the DataWave brief and both S&I consultations**: ask → cited brief (segment
+  statements, quant first, qualitative colour with emotion cues, audience modes, page citations into
+  report PDFs) with computed confidence; four human checkpoints (study review incl. PDF upload,
+  access decisions, ask an analyst with a generated draft, commissioning with coverage states and an
+  S&I inbox); RLS-enforced permissions on findings and documents; append-only audit log.
+- **Deadlines:** submission 13 Nov 2026 (pitch deck + prototype); top-5 pitch 27 Nov. Next
+  consultation 4 Nov: bring the open questions below.
+- **Tests:** 178 backend tests pass (`cd backend && .venv/Scripts/python -m pytest`, ~50 s).
+  Frontend typechecks and builds. CI: `.github/workflows/ci.yml` (first run not checked: private repo).
+- **Data:** 13 synthetic studies + 6 synthetic report PDFs in the review queue; 5 public reports
+  (BSP FIS 2021, BSP CES Q4 2025, World Bank Enterprise Survey 2023, two CGAP qualitative studies)
+  seeded as "Public source" when their PDFs are downloaded (`dev_db.py --fetch-public`; ADB blocks
+  scripted downloads). Real BPI data must never be loaded.
+- **Runs on the tailnet:** `./scripts/tailnet.ps1` → `http://100.102.10.69:10012`, fastembed
+  semantic search, offline template writer (no Anthropic key). Firewall rule
+  "BPI Evidence Assistant (Tailscale) 10012" is installed.
 
 ## Session log
 
-### 29 Oct 2026 — initialisation and first improvement pass
+### 30 Oct 2026: consultation 2, documents, redesign, multi-agent pass
 
-1. Read the codebase and the consultation notes; installed and ran everything (Python 3.14, Node 24).
-2. **Tailscale / one-port deployment**: Next proxies `/api/*` to the backend; `scripts/tailnet.ps1`.
-3. **Continuity**: `AGENTS.md` (source of truth for any agent), `CLAUDE.md`, `.claude/agents/`
-   (`retrieval-evaluator`, `brief-qa`), `.claude/skills/run-app`, this file, `docs/IMPROVEMENTS.md`.
-4. **Frontend audit and fixes** (accessibility, silent failures, mobile, brief page): see the commit
-   "Fix accessibility, error handling and mobile issues in the frontend".
-5. **Claude path**: findings prompt cached for regeneration; timeouts; first tests of `ClaudeLLM`.
-6. **Retrieval**: evaluation harness and an optional local semantic embedder. Results below.
-7. **BPI colours**: red `#9A191E` and gold `#D5B625` sampled from the current logo; red header band
-   with a gold rule, white page, red primary actions. Links and charts stay slate blue on purpose.
-   The logo itself is not used in the app.
-8. **Light / dark switch** in the header (Match device, Light, Dark), saved per browser, applied
-   before first paint so there is no flash; printing is always light.
+Work ran as parallel agents in git worktrees, merged into `main` by the lead (see `git log`).
 
-### 30 Oct 2026 — frontend for report PDFs and the study catalogue
+1. **Design** (Archivo + Fragment Mono replace the old serif/Plex trio; light by default with a
+   Light/Dark switch; study-card citations; inviting ask page). BPI red/gold kept.
+2. **Consultation rules in the pipeline** (`divergence.py`, `describe.py`, `synthesis.py`,
+   `validators.py`, `confidence.py`, `tiers.py`, `emotion.py`, `geography.py`):
+   - context differences read as segment statements ("Fees: a driver of drop-off among 20–40 in
+     Metro Manila; not among 41–60 nationwide"), never "studies disagree";
+   - quant and qual are never compared as a divergence; qual that runs against a survey is colour
+     in "What people say" (`qual_contrasts`);
+   - qualitative tiers by recency (`QUAL_TIER_CONFIG`: B within 12 months, else C);
+   - two trends inside one study (`study_patterns`, "61% → 72%"); Metro Manila vs provincial/rural;
+   - qual-only themes synthesised across groups with lexicon emotion cues (English + Tagalog);
+   - Executive / Analyst / Plain-language summaries; "Prepared for" persona framing;
+   - ask-an-analyst draft (`GET /api/briefs/{id}/escalation-draft`), escalation threads;
+   - coverage states covered / covered_stale / partial / gap ("new problem") with caveats.
+3. **Documents** (`documents.py`, `documents_api.py`, `report_pdf.py`, migration
+   `20261030100000_study_documents.sql`): report PDFs stored per study under RLS, findings pinned to
+   pages, signed "open at page N" links, `GET /api/studies` catalogue, PDF upload for S&I, public
+   reports with hand-labelled cards, `eval/extraction_eval.py`, `eval/evidence_weighing.py`.
+4. **Frontend for all of it**: `/studies`, `/studies/[id]`, citation chips "SI-2026-014 · p.3",
+   audience switch, segment lines, emotion labels, `/analyst/new` prefilled handoff page, coverage
+   states, S&I inbox of submitted checks.
+5. **Bug hunt** (read-only adversarial pass): no restricted leaks found in ~30 briefs. Fixed: 500s on
+   malformed ids/NUL bytes/tokens; coverage false "Covered"; headline on a disputed figure; headline
+   not answering the question; junk questions getting High confidence; charts showing uncited studies;
+   duplicate/overwritten escalations; past-dated grants; access requests on unreviewed studies;
+   unlabelled restricted text in exports; stale "ask again"; replies missing from briefs; S&I never
+   seeing submitted checks; awkward generated wording.
+6. **Retrieval precision** (`retrieval.py`, `topicality.py`, migration
+   `20261030120000_restricted_match_concepts.sql`): product and topic facet rerank; coverage needs
+   the objective's concept; restricted hints need it too. See results below.
+7. **AWS + Kiro plan** (`docs/AWS_PLAN.md`): plan only, nothing built.
 
-1. **Citations open the report at the cited page**: chips read "SI-2026-014 · p.3" and open the PDF
-   in a new tab through the signed two-minute link (`openReport` in `frontend/lib/api.ts`; the tab is
-   opened during the click so pop-up blockers allow it). No page → page 1; no document → no link.
-   Public studies say "Public source · <publisher>" in the card meta. Study titles link to the study.
-2. **Studies** (`/studies`, in the nav for everyone): filters (method, owner, year, source) and
-   search-as-you-type, mirrored to the URL; restricted studies show a lock and the request-access
-   flow (`components/RequestAccess.tsx`, shared with the brief's Restricted matches).
-3. **Study page** (`/studies/[id]`): findings grouped by report page with p.N links, study card with
-   tier breakdown, licence and original URL for public sources.
-4. **PDF upload** on the review queue; `/review/[id]` has Open report and a page chip per finding.
-5. **Fixes**: example questions always write a fresh brief (reopening an old one hid newly granted
-   studies); the analyst's status and reply now show on every brief, with a follow-up question.
-6. Payload gaps for the backend: chart bars lack `page`/`document_url` (looked up via
-   `brief.sources`, which misses some bars); `brief.escalation` is only the latest escalation, so a
-   reply disappears from the brief once a follow-up is sent; no group count for "6 FGDs" labels.
+### 29 Oct 2026: initialisation and first improvement pass
 
-### 30 Oct 2026 — frontend for brief intelligence (consultation 2)
-
-1. **Answer with audience modes**: Executive / Analyst / Plain language switch above the headline
-   (`components/brief/AudienceAnswer.tsx`), citing the summary's studies; the choice is kept per
-   browser (`si-evidence:audience`). "Prepared for <name> · <team>" with the framing note.
-2. **Segment statements** (`lib/segments.ts` parses the backend's deterministic explanations back into
-   lines; falls back to the prose if the wording differs): "It depends on who was asked" shows each
-   group as who/where/when → result; "Two trends in the same study" names the target respondents;
-   unresolved conflicts show what each study found and the analyst's status.
-3. **What people say**: emotion words on qualitative claims and quotes (`components/Emotion.tsx`,
-   "Detected from participants' words"); qualitative views that run against a survey show who said
-   them next to what the survey measured, never as a conflict. Study cards read
-   "6 FGDs · 48 participants · **Sep 2025** (1 year 1 month ago)"; the tier badge's tooltip gives the
-   tier basis.
-4. **Ask an analyst page** (`/analyst/new?brief=<id>`), prefilled from the escalation draft: found,
-   study codes, difference chips, gap checkboxes, editable question, who it is for, needed by, note,
-   and a "What happens next" stepper. The brief's panel shows the whole thread and a follow-up form.
-5. **Before you commission**: four coverage states (word + icon), newest fieldwork with its age,
-   conflict and restricted-study caveats (request access inline), a "New problems" summary, and the
-   existing submission on a repeat send. `?check=<id>` opens a check.
-6. **Analyst desk**: "Coverage checks sent to S&I" inbox for S&I, linking to each check.
-7. Payload problems for the backend: a brief whose conflict was linked to an earlier open escalation
-   has `escalation: null` on GET (the UI says "Sent to an analyst" for business users); QR claim text
-   says "frustration and worry" while its `emotions` are Worry and Convenience; a gap `ask` names a
-   study the brief does not cite (SI-2026-025 in the Gen Z brief); coverage marks "crypto savings
-   among OFWs" covered (stale) by the World Bank enterprise survey and "pet insurance add-on" covered
-   by SI-2026-027 for Carla; awkward generated wording ("on prefers cashback rewards", "Long ATM
-   queues moves in two directions", "Fees differs by ...").
+Tailscale one-port deployment (`scripts/tailnet.ps1`), continuity files (`AGENTS.md`, `CLAUDE.md`,
+`.claude/agents`, `.claude/skills/run-app`), first frontend audit, Claude prompt caching and tests,
+retrieval eval harness and the local semantic embedder, BPI colours, theme switch.
 
 ## Retrieval results
 
-`python -m eval.retrieval_eval` (24 questions: 3 canonical, 12 paraphrase, 4 Taglish, 5 off-topic;
-study-level scoring, as the S&I analyst so permissions don't confound it):
+`python -m eval.retrieval_eval --provider all` (43 questions with a tune/holdout split: canonical,
+paraphrase, Taglish, off-topic and near-negative; study-level scoring as the S&I analyst):
 
-| Embedder | Paraphrase recall | Paraphrase hit@1 | Taglish recall | MRR | Off-topic FP | Micro F1 |
-|---|---|---|---|---|---|---|
-| hashing (default; tests) | 0.69 | 0.75 | 0.81 | 0.84 | 0.00 | 0.81 |
-| **fastembed multilingual MiniLM-L12** (enabled locally) | **0.90** | 0.75 | **0.88** | **0.89** | **0.00** | **0.86** |
+| | fastembed (demo) | hashing (tests) |
+|---|---|---|
+| Micro F1, all 43 (no facets → facets) | 0.67 → 0.80 | 0.72 → 0.76 |
+| Paraphrase hit@1 / precision | 0.71 / 0.59 → 0.90 / 0.84 | 0.71 / 0.54 → 0.81 / 0.58 |
+| Micro F1, held-out half | 0.61 → 0.76 | 0.68 → 0.75 |
+| Off-topic false positives | 0.00 | 0.00 |
 
-Five fastembed models were swept (floors 0–0.90 × relative floors); the multilingual model was the
-only one to reach zero off-topic hits with high recall. Its floors (0.38 / 0.7) sit mid-plateau:
-every floor from 0.36 to 0.40 gave the same zero false positives. Off-topic questions peaked at
-0.355 similarity. Remaining misses: "technical glitches when uploading files" (finds nothing), and
-some cross-topic extras (card studies appearing for "physical money over cashless").
+Coverage eval (`eval/coverage_eval.py`, 14 cases): fastembed 14/14, hashing 13/14. Floors unchanged
+(fastembed 0.38 / 0.7). Both halves are ~20 questions: indicative only. Still failing: questions that
+name a covered product but ask what no study measures ("metal card design"); "How long do merchants
+wait…" pulls card/QR studies; the generic "abandon digital applications" has low recall.
 
-The machine running the tailnet demo has `EMBEDDING_PROVIDER=fastembed` in `backend/.env.local`.
+Extraction (offline, `eval/extraction_eval.py`): synthetic PDFs 100% on every field; public PDFs
+find only 7% of findings, so real reports need Claude extraction.
 
 ## Configuration you need to know
 
 | Setting | Where | Default | Notes |
 |---|---|---|---|
-| `EMBEDDING_PROVIDER` | `backend/.env.local` | `hashing` | `fastembed` for semantic search; needs `pip install -r requirements-semantic.txt`, then restart `dev_db.py` (re-embeds automatically) |
-| `EMBEDDING_MODEL` | `backend/.env.local` | see `app/embeddings.py` | Any fastembed model with ≤512 dimensions; add floors for it in `EMBEDDER_FLOORS` (`app/config.py`) after running the eval |
+| `EMBEDDING_PROVIDER` | `backend/.env.local` | `hashing` | `fastembed` for semantic search; needs `pip install -r requirements-semantic.txt`; `dev_db.py` re-embeds on start |
+| `EMBEDDING_MODEL` | `backend/.env.local` | see `app/embeddings.py` | Any fastembed model ≤512 dims; add floors in `EMBEDDER_FLOORS` after running the eval |
 | `ANTHROPIC_API_KEY` | `backend/.env.local` | unset | Without it, briefs use the deterministic template writer |
-| `LLM_MODEL` / `LLM_EFFORT` | `backend/.env.local` | `claude-opus-5-5` / `high` | Opus 5.5 defaults to `medium` effort if unset at the API, so keep it explicit |
+| `LLM_MODEL` / `LLM_EFFORT` | `backend/.env.local` | `claude-opus-5-5` / `high` | Keep effort explicit (Opus 5.5's API default is `medium`) |
 | `BACKEND_URL` | `frontend/.env.local` | `http://127.0.0.1:8000` | Where Next proxies `/api` |
+| Thresholds | `backend/app/config.py` | proposed | `TIER_CONFIG`, `QUAL_TIER_CONFIG`, `COVERAGE_STATE_CONFIG`, `TOPICALITY_CONFIG`, `DOCUMENT_CONFIG`, facet weights |
 
 Models download to `%LOCALAPPDATA%\si-evidence-assistant\models`; the dev database lives in
-`%LOCALAPPDATA%\si-evidence-assistant\pgdata` (both outside the OneDrive-synced repo).
+`%LOCALAPPDATA%\si-evidence-assistant\pgdata`; public PDFs in `data/public/pdfs/` (git-ignored).
 
 ## Open questions for S&I (4 Nov consultation)
 
-1. Tier thresholds and weights (`TIER_CONFIG`) — still proposed defaults.
-2. Should a headline be allowed when its metric is part of an unresolved conflict? (IMPROVEMENTS A4)
-3. Their commissioning system and required fields (`WebhookAdapter.payload`).
-4. Fixed vocabularies for regions, age bands and metric keys?
-5. A sample of real (anonymised) BU questions to evaluate retrieval on (IMPROVEMENTS A3).
-6. Brand guidelines: confirm the sampled red/gold, the typeface, and whether the crest may appear
-   in the prototype (IMPROVEMENTS S9).
+1. Qualitative tiers: is "B within 12 months, else C" right? Is 24 months the right line for
+   "covered but old" in coverage checks?
+2. Survey tiers: every n ≥ 1,000 scores the same (n=640 pulse and a 5,489-household national sample
+   are both A), and "mixed" labelling costs points. Should design (probability sample, national
+   frame) count? (`eval/evidence_weighing.py` prints the table.)
+3. Team metric families used for "Prepared for" framing, and the emotion word list: please review.
+4. Their commissioning system and required fields (`WebhookAdapter.payload`).
+5. Fixed vocabularies for regions, age bands, metric keys and product/topic facets?
+6. Real (anonymised) BU questions to evaluate retrieval on, held out from tuning.
+7. Brand: confirm sampled red/gold and whether the crest may appear (IMPROVEMENTS S9).
+8. Licences: CGAP reports are "all rights reserved", the World Bank survey non-commercial; the repo
+   holds only URLs, cards and short quotes. OK for a pitch demo?
 
 ## Next steps, in order
 
-1. Run one session with a real `ANTHROPIC_API_KEY` and record validator/regeneration/cost numbers (A7).
-2. Check the first CI run in the GitHub Actions tab (`.github/workflows/ci.yml`; not verified yet).
-3. Pitch deck: lead with the paraphrase-search before/after (eval table above) and the four checkpoints.
-4. Supabase Auth in the frontend for a non-demo deployment (S6).
+1. Run one session with a real `ANTHROPIC_API_KEY`: record validator/regeneration/cost numbers (A7)
+   and run `eval/extraction_eval.py` with Claude on the public PDFs.
+2. Check the CI run in the GitHub Actions tab.
+3. Pitch deck: the consultation example before/after, the retrieval table, the four checkpoints,
+   documents with page citations, and the AWS slide from `docs/AWS_PLAN.md`.
+4. Confidence should count only unresolved conflicts among findings relevant to the question (the
+   facet rerank fixed the known case; the rule itself is still "any conflict → Low").
+5. Supabase Auth in the frontend for a non-demo deployment (S6).
 
 ## Known gaps not to forget
 
-- Project `.claude/settings.json` (a permission allowlist for routine test/build commands) was not
-  created: the agent's write was blocked as self-modification. Create it yourself or run
-  `/fewer-permission-prompts` if prompts get noisy.
-- Floors for the semantic embedder were tuned in-sample on 24 synthetic questions.
+- Chart bars carry no `page` / `provenance`; restricted catalogue rows show year only.
+- Ticked analyst gaps are stored inside the escalation note (no column yet).
+- Scanned PDFs are refused (no OCR); Textract is in the AWS plan.
+- `.claude/settings.json` (permission allowlist) was not created: the agent's write was blocked as
+  self-modification. Create it yourself or run `/fewer-permission-prompts`.
+- Stale agent worktrees under `.claude/worktrees/` (git-ignored) can be removed once no process holds
+  them: `git worktree prune`.
