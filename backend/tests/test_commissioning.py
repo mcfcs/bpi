@@ -22,10 +22,12 @@ def run_check(client, who="ben"):
 def test_coverage_result_is_structured(client):
     check = run_check(client)
     result = check["result"]
-    assert set(result) == {"objectives", "recommended_new_scope"}
-    assert [set(o) for o in result["objectives"]] == [{"text", "coverage", "finding_ids"}] * 3
+    assert set(result) == {"objectives", "new_problems", "recommended_new_scope"}
+    keys = {"text", "coverage", "coverage_label", "new_problem", "newest_fieldwork", "caveats", "finding_ids"}
+    assert [set(o) for o in result["objectives"]] == [keys] * 3
     assert [o["coverage"] for o in result["objectives"]] == ["covered", "partial", "gap"]
-    assert result["objectives"][2]["finding_ids"] == []
+    assert result["objectives"][2]["finding_ids"] == [] and result["objectives"][2]["new_problem"] is True
+    assert result["new_problems"] == [OBJECTIVES[2]]
     assert "crop insurance" in result["recommended_new_scope"]
 
 

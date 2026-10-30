@@ -145,7 +145,7 @@ def create_app(settings: Settings | None = None, *, db: Database | None = None, 
     # ------------------------------------------------------------------ briefs
     @app.post("/api/briefs")
     def ask(body: AskBody, user: CurrentUser = Depends(current_user)):
-        return briefs.ask(user, body.question)
+        return briefs.ask(user, body.question, body.reader_role)
 
     @app.get("/api/briefs")
     def my_briefs(user: CurrentUser = Depends(current_user)):
@@ -240,7 +240,8 @@ def create_app(settings: Settings | None = None, *, db: Database | None = None, 
     @app.post("/api/escalations")
     def escalate(body: EscalationBody, user: CurrentUser = Depends(current_user)):
         with as_user(user) as conn:
-            return governance.create_escalation(conn, user.id, body.brief_id, body.note)
+            return governance.create_escalation(conn, user.id, body.brief_id, body.note,
+                                                gaps=body.gaps, suggested_question=body.suggested_question)
 
     @app.post("/api/escalations/{escalation_id}/respond")
     def respond(escalation_id: str, body: EscalationResponseBody, user: CurrentUser = Depends(require_si)):
@@ -251,7 +252,8 @@ def create_app(settings: Settings | None = None, *, db: Database | None = None, 
     @app.post("/api/commissioning/coverage")
     def coverage(body: CoverageBody, user: CurrentUser = Depends(current_user)):
         with as_user(user) as conn:
-            return commissioning.run_coverage_check(conn, user.id, body.title, body.objectives, embedder, llm, offline)
+            return commissioning.run_coverage_check(conn, user.id, body.title, body.objectives, embedder, llm, offline,
+                                                    today=today())
 
     @app.get("/api/commissioning")
     def my_checks(user: CurrentUser = Depends(current_user)):
@@ -278,6 +280,9 @@ def create_app(settings: Settings | None = None, *, db: Database | None = None, 
     def submit_check(check_id: str, user: CurrentUser = Depends(current_user)):
         with as_user(user) as conn:
             check, _ = _check_with_findings(conn, check_id)
+        previous = commissioning.existing_submission(check)
+        if previous:
+            return previous   # handed over once; a repeat submit changes nothing
         try:
             outcome = adapter.submit(check)
         except httpx.HTTPError as exc:
@@ -291,10 +296,10 @@ def create_app(settings: Settings | None = None, *, db: Database | None = None, 
     @app.get("/api/commissioning/{check_id}/export.json")
     def export_json(check_id: str, user: CurrentUser = Depends(current_user)):
         with as_user(user) as conn:
-            check, _ = _check_with_findings(conn, check_id)
+            check, findings = _check_with_findings(conn, check_id)
             audit.log(conn, "commissioning.exported", "commissioning_check", check_id, {"format": "json"})
         return JSONResponse(
-            {"id": check["id"], "title": check["title"], "created_at": check["created_at"], **check["result"]},
+            commissioning.export_json(check, findings),
             headers={"Content-Disposition": f'attachment; filename="coverage-{check_id[:8]}.json"'})
 
     @app.get("/api/commissioning/{check_id}/export.pdf")
@@ -304,6 +309,18 @@ def create_app(settings: Settings | None = None, *, db: Database | None = None, 
             audit.log(conn, "commissioning.exported", "commissioning_check", check_id, {"format": "pdf"})
         return Response(commissioning.export_pdf(check, findings), media_type="application/pdf",
                         headers={"Content-Disposition": f'attachment; filename="coverage-{check_id[:8]}.pdf"'})
+
+    # ------------------------------------------------------------------ brief rules (S&I consultation 2)
+    # Ask an analyst: a specific escalation drafted from a stored brief. Read-only; the brief row is
+    # loaded under RLS, so only its author (or S&I) can draft from it. Send the edited draft to
+    # POST /api/escalations with {brief_id, note, gaps: [ticked gap texts], suggested_question}.
+    @app.get("/api/briefs/{brief_id}/escalation-draft")
+    def escalation_draft(brief_id: str, user: CurrentUser = Depends(current_user)):
+        with as_user(user) as conn:
+            row = conn.execute("select id::text as id, payload from public.briefs where id = %s", [brief_id]).fetchone()
+        if row is None:
+            raise HTTPException(404, "Brief not found.")
+        return governance.draft_escalation({**row["payload"], "id": row["id"]})
 
     # ------------------------------------------------------------------ audit
     @app.get("/api/audit")
