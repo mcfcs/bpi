@@ -35,6 +35,24 @@ _Last updated: 29 Oct 2026._
 8. **Light / dark switch** in the header (Match device, Light, Dark), saved per browser, applied
    before first paint so there is no flash; printing is always light.
 
+### 30 Oct 2026 — frontend for report PDFs and the study catalogue
+
+1. **Citations open the report at the cited page**: chips read "SI-2026-014 · p.3" and open the PDF
+   in a new tab through the signed two-minute link (`openReport` in `frontend/lib/api.ts`; the tab is
+   opened during the click so pop-up blockers allow it). No page → page 1; no document → no link.
+   Public studies say "Public source · <publisher>" in the card meta. Study titles link to the study.
+2. **Studies** (`/studies`, in the nav for everyone): filters (method, owner, year, source) and
+   search-as-you-type, mirrored to the URL; restricted studies show a lock and the request-access
+   flow (`components/RequestAccess.tsx`, shared with the brief's Restricted matches).
+3. **Study page** (`/studies/[id]`): findings grouped by report page with p.N links, study card with
+   tier breakdown, licence and original URL for public sources.
+4. **PDF upload** on the review queue; `/review/[id]` has Open report and a page chip per finding.
+5. **Fixes**: example questions always write a fresh brief (reopening an old one hid newly granted
+   studies); the analyst's status and reply now show on every brief, with a follow-up question.
+6. Payload gaps for the backend: chart bars lack `page`/`document_url` (looked up via
+   `brief.sources`, which misses some bars); `brief.escalation` is only the latest escalation, so a
+   reply disappears from the brief once a follow-up is sent; no group count for "6 FGDs" labels.
+
 ## Retrieval results
 
 `python -m eval.retrieval_eval` (24 questions: 3 canonical, 12 paraphrase, 4 Taglish, 5 off-topic;
