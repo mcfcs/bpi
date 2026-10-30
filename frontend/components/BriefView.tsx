@@ -5,9 +5,11 @@ import Link from "next/link";
 import { Info, Lock, Printer } from "lucide-react";
 import { useState } from "react";
 import { api, ApiError } from "@/lib/api";
-import type { Brief, Claim, ContextNote, RestrictedMatch, SourceView } from "@/lib/types";
-import { dateTime, DIFFERS_LABELS, monthYear, n } from "@/lib/format";
-import { CiteChip, Meter, SourceList, TierBadge, uniqueByStudy, type CitationItem } from "./Citation";
+import type { Brief, ChartSpec, Claim, ContextNote, Escalation, RestrictedMatch, SourceView } from "@/lib/types";
+import { dateTime, DIFFERS_LABELS, monthYear, n, provenanceLabel } from "@/lib/format";
+import { CiteChip, Meter, SourceChip, SourceList, TierBadge, uniqueByStudy, type CitationItem } from "./Citation";
+import { CiteLink } from "./ReportLink";
+import { RequestAccess } from "./RequestAccess";
 
 // recharts is the heaviest dependency; load it only for briefs that have charts.
 const MetricChart = dynamic(() => import("./MetricChart").then((m) => m.MetricChart), {
@@ -49,7 +51,7 @@ function Verbatim({ source }: { source: SourceView | undefined }) {
       “{source.text}”
       <footer>
         {who && <span>{who}</span>}
-        <CiteChip code={source.study_code} page={(source as SourceView & { page?: number | null }).page} title={source.study_title} />
+        <SourceChip source={source} />
       </footer>
     </blockquote>
   );
@@ -92,81 +94,107 @@ function NoteRow({ note, brief, conflict }: { note: ContextNote; brief: Brief; c
   );
 }
 
+/** A matching study the reader's team cannot read: its catalogue line and the request flow. */
 function RestrictedRow({ match }: { match: RestrictedMatch }) {
-  const [open, setOpen] = useState(false);
-  const [purpose, setPurpose] = useState("");
-  const [status, setStatus] = useState(match.request_status);
-  const [error, setError] = useState<string | null>(null);
-  const [busy, setBusy] = useState(false);
-
-  async function submit(event: React.FormEvent) {
-    event.preventDefault();
-    setBusy(true);
-    setError(null);
-    try {
-      await api("/api/access-requests", { method: "POST", json: { study_id: match.study_id, purpose } });
-      setStatus("pending");
-      setOpen(false);
-    } catch (e) {
-      setError(e instanceof ApiError ? e.message : "The request could not be sent.");
-    } finally {
-      setBusy(false);
-    }
-  }
-
   return (
-    <li>
-      <div className="line">
-        <span className="what">
-          <Lock size={15} strokeWidth={1.75} aria-hidden style={{ color: "var(--muted)" }} />
-          <CiteChip code={match.code} />
-          <span>{match.title}</span>
-          <span className="muted small">Owned by {match.owner_team}</span>
-        </span>
-        {status === "pending" ? (
-          <span className="status status-wait">Requested, waiting for {match.owner_team}</span>
-        ) : status === "approved" ? (
-          <span className="status status-ok">Approved: ask again to include it</span>
-        ) : (
-          !open && (
-            <button type="button" className="btn" onClick={() => setOpen(true)}>
-              Request access
-            </button>
-          )
-        )}
-      </div>
-      {open && (
-        <form onSubmit={submit} style={{ marginTop: 10 }}>
-          <div className="field">
-            <label htmlFor={`purpose-${match.study_id}`}>How will your team use this study?</label>
-            <textarea id={`purpose-${match.study_id}`} rows={3} value={purpose} onChange={(e) => setPurpose(e.target.value)} required minLength={10} />
-            <p className="hint">The owning team or S&amp;I reviews every request. Approval shares the study with your team.</p>
-          </div>
-          {error && <p className="error">{error}</p>}
-          <div className="actions">
-            <button className="btn btn-primary" disabled={busy || purpose.trim().length < 10}>Send request</button>
-            <button type="button" className="btn btn-quiet" onClick={() => setOpen(false)}>Cancel</button>
-          </div>
-        </form>
-      )}
-    </li>
+    <RequestAccess.Provider studyId={match.study_id} ownerTeam={match.owner_team} initialStatus={match.request_status}>
+      <li>
+        <div className="line">
+          <span className="what">
+            <Lock size={15} strokeWidth={1.75} aria-label="Restricted" role="img" style={{ color: "var(--muted)" }} />
+            <CiteChip code={match.code} />
+            <span>{match.title}</span>
+            <span className="muted small">Owned by {match.owner_team}</span>
+          </span>
+          <RequestAccess.Action approved="Approved: ask again to include it" />
+        </div>
+        <RequestAccess.Form className="request-form" />
+      </li>
+    </RequestAccess.Provider>
   );
 }
 
-function AskAnalyst({ brief }: { brief: Brief }) {
+/** One entry per study in a chart, with the report pages its bars were read from. */
+function chartStudies(chart: ChartSpec, sources: Record<string, SourceView>) {
+  const studies = new Map<string, { bar: ChartSpec["bars"][number]; source?: SourceView; pages: Set<number> }>();
+  for (const bar of chart.bars) {
+    const source = sources[bar.finding_id];
+    const entry = studies.get(bar.study_id) ?? { bar, source, pages: new Set<number>() };
+    entry.source ??= source;
+    if (source?.page != null) entry.pages.add(source.page);
+    studies.set(bar.study_id, entry);
+  }
+  return [...studies.values()].map(({ bar, source, pages }) => {
+    const sorted = [...pages].sort((a, b) => a - b);
+    return { bar, source, pages: sorted };
+  });
+}
+
+function ChartSources({ chart, sources }: { chart: ChartSpec; sources: Record<string, SourceView> }) {
+  return (
+    <aside aria-label="Chart sources">
+      <ul className="sources">
+        <li className="label">Chart sources</li>
+        {chartStudies(chart, sources).map(({ bar: b, source, pages }) => (
+          <li key={b.study_id} className="study-card">
+            <div className="top">
+              {source?.document_url ? (
+                <CiteLink studyId={b.study_id} code={b.study_code} page={pages[0] ?? null} title={b.study_title} />
+              ) : (
+                <CiteChip code={b.study_code} page={pages[0] ?? null} title={b.study_title} />
+              )}
+              <TierBadge tier={b.tier} sample={`n=${n(b.sample_size)}`} when={b.fieldwork_end?.slice(0, 4) ?? "n.d."} />
+            </div>
+            <Link className="title" href={`/studies/${b.study_id}`}>{b.study_title}</Link>
+            <div className="source-meta">
+              {[
+                source?.provenance === "public" ? provenanceLabel(source) : "",
+                b.method_type === "quant" ? "Quantitative" : "Mixed method",
+                b.region_label,
+                `fieldwork ${monthYear(b.fieldwork_end)}`,
+                pages.length > 1 ? `pages ${pages.join(", ")}` : "",
+              ].filter(Boolean).join(" · ")}
+            </div>
+          </li>
+        ))}
+      </ul>
+    </aside>
+  );
+}
+
+const ESCALATION_REASONS: Record<string, string> = {
+  user_request: "You asked an analyst to check this brief.",
+  unresolved_conflict: "Sent to an analyst automatically: studies of the same population disagree.",
+  low_confidence: "Sent to an analyst automatically: confidence is low.",
+};
+
+/**
+ * Ask an analyst about this brief: the question form, then the escalation's status and the analyst's
+ * reply, then a follow-up once the reply is in. Shown on every brief, conflict or not.
+ */
+function AnalystPanel({ brief }: { brief: Brief }) {
+  const [escalation, setEscalation] = useState<Escalation | null>(brief.escalation);
+  // The reply a follow-up was asked about. A brief carries only its latest escalation, so keep the
+  // earlier reply on screen for this visit; every reply stays under Ask an analyst.
+  const [earlier, setEarlier] = useState<string | null>(null);
   const [open, setOpen] = useState(false);
   const [note, setNote] = useState("");
-  const [sent, setSent] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+
+  const waiting = escalation?.status === "open";
+  const followUp = escalation != null && !waiting;
+  const reply = escalation?.response ?? null;
 
   async function submit(event: React.FormEvent) {
     event.preventDefault();
     setError(null);
     setBusy(true);
     try {
-      await api("/api/escalations", { method: "POST", json: { brief_id: brief.id, note } });
-      setSent(true);
+      const created = await api<Escalation>("/api/escalations", { method: "POST", json: { brief_id: brief.id, note } });
+      setEarlier(reply);
+      setEscalation({ ...created, response: null });
+      setNote("");
       setOpen(false);
     } catch (e) {
       setError(e instanceof ApiError ? e.message : "Could not send.");
@@ -175,26 +203,58 @@ function AskAnalyst({ brief }: { brief: Brief }) {
     }
   }
 
-  if (sent) return <p className="notice small">Sent to S&amp;I. The reply will appear under <Link href="/analyst">Ask an analyst</Link>.</p>;
-  if (!open) {
-    return (
-      <button type="button" className="btn" onClick={() => setOpen(true)}>
-        Ask an analyst
-      </button>
-    );
-  }
   return (
-    <form onSubmit={submit}>
-      <div className="field">
-        <label htmlFor="escalation-note">What should the analyst check?</label>
-        <textarea id="escalation-note" rows={3} value={note} onChange={(e) => setNote(e.target.value)} required />
+    <section className="side-panel analyst-panel" aria-labelledby="analyst-title">
+      <div className="analyst-head">
+        <h2 id="analyst-title">Ask an analyst</h2>
+        {escalation && (
+          <span className={waiting ? "status status-wait" : escalation.status === "answered" ? "status status-ok" : "status"}>
+            {waiting ? "Waiting for S&I" : escalation.status === "answered" ? "Answered" : "Closed"}
+          </span>
+        )}
       </div>
-      {error && <p className="error" role="alert">{error}</p>}
-      <div className="actions">
-        <button className="btn btn-primary" disabled={busy || note.trim().length < 3}>Send to S&amp;I</button>
-        <button type="button" className="btn btn-quiet" onClick={() => setOpen(false)}>Cancel</button>
-      </div>
-    </form>
+      <p>
+        {escalation
+          ? ESCALATION_REASONS[escalation.reason] ?? "Sent to S&I."
+          : "Not sure the evidence answers your question? An S&I analyst can check the brief and reply here."}
+      </p>
+      {earlier && (
+        <blockquote className="analyst-reply">
+          <span className="who">Earlier reply</span>
+          {earlier}
+        </blockquote>
+      )}
+      {reply && (
+        <blockquote className="analyst-reply">
+          <span className="who">Analyst&rsquo;s reply</span>
+          {reply}
+        </blockquote>
+      )}
+      {open ? (
+        <form onSubmit={submit}>
+          <div className="field">
+            <label htmlFor="escalation-note">{followUp ? "Your follow-up question" : "What should the analyst check?"}</label>
+            <textarea id="escalation-note" rows={3} value={note} onChange={(e) => setNote(e.target.value)} required autoFocus />
+          </div>
+          {error && <p className="error" role="alert">{error}</p>}
+          <div className="actions">
+            <button className="btn btn-primary" disabled={busy || note.trim().length < 3}>{busy ? "Sending…" : "Send to S&I"}</button>
+            <button type="button" className="btn btn-quiet" onClick={() => setOpen(false)}>Cancel</button>
+          </div>
+        </form>
+      ) : (
+        !waiting && (
+          <button type="button" className="btn" onClick={() => setOpen(true)}>
+            {followUp ? "Ask a follow-up" : "Ask an analyst"}
+          </button>
+        )
+      )}
+      {escalation && (
+        <p className="hint analyst-foot">
+          Every question and reply is kept under <Link href="/analyst">Ask an analyst</Link>.
+        </p>
+      )}
+    </section>
   );
 }
 
@@ -253,23 +313,7 @@ export function BriefView({ brief }: { brief: Brief }) {
               <div className="text" style={{ maxWidth: "none" }}>
                 <MetricChart chart={chart} />
               </div>
-              <aside aria-label="Chart sources">
-                <ul className="sources">
-                  <li className="label">Chart sources</li>
-                  {[...new Map(chart.bars.map((b) => [b.study_code, b])).values()].map((b) => (
-                    <li key={b.study_code} className="study-card">
-                      <div className="top">
-                        <CiteChip code={b.study_code} />
-                        <TierBadge tier={b.tier} sample={`n=${n(b.sample_size)}`} when={b.fieldwork_end?.slice(0, 4) ?? "n.d."} />
-                      </div>
-                      <div className="title">{b.study_title}</div>
-                      <div className="source-meta">
-                        {b.method_type === "quant" ? "Quantitative" : "Mixed method"} · {b.region_label} · fieldwork {monthYear(b.fieldwork_end)}
-                      </div>
-                    </li>
-                  ))}
-                </ul>
-              </aside>
+              <ChartSources chart={chart} sources={sources} />
             </div>
           ))}
         </Section>
@@ -303,11 +347,9 @@ export function BriefView({ brief }: { brief: Brief }) {
           {brief.unresolved_conflicts.map((note) => (
             <NoteRow key={note.topic + note.finding_ids.join()} note={note} brief={brief} conflict />
           ))}
-          {brief.escalation && (
+          {brief.escalation?.reason === "unresolved_conflict" && (
             <p className="notice small">
-              Sent to an S&amp;I analyst automatically. Status: {brief.escalation.status}.{" "}
-              {brief.escalation.response ? `Reply: ${brief.escalation.response}` : ""}{" "}
-              <Link href="/analyst">Ask an analyst</Link>
+              Sent to an S&amp;I analyst automatically. <a href="#confidence">See the status and any reply</a>.
             </p>
           )}
         </Section>
@@ -350,7 +392,7 @@ export function BriefView({ brief }: { brief: Brief }) {
             </ul>
             <p className="hint">Computed from study tiers and how the studies relate, not reported by the model.</p>
           </div>
-          <div className="no-print">{!brief.escalation && <AskAnalyst brief={brief} />}</div>
+          <AnalystPanel key={brief.id} brief={brief} />
         </div>
       </Section>
     </article>

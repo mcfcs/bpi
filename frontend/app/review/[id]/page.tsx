@@ -4,7 +4,9 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { CiteChip, TierBadge } from "@/components/Citation";
+import { CiteLink, OpenReportButton } from "@/components/ReportLink";
 import { SignedIn } from "@/components/SiteHeader";
+import { TierScore } from "@/components/TierScore";
 import { api, ApiError } from "@/lib/api";
 import type { FindingRow, StudyDetail, Tier } from "@/lib/types";
 import { monthYear, n, stateLabel } from "@/lib/format";
@@ -157,16 +159,7 @@ function TierPanel({ study, onSaved }: { study: StudyDetail; onSaved: (s: StudyD
         )}
         {study.tier_override && <span className="muted small"> (computed {study.robustness_tier}, overridden)</span>}
       </p>
-      {b && (
-        <table className="score">
-          <tbody>
-            <tr><td>Method</td><td className="num">{b.method_points >= 0 ? "+" : ""}{b.method_points}</td></tr>
-            <tr><td>Sample size</td><td className="num">+{b.sample_points}</td></tr>
-            <tr><td>Recency ({b.age_months} months since fieldwork)</td><td className="num">{b.recency_points >= 0 ? "+" : ""}{b.recency_points}</td></tr>
-            <tr><td><strong>Score → tier</strong></td><td className="num"><strong>{b.score} → {b.tier}</strong></td></tr>
-          </tbody>
-        </table>
-      )}
+      {b && <TierScore breakdown={b} />}
       <p className="hint" style={{ marginBottom: 14 }}>
         Points and cut-offs are proposed defaults, not yet validated by S&amp;I. Recency is re-checked nightly.
       </p>
@@ -198,7 +191,7 @@ function TierPanel({ study, onSaved }: { study: StudyDetail; onSaved: (s: StudyD
   );
 }
 
-function FindingEditor({ finding }: { finding: FindingRow }) {
+function FindingEditor({ finding, studyId, hasDocument }: { finding: FindingRow; studyId: string; hasDocument: boolean }) {
   const [f, setF] = useState(finding);
   const [status, setStatus] = useState<Status>(null);
   const sub = f.subgroup ?? {};
@@ -232,7 +225,15 @@ function FindingEditor({ finding }: { finding: FindingRow }) {
   return (
     <li>
       <div className="field">
-        <label htmlFor={`text-${f.id}`}>Finding {f.ordinal + 1}</label>
+        <div className="finding-head">
+          <label htmlFor={`text-${f.id}`}>Finding {f.ordinal + 1}</label>
+          {hasDocument ? (
+            <CiteLink studyId={studyId} code={null} page={f.page ?? null} />
+          ) : (
+            f.page != null && <span className="muted small">p.{f.page}</span>
+          )}
+          {hasDocument && f.page == null && <span className="muted small">Page not found in the PDF</span>}
+        </div>
         <textarea id={`text-${f.id}`} rows={2} value={f.text} onChange={(e) => update({ text: e.target.value })} />
       </div>
       <div className="field-row">
@@ -350,6 +351,14 @@ function Review({ id }: { id: string }) {
           {study.owner_team} · {study.access_level} · fieldwork ended {monthYear(study.fieldwork_end)} · source{" "}
           {study.source_name ?? "not recorded"}
         </p>
+        {study.document && (
+          <div className="actions study-actions">
+            <OpenReportButton studyId={study.id} label="Open report" />
+            <span className="muted small nums">
+              {study.document.filename}{study.document.page_count ? `, ${study.document.page_count} pages` : ""}
+            </span>
+          </div>
+        )}
       </section>
 
       <div className="two-col">
@@ -382,7 +391,7 @@ function Review({ id }: { id: string }) {
         </div>
         <ul className="findings">
           {study.findings.map((f) => (
-            <FindingEditor key={f.id} finding={f} />
+            <FindingEditor key={f.id} finding={f} studyId={study.id} hasDocument={Boolean(study.document)} />
           ))}
         </ul>
       </section>

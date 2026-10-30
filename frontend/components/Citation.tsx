@@ -1,31 +1,41 @@
+import Link from "next/link";
 import type { SourceView, Tier } from "@/lib/types";
-import { monthYear, sampleLabel, year } from "@/lib/format";
+import { monthYear, provenanceLabel, sampleLabel, year } from "@/lib/format";
+import { CiteLink } from "./ReportLink";
 
-/** Tier letter on its colour, then sample and year: "A | n=1,200 · 2026". */
-export function TierBadge({ tier, sample, when }: { tier: Tier | null; sample: string; when: string }) {
-  const label = `Tier ${tier ?? "not set"}, ${sample}, ${when}`;
+/** Tier letter on its colour, then sample and year: "A | n=1,200 · 2026". Either may be left out. */
+export function TierBadge({ tier, sample, when }: { tier: Tier | null; sample?: string; when?: string }) {
+  const rest = [sample, when].filter(Boolean).join(" · ");
+  const label = [`Tier ${tier ?? "not set"}`, sample, when].filter(Boolean).join(", ");
   return (
     <span className={`tier tier-${tier ?? "C"}`} title={`Robustness tier ${tier ?? "not set"}`}>
       {/* A plain span cannot carry an accessible name, so the reading goes in hidden text. */}
       <span className="visually-hidden">{label}</span>
       <b aria-hidden>{tier ?? "–"}</b>
-      <span aria-hidden>
-        {sample} · {when}
-      </span>
+      {rest && <span aria-hidden>{rest}</span>}
     </span>
   );
 }
 
-/**
- * The study code a reader quotes back to S&I, with the report page when the backend sends one.
- * `page` is not in the API yet; the chip shows it only once it arrives, and never guesses.
- */
+/** The study code a reader quotes back to S&I, with the report page when there is one. */
 export function CiteChip({ code, page, title }: { code: string | null; page?: number | null; title?: string }) {
   return (
     <span className="cite" title={title}>
       {code ?? "no code"}
       {page != null && <span className="page">· p.{page}</span>}
     </span>
+  );
+}
+
+/**
+ * The chip for one cited finding: a link into the report at the finding's page when the study has a
+ * document (page 1 if the page is unknown), the plain code otherwise.
+ */
+export function SourceChip({ source }: { source: Pick<SourceView, "study_id" | "study_code" | "study_title" | "page" | "document_url"> }) {
+  return source.document_url ? (
+    <CiteLink studyId={source.study_id} code={source.study_code} page={source.page} title={source.study_title} />
+  ) : (
+    <CiteChip code={source.study_code} page={source.page} title={source.study_title} />
   );
 }
 
@@ -36,8 +46,8 @@ export interface CitationItem {
 
 /** A study card: code and tier, the study's title, then method, region and fieldwork date. */
 export function Citation({ source, stance }: CitationItem) {
-  const page = (source as SourceView & { page?: number | null }).page;
   const details = [
+    source.provenance === "public" ? provenanceLabel(source) : "",
     source.method_label,
     source.region_label,
     `fieldwork ${monthYear(source.fieldwork_end)}`,
@@ -48,10 +58,10 @@ export function Citation({ source, stance }: CitationItem) {
   return (
     <div className="study-card">
       <div className="top">
-        <CiteChip code={source.study_code} page={page} />
+        <SourceChip source={source} />
         <TierBadge tier={source.tier} sample={sampleLabel(source)} when={year(source.fieldwork_end)} />
       </div>
-      <div className="title">{source.study_title}</div>
+      <Link className="title" href={`/studies/${source.study_id}`}>{source.study_title}</Link>
       <div className="source-meta">{details.join(" · ")}</div>
     </div>
   );

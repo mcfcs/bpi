@@ -1,4 +1,4 @@
-import type { DiffersBy, SourceView } from "./types";
+import type { DiffersBy, MethodType, Provenance, SourceView } from "./types";
 
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
@@ -32,6 +32,40 @@ export function year(iso: string | null | undefined): string {
 export function sampleLabel(source: Pick<SourceView, "method_type" | "sample_size">): string {
   if (source.sample_size == null) return "n not stated";
   return source.method_type === "qual" ? `${n(source.sample_size)} participants` : `n=${n(source.sample_size)}`;
+}
+
+export const METHOD_LABELS: Record<MethodType, string> = {
+  quant: "Survey",
+  qual: "Qualitative",
+  mixed: "Mixed method",
+};
+
+/** "Survey · n=1,200", "Qualitative · 42 participants": what a study is, in the catalogue's words. */
+export function methodSample(study: { method_type: MethodType | null; sample_size?: number | null }): string {
+  const method = study.method_type ? METHOD_LABELS[study.method_type] : "Method not stated";
+  return study.sample_size == null ? method : `${method} · ${sampleLabel({ method_type: study.method_type, sample_size: study.sample_size })}`;
+}
+
+export const PROVENANCE_LABELS: Record<Provenance, string> = {
+  synthetic: "Synthetic S&I study",
+  public: "Public source",
+  internal: "Internal report",
+};
+
+/** "Public source · World Bank Group" for published research; the plain label otherwise. */
+export function provenanceLabel(study: { provenance?: Provenance | null; publisher?: string | null }): string {
+  if (!study.provenance) return "";
+  const label = PROVENANCE_LABELS[study.provenance] ?? study.provenance;
+  return study.provenance === "public" && study.publisher ? `${label} · ${study.publisher}` : label;
+}
+
+/** "SME owners aged 30–60": who a study asked, without the regions (listed on their own). */
+export function populationLabel(pop: { age_min: number | null; age_max: number | null; segment: string | null } | null | undefined): string {
+  if (!pop) return "not stated";
+  const ages = pop.age_min != null && pop.age_max != null ? `aged ${pop.age_min}–${pop.age_max}`
+    : pop.age_min != null ? `aged ${pop.age_min} and over`
+    : pop.age_max != null ? `aged up to ${pop.age_max}` : "";
+  return [pop.segment ?? "", ages].filter(Boolean).join(" ") || "not stated";
 }
 
 /** "pending_review" -> "Pending review": a stored state as it reads in a sentence. */

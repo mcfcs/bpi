@@ -106,12 +106,8 @@ function Ask() {
   }, [profile?.id]);
 
   async function ask(text: string) {
-    // The same question asked before: open that brief instead of writing a duplicate.
-    const earlier = recent.find((b) => b.question.trim().toLowerCase() === text.trim().toLowerCase());
-    if (earlier && EXAMPLES.includes(text)) {
-      router.push(`/briefs/${earlier.id}`);
-      return;
-    }
+    // Always a fresh brief, examples included: reopening an earlier one would hide studies the team
+    // has been granted since, and show stale access-request states.
     setBusy(true);
     setError(null);
     try {

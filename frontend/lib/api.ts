@@ -73,3 +73,37 @@ export async function download(path: string, filename: string): Promise<void> {
   link.remove();
   URL.revokeObjectURL(url);
 }
+
+/**
+ * Open a study's report PDF in a new tab at `page` (page 1 when the finding has no page).
+ *
+ * The PDF endpoint needs the Bearer token, which a plain link cannot send, so the backend issues a
+ * two-minute signed link instead. The tab is opened during the click, before the link is fetched,
+ * so pop-up blockers treat it as the user's own action; it is pointed at the PDF once the link
+ * arrives, and closed again if the study turns out to be unreadable.
+ */
+export async function openReport(studyId: string, page?: number | null): Promise<void> {
+  const tab = window.open("", "_blank");
+  if (tab) {
+    tab.document.title = "Opening the report…";
+    tab.document.body.style.font = "16px system-ui, sans-serif";
+    tab.document.body.textContent = "Opening the report…";
+  }
+  try {
+    const { url } = await api<{ url: string }>(
+      `/api/studies/${encodeURIComponent(studyId)}/document/link?page=${page && page > 0 ? page : 1}`,
+      { method: "POST" },
+    );
+    // Absolute, because the blank tab has no base URL of its own to resolve a path against.
+    const href = new URL(`${BASE}${url}`, window.location.href).href;
+    if (tab) {
+      tab.opener = null;
+      tab.location.href = href;
+    } else if (!window.open(href, "_blank", "noopener")) {
+      throw new ApiError(0, "Your browser blocked the new tab. Allow pop-ups for this site to open reports.");
+    }
+  } catch (e) {
+    tab?.close();
+    throw e;
+  }
+}
