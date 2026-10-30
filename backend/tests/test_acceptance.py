@@ -31,10 +31,14 @@ def test_1_sme_drop_off_brief_for_a_fully_entitled_user(client):
 
     fees = [n for n in brief["context_notes"] if n["topic"] == "barrier:fees"]
     assert len(fees) == 1
-    assert "age" in fees[0]["differs_by"]
-    assert {"region", "method"} <= set(fees[0]["differs_by"])
+    assert {"age", "region"} <= set(fees[0]["differs_by"])
+    # Surveys and focus groups are never compared: the Cebu FGD's view on fees is colour, not a
+    # side of the divergence, so "method" never separates the groups in a context note.
+    assert "method" not in fees[0]["differs_by"]
+    assert all(brief["sources"][i]["evidence_kind"] == "quant" for i in fees[0]["finding_ids"])
+    assert [c for c in brief["qual_contrasts"] if brief["sources"][c["finding_id"]]["study_code"] == "SI-2025-031"]
 
-    assert not re.search(r"conflict", brief_text(brief), re.IGNORECASE)
+    assert not re.search(r"conflict|disagree|contradict", brief_text(brief), re.IGNORECASE)
     assert brief["unresolved_conflicts"] == []
     assert brief["charts"] and all(len(chart["bars"]) >= 2 for chart in brief["charts"])
 

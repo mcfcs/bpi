@@ -73,8 +73,9 @@ def test_analyze_merges_context_pairs_per_topic_and_keeps_conflicts_separate():
     groups = analyze([STUDY_A, STUDY_B, STUDY_C, CARDS_F, CARDS_G])
     by_kind = {(g.kind, g.topic): g for g in groups}
     fees = by_kind[("context_difference", "barrier:fees")]
-    assert set(fees.finding_ids) == {"a", "b", "c"}
-    assert fees.differs_by == ["age", "region", "method"]  # union of both pairs, in canonical order
+    # The qualitative finding (c) is never paired with a survey figure, so only a and b remain.
+    assert set(fees.finding_ids) == {"a", "b"}
+    assert fees.differs_by == ["age", "region"]
     conflict = by_kind[("unresolved_conflict", "reward_pref:cashback")]
     assert conflict.finding_ids == ["f", "g"] and conflict.differs_by == []
 

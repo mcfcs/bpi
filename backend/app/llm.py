@@ -13,8 +13,20 @@ from pydantic import BaseModel, ValidationError
 
 from . import offline_extract
 from .config import Settings, metric_label
-from .describe import explain_group, fmt_value, subgroup_label, join_words
-from .divergence import DivergenceGroup
+from . import topicality
+from .describe import (
+    contrast_sentence,
+    explain_group,
+    fieldwork_label,
+    fmt_value,
+    join_words,
+    method_short,
+    qual_place,
+    subgroup_label,
+    synthesize_themes,
+    who_short,
+)
+from .divergence import DivergenceGroup, parse_age_band
 from .llm_types import LLM, BriefRequest, LLMError
 from .prompts import (
     BRIEF_SYSTEM,
@@ -97,11 +109,6 @@ def _sentence(text: str) -> str:
     return text if text.endswith((".", "!", "?")) else text + "."
 
 
-def _lower_first(text: str) -> str:
-    first = text.split()[0] if text.split() else ""
-    return text if first.isupper() or first[:2].isupper() else text[:1].lower() + text[1:]
-
-
 def _short_population(s: Source) -> str:
     from .geography import describe
 
@@ -115,14 +122,21 @@ def _short_population(s: Source) -> str:
 
 
 def _population_phrase(s: Source) -> str:
-    """Who a figure describes, e.g. "NCR, ages 20–40"; code, year and n are in the citation badge."""
+    """Who a figure describes, e.g. "NCR, ages 20–40" (the subgroup where the figure is for one);
+    code, year and n are in the citation badge."""
     from .geography import describe
 
-    pop = s.population or {}
-    parts = [describe(pop.get("regions"))]
-    if pop.get("age_min") is not None and pop.get("age_max") is not None:
-        parts.append(f"ages {pop['age_min']}–{pop['age_max']}")
+    age_min, age_max, regions, _ = s.population_view()
+    parts = [describe(regions)]
+    if age_min is not None and age_max is not None:
+        parts.append(f"ages {age_min}–{age_max}" if age_max < 99 else f"ages {age_min}+")
     return ", ".join(parts)
+
+
+def _subgroup_order(subgroup: dict | None) -> tuple:
+    sub = subgroup or {}
+    lo, _ = parse_age_band(sub.get("age_band"))
+    return (lo if lo is not None else 999, sub.get("region") or "", sub.get("segment") or "")
 
 
 def _base(s: Source) -> str:
@@ -152,25 +166,39 @@ class OfflineLLM:
         ]
         ab_quant = [(ref, s) for ref, s in quant if s.effective_tier in ("A", "B")]
 
-        # Headline: the most relevant Tier A/B study, and its largest reported figure.
+        # Headline: the Tier A/B figure that best matches the question's own concept ("Are fees a
+        # barrier?" leads with fees), then the most relevant study and its largest figure. It always
+        # carries who it describes. When its metric is in an unresolved conflict, the headline says
+        # what each study found instead of presenting one figure as the answer.
+        by_ref = dict(request.findings)
+        focus = topicality.specific_terms(request.question)
+        conflicts = {g.topic: g for g in request.groups if g.kind == "unresolved_conflict"}
         if ab_quant:
-            lead_study = ab_quant[0][1].study_id
-            pool = [(r, s) for r, s in ab_quant if s.study_id == lead_study and not s.subgroup] or \
-                   [(r, s) for r, s in ab_quant if s.study_id == lead_study]
+            totals = [(r, s) for r, s in ab_quant if not s.subgroup] or ab_quant
+            matching = [(r, s) for r, s in totals if focus & topicality.finding_terms(s)]
+            candidates = sorted(matching or totals, key=lambda rs: rs[1].effective_tier or "C")   # stable: keeps rank order
+            lead_study = candidates[0][1].study_id
+            pool = [(r, s) for r, s in candidates if s.study_id == lead_study]
             ref, lead = max(pool, key=lambda rs: (rs[1].unit == "%", float(rs[1].value)))
-            agreeing = [
-                (r, s) for r, s in ab_quant
-                if s.study_id != lead.study_id and s.metric_key == lead.metric_key and not s.subgroup
-                and s.resolved_direction() == lead.resolved_direction()
-            ]
-            text = _sentence(lead.text)
-            for _, s in agreeing:
-                text += f" {s.study_code} ({_short_population(s)}) reports {fmt_value(s.value, s.unit)} on the same measure."
-            claims.append(Claim(
-                text=text, kind="headline",
-                evidence=[Evidence(finding_id=r, stance="supports") for r in [ref] + [r for r, _ in agreeing]],
-            ))
-            used.update([ref] + [r for r, _ in agreeing])
+            if lead.metric_key in conflicts:
+                members = [(r, by_ref[r]) for r in conflicts[lead.metric_key].refs]
+                text = (f"{metric_label(lead.metric_key)}: " + "; ".join(
+                    f"{m.study_code} found {fmt_value(m.value, m.unit)} among {who_short(m)} ({method_short(m)}, {fieldwork_label(m)})"
+                    for _, m in members) + ". An S&I analyst is checking why the results differ before either is used.")
+                refs = [r for r, _ in members]
+            else:
+                agreeing = [
+                    (r, s) for r, s in ab_quant
+                    if s.study_id != lead.study_id and s.metric_key == lead.metric_key and not s.subgroup
+                    and s.resolved_direction() == lead.resolved_direction()
+                ]
+                text = _with_details(lead.text, _population_phrase(lead))
+                for _, s in agreeing:
+                    text += f" {s.study_code} ({_short_population(s)}) reports {fmt_value(s.value, s.unit)} on the same measure."
+                refs = [ref] + [r for r, _ in agreeing]
+            claims.append(Claim(text=text, kind="headline",
+                                evidence=[Evidence(finding_id=r, stance="supports") for r in refs]))
+            used.update(refs)
 
         # Breakdowns: subgroup splits first, then figures involved in divergences, then the rest.
         breakdowns = 0
@@ -178,9 +206,12 @@ class OfflineLLM:
         for ref, s in quant:
             if ref not in used and s.subgroup:
                 by_split.setdefault((s.study_id, s.metric_key), []).append((ref, s))
-        for rows in by_split.values():
+        splits = sorted(by_split.values(),
+                        key=lambda rows: not (request.reader and request.reader.owns(rows[0][1])))
+        for rows in splits:
             if len(rows) < 2 or breakdowns >= self.MAX_BREAKDOWNS:
                 continue
+            rows = sorted(rows, key=lambda rs: _subgroup_order(rs[1].subgroup))   # ages ascending, then place
             first = rows[0][1]
             parts = "; ".join(f"{subgroup_label(s.subgroup)}: {fmt_value(s.value, s.unit)} ({_base(s)})" for _, s in rows)
             claims.append(Claim(
@@ -193,10 +224,11 @@ class OfflineLLM:
         # context notes), then the largest remaining figures, skipping the headline's own metric.
         in_groups = {ref for g in request.groups for ref in g.refs}
         headline_metrics = {s.metric_key for r, s in quant if r in used}
+        reader = request.reader
         ordered = sorted(
             (x for x in quant if x[0] not in used and not x[1].subgroup
              and (x[0] in in_groups or x[1].metric_key not in headline_metrics)),
-            key=lambda rs: (rs[0] not in in_groups, -float(rs[1].value)),
+            key=lambda rs: (rs[0] not in in_groups, not (reader and reader.owns(rs[1])), -float(rs[1].value)),
         )
         for ref, s in ordered:
             if breakdowns >= self.MAX_BREAKDOWNS:
@@ -208,59 +240,95 @@ class OfflineLLM:
             used.add(ref)
             breakdowns += 1
 
-        # What people say: qualitative themes, hedged, with their verbatims.
-        for ref, s in request.findings:
-            if s.finding_type != "qual_theme" or ref in used:
-                continue
-            text = _sentence(s.text)
-            if s.is_qual:
-                if QUAL_FORBIDDEN.search(text):
-                    continue  # cannot be phrased without incidence language; left for the analyst
-                if not has_hedge(text):
-                    text = "Indicatively, " + _lower_first(text)
-            verbatims = [
+        # What people say: qualitative support, newest fieldwork first (S&I weigh qualitative evidence
+        # by recency). A synthesis of themes across groups comes first; themes that run against a
+        # survey result come last, as colour with their population, never as a divergence.
+        by_id = {s.finding_id: s for s in by_ref.values()}
+        contrasts = {c.qual_ref: c for c in request.qual_contrasts}
+        themes = sorted(
+            [(ref, s) for ref, s in request.findings if s.finding_type == "qual_theme" and ref not in used],
+            key=lambda rs: (rs[0] in contrasts, -(rs[1].fieldwork_end.toordinal() if rs[1].fieldwork_end else 0)),
+        )
+        themes = [(ref, s) for ref, s in themes if not (s.is_qual and QUAL_FORBIDDEN.search(s.text))]
+
+        def verbatims_for(s: Source) -> list[str]:
+            return [
                 vref for vref, v in request.findings
                 if v.finding_type == "verbatim" and v.study_id == s.study_id
                 and ((s.metric_key and v.metric_key == s.metric_key) or (not s.metric_key and v.theme == s.theme))
             ][:2]
+
+        supporting = [(r, s) for r, s in themes if r not in contrasts and s.is_qual]
+        synthesis = synthesize_themes([s for _, s in supporting],
+                                      [by_ref[v] for _, s in supporting for v in verbatims_for(s)])
+        if synthesis:
+            claims.append(Claim(text=synthesis, kind="qualitative_insight",
+                                evidence=[Evidence(finding_id=r, stance="supports") for r, _ in supporting]))
+        for ref, s in themes:
+            text = _sentence(s.text)
+            if s.is_qual and not has_hedge(text):
+                text += f" Indicatively, this view comes from participants {qual_place(s)}."
+            stance = "supports"
+            if ref in contrasts:
+                text += " " + contrast_sentence(s, [by_ref[r] for r in contrasts[ref].quant_refs])
+                stance = "context"
             claims.append(Claim(text=text, kind="qualitative_insight",
-                                evidence=[Evidence(finding_id=ref, stance="supports")], verbatim_ids=verbatims))
+                                evidence=[Evidence(finding_id=ref, stance=stance)], verbatim_ids=verbatims_for(s)))
             used.add(ref)
 
         # Divergences: classification and differs_by come from code; only the wording is written here.
-        by_ref = dict(request.findings)
-        by_id = {s.finding_id: s for s in by_ref.values()}
-        context_notes, unresolved = [], []
+        notes: dict[str, list[ContextNote]] = {"context_difference": [], "unresolved_conflict": [], "within_study": []}
         for g in request.groups:
             group = DivergenceGroup(g.kind, g.topic, [by_ref[r].finding_id for r in g.refs], list(g.differs_by))
-            note = ContextNote(topic=g.topic, finding_ids=list(g.refs), differs_by=list(g.differs_by),
-                               explanation=explain_group(group, by_id))
-            (context_notes if g.kind == "context_difference" else unresolved).append(note)
+            notes[g.kind].append(ContextNote(topic=g.topic, finding_ids=list(g.refs), differs_by=list(g.differs_by),
+                                             explanation=explain_group(group, by_id)))
 
         cited_metrics = [
             by_ref[e.finding_id].metric_key for c in claims if c.kind != "qualitative_insight"
             for e in c.evidence if e.finding_id in by_ref
         ]
         charts = [k for k in dict.fromkeys(cited_metrics) if k in request.chartable][:3]
-        return EvidenceBrief(claims=claims, context_notes=context_notes, unresolved_conflicts=unresolved,
+        # Audience summaries are left to the validator's finalize step, which builds them from the
+        # claims that survive validation (describe.build_summaries).
+        return EvidenceBrief(claims=claims, context_notes=notes["context_difference"],
+                             unresolved_conflicts=notes["unresolved_conflict"], study_patterns=notes["within_study"],
                              chart_requests=charts, gaps=list(request.computed_gaps))
 
     def extract_study_card(self, report_text: str, known_metric_keys: list[str]) -> StudyCardExtraction:
         return offline_extract.extract(report_text)
 
     def write_scope(self, title: str, objectives: list[dict]) -> str:
-        gaps = [o["text"] for o in objectives if o["coverage"] == "gap"]
+        def q(o: dict) -> str:
+            return f"\u201c{o['text'].strip()}\u201d"
+
+        def caveated(o: dict) -> bool:
+            return any(c["code"] == "conflict" for c in o.get("caveats") or [])
+
+        gaps = [o for o in objectives if o["coverage"] == "gap"]
+        stale = [o for o in objectives if o["coverage"] == "covered_stale"]
         partial = [o for o in objectives if o["coverage"] == "partial"]
-        covered = [o["text"] for o in objectives if o["coverage"] == "covered"]
+        checking = [o for o in objectives if o["coverage"] == "covered" and caveated(o)]
+        covered = [o for o in objectives if o["coverage"] == "covered" and not caveated(o)]
+        restricted = [o for o in objectives if any(c["code"] == "restricted_match" for c in o.get("caveats") or [])]
         sentences = []
         if gaps:
-            sentences.append(f"New research is needed for: {'; '.join(gaps)}.")
+            sentences.append(f"New problems, not yet researched: {join_words(q(o) for o in gaps)}. These need new research.")
+        if stale:
+            sentences.append("Refresh older evidence for " + join_words(
+                f"{q(o)} ({o['evidence_summary']})" for o in stale) + ".")
         if partial:
-            sentences.append("Extend the existing evidence for: " + "; ".join(
-                f"{o['text']} ({o['evidence_summary']})" for o in partial) + ".")
+            sentences.append("Extend the existing evidence for " + join_words(
+                f"{q(o)} ({o['evidence_summary']})" for o in partial) + ".")
+        if checking:
+            sentences.append(f"Approved studies cover {join_words(q(o) for o in checking)}, but they report different "
+                             f"results for the same group; ask an S&I analyst which to rely on before reusing them.")
         if covered:
-            sentences.append(f"Approved studies already cover {join_words(covered)}; reuse them rather than asking again.")
-        if not gaps and not partial:
+            sentences.append(f"Approved studies already cover {join_words(q(o) for o in covered)}; reuse them rather "
+                             f"than asking again.")
+        if restricted:
+            sentences.append(f"A restricted study may also cover {join_words(q(o) for o in restricted)}; request access "
+                             f"before commissioning.")
+        if not gaps and not partial and not stale and not checking:
             sentences.append("No new fieldwork appears necessary; confirm with S&I before commissioning.")
         return " ".join(sentences)
 

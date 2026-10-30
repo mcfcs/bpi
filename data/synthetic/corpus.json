@@ -3,7 +3,8 @@
   "teams": [
     {"name": "Strategy & Insights", "kind": "si"},
     {"name": "SME Banking", "kind": "bu"},
-    {"name": "Cards & Payments", "kind": "bu"}
+    {"name": "Cards & Payments", "kind": "bu"},
+    {"name": "Digital Channels", "kind": "bu"}
   ],
   "personas": [
     {"email": "ana.reyes@example.com", "display_name": "Ana Reyes", "team": "Strategy & Insights", "role": "si_analyst"},
@@ -135,6 +136,117 @@
         {"text": "Participants described keeping cash as their default because their own suppliers still ask to be paid in cash.", "finding_type": "qual_theme", "metric_key": "qr:cash_habit", "direction": "high"},
         {"text": "With QR I have to check my phone before I hand over the fish, and when it's busy that slows me down.", "finding_type": "verbatim", "metric_key": "qr:payment_confirmation", "subgroup": {"segment": "Fish vendor, 46", "region": "Davao City"}},
         {"text": "My suppliers want cash, so the QR money just sits in the app until I withdraw it.", "finding_type": "verbatim", "metric_key": "qr:cash_habit", "subgroup": {"segment": "Vegetable vendor, 38", "region": "Cagayan de Oro"}}
+      ]
+    },
+    {
+      "code": "SI-2026-041",
+      "title": "Card Application Panel 2026",
+      "summary": "Online panel survey of 1,200 credit card applicants aged 20-40 in Metro Manila who started a credit card application in the card app but did not finish it in the past six months.",
+      "owner_team": "Cards & Payments",
+      "access_level": "open",
+      "method_type": "quant",
+      "sample_size": 1200,
+      "fieldwork_end": "2026-07-31",
+      "population": {"age_min": 20, "age_max": 40, "regions": ["NCR"], "segment": "Credit card applicants"},
+      "theme": "card_application",
+      "findings": [
+        {"text": "Verifying their ID with a selfie was the top reason applicants aged 20-40 did not finish a card application (48%).", "finding_type": "quant_stat", "metric_key": "card_dropoff:id_verification", "value": 48, "unit": "%", "base_n": 1200, "direction": "high"},
+        {"text": "For 37% of applicants aged 20-40, the annual fee was a reason they did not finish a card application.", "finding_type": "quant_stat", "metric_key": "card_dropoff:fees", "value": 37, "unit": "%", "base_n": 1200, "direction": "high"},
+        {"text": "Among applicants aged 20-27, 55% cited ID verification.", "finding_type": "quant_stat", "metric_key": "card_dropoff:id_verification", "value": 55, "unit": "%", "base_n": 610, "direction": "high", "subgroup": {"age_band": "20-27"}},
+        {"text": "Among applicants aged 28-40, 41% cited ID verification.", "finding_type": "quant_stat", "metric_key": "card_dropoff:id_verification", "value": 41, "unit": "%", "base_n": 590, "direction": "high", "subgroup": {"age_band": "28-40"}},
+        {"text": "Selfie-step errors were cited by 14% of applicants.", "finding_type": "quant_stat", "metric_key": "card_dropoff:app_errors", "value": 14, "unit": "%", "base_n": 1200, "direction": "neutral"}
+      ]
+    },
+    {
+      "code": "SI-2025-018",
+      "title": "Credit Card Applicant Study 2025: Ages 41-60",
+      "summary": "Nationwide face-to-face and online survey of 900 credit card applicants aged 41-60 on why they did not finish a card application.",
+      "owner_team": "Cards & Payments",
+      "access_level": "open",
+      "method_type": "quant",
+      "sample_size": 900,
+      "fieldwork_end": "2025-02-28",
+      "population": {"age_min": 41, "age_max": 60, "regions": ["Nationwide"], "segment": "Credit card applicants"},
+      "theme": "card_application",
+      "findings": [
+        {"text": "ID verification was a leading reason applicants aged 41-60 did not finish a card application (39%).", "finding_type": "quant_stat", "metric_key": "card_dropoff:id_verification", "value": 39, "unit": "%", "base_n": 900, "direction": "high"},
+        {"text": "Applicants aged 41-60 rarely named the annual fee: 11% said it was a reason they did not finish a card application, sixth of seven reasons.", "finding_type": "quant_stat", "metric_key": "card_dropoff:fees", "value": 11, "unit": "%", "base_n": 900, "direction": "low"}
+      ]
+    },
+    {
+      "code": "SI-2026-044",
+      "title": "Visayas Card Applicant Focus Groups 2026",
+      "summary": "Six focus groups with young credit card applicants in Cebu City and Iloilo City who started a card application in the app, on where and why they did not finish.",
+      "owner_team": "Cards & Payments",
+      "access_level": "open",
+      "method_type": "qual",
+      "sample_size": 48,
+      "fieldwork_end": "2026-08-31",
+      "population": {"age_min": 20, "age_max": 29, "regions": ["Cebu City", "Iloilo City"], "segment": "Young card applicants"},
+      "theme": "card_application",
+      "findings": [
+        {"text": "In the Cebu and Iloilo groups, participants described the ID and selfie check failing again and again as the point where they walked away from their card application.", "finding_type": "qual_theme", "metric_key": "card_dropoff:id_verification", "direction": "high"},
+        {"text": "Participants described one-time PIN texts arriving late or not at all, so the page expired before they could finish.", "finding_type": "qual_theme", "metric_key": "card_dropoff:otp_delay", "direction": "high"},
+        {"text": "Participants described the annual fee as acceptable if approval came quickly; the fee was rarely why they left a card application unfinished.", "finding_type": "qual_theme", "metric_key": "card_dropoff:fees", "direction": "low"},
+        {"text": "Tatlong beses na akong nag-selfie, ayaw pa rin tanggapin. Nakakainis talaga. (I took a selfie three times and it still would not accept it. Really annoying.)", "finding_type": "verbatim", "metric_key": "card_dropoff:id_verification", "subgroup": {"segment": "Student, 21", "region": "Cebu City"}},
+        {"text": "I wasn't sure which ID they wanted, my school ID or my postal ID. I got confused and stopped.", "finding_type": "verbatim", "metric_key": "card_dropoff:id_verification", "subgroup": {"segment": "Call centre agent, 24", "region": "Iloilo City"}},
+        {"text": "I didn't want to send a photo of my ID to an app I wasn't sure was really the bank's.", "finding_type": "verbatim", "metric_key": "card_dropoff:id_verification", "subgroup": {"segment": "Freelance designer, 26", "region": "Cebu City"}},
+        {"text": "The PIN came after the page expired, three times in a row. It felt like they weren't taking me seriously.", "finding_type": "verbatim", "metric_key": "card_dropoff:otp_delay", "subgroup": {"segment": "Sales associate, 25", "region": "Iloilo City"}},
+        {"text": "When I switched to my passport the selfie check finally worked. What a relief.", "finding_type": "verbatim", "metric_key": "card_dropoff:id_verification", "subgroup": {"segment": "Nurse, 27", "region": "Cebu City"}},
+        {"text": "The annual fee doesn't bother me as long as they approve the card quickly.", "finding_type": "verbatim", "metric_key": "card_dropoff:fees", "subgroup": {"segment": "Barista, 22", "region": "Iloilo City"}}
+      ]
+    },
+    {
+      "code": "SI-2025-036",
+      "title": "Davao Young Earners Card Interviews 2025",
+      "summary": "Twenty in-depth interviews with young earners in Davao City about applying for their first credit card in a card app.",
+      "owner_team": "Cards & Payments",
+      "access_level": "open",
+      "method_type": "qual",
+      "sample_size": 20,
+      "fieldwork_end": "2025-05-31",
+      "population": {"age_min": 21, "age_max": 29, "regions": ["Davao City"], "segment": "Young card applicants"},
+      "theme": "card_application",
+      "findings": [
+        {"text": "Participants described being asked for a second valid ID they did not have as the reason they did not finish a card application.", "finding_type": "qual_theme", "metric_key": "card_dropoff:id_verification", "direction": "high"},
+        {"text": "Wala akong passport o driver's license, so hindi ko alam kung paano ituloy. (I don't have a passport or driver's license, so I didn't know how to continue.)", "finding_type": "verbatim", "metric_key": "card_dropoff:id_verification", "subgroup": {"segment": "Fast-food crew member, 22", "region": "Davao City"}}
+      ]
+    },
+    {
+      "code": "SI-2026-025",
+      "title": "Mobile App Experience Tracker 2025-2026",
+      "summary": "Two-wave tracking survey of 2,000 mobile banking app users nationwide per wave (wave 1 November 2025, wave 2 June 2026) on satisfaction with the app.",
+      "owner_team": "Digital Channels",
+      "access_level": "open",
+      "method_type": "quant",
+      "sample_size": 2000,
+      "fieldwork_end": "2026-06-30",
+      "population": {"age_min": 18, "age_max": 65, "regions": ["Nationwide"], "segment": "Mobile banking app users"},
+      "theme": "mobile_app_experience",
+      "findings": [
+        {"text": "Among users aged 18-34, satisfaction with the mobile app rose from 61% in wave 1 to 72% in wave 2.", "finding_type": "quant_stat", "metric_key": "app_trend:satisfaction", "value": 72, "unit": "%", "base_n": 1100, "direction": "high", "subgroup": {"age_band": "18-34"}},
+        {"text": "Among users aged 50-65, satisfaction with the mobile app fell from 66% in wave 1 to 54% in wave 2; slower log-in after the redesign was their most-cited complaint.", "finding_type": "quant_stat", "metric_key": "app_trend:satisfaction", "value": 54, "unit": "%", "base_n": 420, "direction": "low", "subgroup": {"age_band": "50-65"}},
+        {"text": "Across all users, satisfaction with the mobile app was 64% in wave 2, unchanged from wave 1.", "finding_type": "quant_stat", "metric_key": "app_trend:satisfaction", "value": 64, "unit": "%", "base_n": 2000, "direction": "neutral"}
+      ]
+    },
+    {
+      "code": "SI-2026-039",
+      "title": "ATM Access Survey 2026",
+      "summary": "Nationwide survey of 1,600 retail banking customers on ATM access, with results for Metro Manila, Luzon outside NCR, Visayas and Mindanao, and for urban and rural barangays.",
+      "owner_team": "Strategy & Insights",
+      "access_level": "open",
+      "method_type": "quant",
+      "sample_size": 1600,
+      "fieldwork_end": "2026-05-31",
+      "population": {"age_min": 21, "age_max": 65, "regions": ["Nationwide"], "segment": "Retail banking customers"},
+      "theme": "atm_access",
+      "findings": [
+        {"text": "In Metro Manila, 57% said long lines at ATMs were a problem.", "finding_type": "quant_stat", "metric_key": "atm:long_queues", "value": 57, "unit": "%", "base_n": 520, "direction": "high", "subgroup": {"region": "NCR"}},
+        {"text": "In Luzon outside NCR, 24% said long lines at ATMs were a problem.", "finding_type": "quant_stat", "metric_key": "atm:long_queues", "value": 24, "unit": "%", "base_n": 400, "direction": "low", "subgroup": {"region": "Luzon outside NCR"}},
+        {"text": "In Visayas, 19% said long lines at ATMs were a problem.", "finding_type": "quant_stat", "metric_key": "atm:long_queues", "value": 19, "unit": "%", "base_n": 360, "direction": "low", "subgroup": {"region": "Visayas"}},
+        {"text": "In Mindanao, 17% said long lines at ATMs were a problem.", "finding_type": "quant_stat", "metric_key": "atm:long_queues", "value": 17, "unit": "%", "base_n": 320, "direction": "low", "subgroup": {"region": "Mindanao"}},
+        {"text": "In rural barangays, 41% of customers said the nearest ATM is too far away.", "finding_type": "quant_stat", "metric_key": "atm:distance", "value": 41, "unit": "%", "base_n": 620, "direction": "high", "subgroup": {"segment": "Customers in rural barangays"}},
+        {"text": "In urban barangays, 9% of customers said the nearest ATM is too far away.", "finding_type": "quant_stat", "metric_key": "atm:distance", "value": 9, "unit": "%", "base_n": 980, "direction": "low", "subgroup": {"segment": "Customers in urban barangays"}}
       ]
     }
   ]

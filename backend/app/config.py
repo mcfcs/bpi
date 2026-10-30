@@ -138,6 +138,85 @@ PUBLIC_DATA_DIR = REPO_DIR / "data" / "public"
 SYNTHETIC_DATA_DIR = REPO_DIR / "data" / "synthetic"
 
 
+# ---------------------------------------------------------------------------
+# Brief rules from the second S&I consultation (segment statements, quant first, qualitative
+# recency, geography, audience modes, persona framing, coverage states). Proposed defaults that S&I
+# has not validated yet.
+# ---------------------------------------------------------------------------
+
+# Qualitative studies are tiered by recency alone: S&I weigh qualitative evidence by how recent it
+# is, not by how many people took part. The first band whose month limit the fieldwork age fits
+# wins; older studies get "older". Capped at B so a group discussion never outranks a robust survey
+# (n=1,200 survey > 6 FGDs). Qualitative tiers never raise confidence or allow a headline.
+QUAL_TIER_CONFIG: dict = {"recency_tiers": [(12, "B")], "older": "C"}
+
+# Coverage check states (commissioning.py): Tier A/B quant evidence whose newest fieldwork is older
+# than this is "covered_stale" rather than "covered".
+COVERAGE_STATE_CONFIG: dict = {"stale_months": 24}
+
+METRIC_LABELS.update({
+    "card_dropoff:id_verification": "ID verification",
+    "card_dropoff:fees": "Fees",
+    "card_dropoff:approval_wait": "Waiting for approval",
+    "card_dropoff:otp_delay": "One-time PIN delays",
+    "card_dropoff:app_errors": "App errors",
+    "app_trend:satisfaction": "Satisfaction with the mobile app",
+    "atm:long_queues": "Long ATM queues",
+    "atm:distance": "Distance to the nearest ATM",
+})
+METRIC_CHART_TITLES.update({
+    "card_dropoff:": "Cited {label_lower} as a reason for not finishing a card application",
+    "app_trend:": "{label} (latest wave)",
+    "atm:": "Named {label_lower} as a problem",
+})
+
+# How a segment statement describes a metric when it is prominent (high) or not (low), by key
+# prefix. Used for "Fees: a driver of drop-off among ..., but not among ...".
+METRIC_STANCE_PHRASES: dict[str, tuple[str, str]] = {
+    "barrier:": ("a reason for dropping off", "not a main reason for dropping off"),
+    "card_dropoff:": ("a driver of drop-off", "not a driver of drop-off"),
+    "reward_pref:": ("the preferred reward", "not the preferred reward"),
+    "app_trend:": ("improving", "declining"),
+    "atm:": ("a pain point", "not a main pain point"),
+}
+DEFAULT_STANCE_PHRASES = ("prominent", "not prominent")
+
+
+def stance_phrases(metric_key: str | None) -> tuple[str, str]:
+    for prefix, phrases in METRIC_STANCE_PHRASES.items():
+        if metric_key and metric_key.startswith(prefix):
+            return phrases
+    return DEFAULT_STANCE_PHRASES
+
+
+# Persona framing: metric families each team owns. A brief lists these first for that team; it
+# never changes what the reader may see (RLS decides that). Unknown teams get no reordering.
+TEAM_METRIC_FOCUS: dict[str, tuple[str, ...]] = {
+    "Cards & Payments": ("card_dropoff:", "reward_pref:", "qr:"),
+    "SME Banking": ("barrier:", "support:", "channel_pref:"),
+    "Digital Channels": ("app_trend:",),
+}
+# Topicality (app/topicality.py): whether retrieved findings share the question's own concept, not
+# just generic words like "SME" or "loan". With the lexical hashing embedder, off-topic findings are
+# dropped from briefs; with a semantic embedder lexical overlap misses true paraphrases, so it only
+# caps confidence. Coverage checks drop off-topic findings unless their similarity reaches the bypass.
+TOPICALITY_CONFIG: dict[str, dict] = {
+    "hashing": {"filter_off_topic": True, "coverage_bypass_similarity": 2.0},   # never bypassed
+    "default": {"filter_off_topic": False, "coverage_bypass_similarity": 0.7},
+}
+
+
+def topicality_config(embedder_name: str = "hashing") -> dict:
+    return TOPICALITY_CONFIG.get(embedder_name, TOPICALITY_CONFIG["default"])
+
+
+ROLE_LABELS: dict[str, str] = {
+    "si_analyst": "S&I analyst",
+    "bu_user": "Business-unit user",
+    "bu_approver": "Business-unit approver",
+}
+
+
 def _load_env_file(path: Path) -> None:
     """Load KEY=VALUE lines into the environment without overriding values that are already set."""
     if not path.exists():

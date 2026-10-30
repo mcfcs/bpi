@@ -5,6 +5,14 @@ bands, regions, segments, periods or methods. Two findings diverge when they rep
 directions on the same metric_key (or theme). A divergence is a context difference when the
 populations differ on at least one of those dimensions; only when they don't is it an
 unresolved conflict, which the UI labels as a conflict and routes to an analyst.
+
+Rules from the second consultation:
+- Quantitative and qualitative findings are never compared. Survey figures drive the answer and
+  group discussions support it; qualitative evidence that runs against a survey is shown as
+  colour in "What people say" (describe.qual_contrasts), not as a divergence.
+- Opposite directions on one metric inside the same study (two waves, or two subgroups) are two
+  trends in the same study (kind "within_study"), explained with who each subgroup is. They are
+  never a conflict.
 """
 
 from __future__ import annotations
@@ -22,7 +30,7 @@ from .tiers import months_between
 
 DIFFERS_BY_ORDER = ("age", "region", "segment", "period", "method")
 
-DivergenceKind = Literal["context_difference", "unresolved_conflict"]
+DivergenceKind = Literal["context_difference", "unresolved_conflict", "within_study"]
 
 
 @dataclass(frozen=True)
@@ -37,6 +45,8 @@ class FindingCtx:
     regions: tuple[str, ...]
     segment: str | None
     fieldwork_end: date | None
+    evidence: str | None = None                       # "quant" or "qual"; derived from method_type when None
+    subgroup: tuple[tuple[str, str], ...] = ()        # sorted (key, value) pairs of the finding's subgroup
 
 
 @dataclass
@@ -84,6 +94,20 @@ def _norm(text: str | None) -> str:
     return re.sub(r"\s+", " ", (text or "").strip().lower())
 
 
+def evidence_kind(f: FindingCtx) -> str | None:
+    if f.evidence:
+        return f.evidence
+    if f.method_type == "qual":
+        return "qual"
+    return "quant" if f.method_type else None
+
+
+def cross_method(a: FindingCtx, b: FindingCtx) -> bool:
+    """A survey figure and a qualitative theme: never compared directly."""
+    ka, kb = evidence_kind(a), evidence_kind(b)
+    return bool(ka and kb and ka != kb)
+
+
 def classify_divergence(a: FindingCtx, b: FindingCtx) -> tuple[DivergenceKind, list[str]]:
     cfg = DIVERGENCE_CONFIG
     differs_by: list[str] = []
@@ -100,14 +124,41 @@ def classify_divergence(a: FindingCtx, b: FindingCtx) -> tuple[DivergenceKind, l
     return ("context_difference", differs_by) if differs_by else ("unresolved_conflict", [])
 
 
+def _opposite(a: FindingCtx, b: FindingCtx) -> bool:
+    return a.topic is not None and a.topic == b.topic and {a.direction, b.direction} == {"high", "low"}
+
+
 def diverges(a: FindingCtx, b: FindingCtx) -> bool:
-    """Opposite directions on the same metric or theme, from different studies."""
-    return (
-        a.topic is not None
-        and a.topic == b.topic
-        and a.study_id != b.study_id
-        and {a.direction, b.direction} == {"high", "low"}
-    )
+    """Opposite directions on the same metric or theme, from different studies, with the same kind
+    of evidence (survey with survey, qualitative with qualitative)."""
+    return _opposite(a, b) and a.study_id != b.study_id and not cross_method(a, b)
+
+
+def _is_wave(value: str) -> bool:
+    return bool(re.search(r"\bwave\b", value, re.IGNORECASE))
+
+
+def subgroup_differs_by(a: FindingCtx, b: FindingCtx) -> list[str]:
+    """Which subgroup dimensions separate two findings of the same study. A segment that names a
+    survey wave counts as a period."""
+    sa, sb = dict(a.subgroup), dict(b.subgroup)
+    dims = set()
+    for key in set(sa) | set(sb):
+        if _norm(sa.get(key)) == _norm(sb.get(key)):
+            continue
+        if key == "age_band":
+            dims.add("age")
+        elif key == "region":
+            dims.add("region")
+        elif key == "segment":
+            dims.add("period" if _is_wave(sa.get(key) or "") or _is_wave(sb.get(key) or "") else "segment")
+    return [d for d in DIFFERS_BY_ORDER if d in dims]
+
+
+def same_study_trends(a: FindingCtx, b: FindingCtx) -> bool:
+    """Opposite directions on one metric within one study, for different subgroups or waves."""
+    return (_opposite(a, b) and a.study_id == b.study_id and not cross_method(a, b)
+            and a.subgroup != b.subgroup and bool(subgroup_differs_by(a, b)))
 
 
 def _ordered_union(lists: Iterable[list[str]]) -> list[str]:
@@ -115,9 +166,13 @@ def _ordered_union(lists: Iterable[list[str]]) -> list[str]:
     return [d for d in DIFFERS_BY_ORDER if d in seen]
 
 
+def _ids(pairs: list[DivergencePair]) -> list[str]:
+    return list(dict.fromkeys(i for p in pairs for i in (p.a, p.b)))
+
+
 def analyze(findings: list[FindingCtx]) -> list[DivergenceGroup]:
     """All divergences among retrieved findings: one context-difference group per topic (pairs
-    merged) and one group per unresolved pair."""
+    merged), one group per unresolved pair, and one within-study group per study and topic."""
     by_topic: dict[str, list[FindingCtx]] = {}
     for f in findings:
         if f.topic and f.direction in ("high", "low"):
@@ -127,19 +182,24 @@ def analyze(findings: list[FindingCtx]) -> list[DivergenceGroup]:
     for topic, items in sorted(by_topic.items()):
         context_pairs: list[DivergencePair] = []
         conflict_pairs: list[DivergencePair] = []
+        within: dict[str, list[DivergencePair]] = {}
         for a, b in combinations(items, 2):
+            if same_study_trends(a, b):
+                within.setdefault(a.study_id, []).append(DivergencePair(a.finding_id, b.finding_id, subgroup_differs_by(a, b)))
+                continue
             if not diverges(a, b):
                 continue
             kind, differs_by = classify_divergence(a, b)
             pair = DivergencePair(a.finding_id, b.finding_id, differs_by)
             (context_pairs if kind == "context_difference" else conflict_pairs).append(pair)
         if context_pairs:
-            ids = list(dict.fromkeys(i for p in context_pairs for i in (p.a, p.b)))
             groups.append(DivergenceGroup(
-                "context_difference", topic, ids, _ordered_union(p.differs_by for p in context_pairs), context_pairs,
+                "context_difference", topic, _ids(context_pairs), _ordered_union(p.differs_by for p in context_pairs), context_pairs,
             ))
         for pair in conflict_pairs:
             groups.append(DivergenceGroup("unresolved_conflict", topic, [pair.a, pair.b], [], [pair]))
+        for pairs in within.values():
+            groups.append(DivergenceGroup("within_study", topic, _ids(pairs), _ordered_union(p.differs_by for p in pairs), pairs))
     return groups
 
 

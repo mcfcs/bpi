@@ -4,6 +4,9 @@
     {"set": "canonical", "q": "Why do SME owners drop off during online loan applications?", "expected": ["SI-2026-014", "SI-2025-009", "SI-2025-031", "SI-2022-007"]},
     {"set": "canonical", "q": "How do market vendors feel about accepting QR payments?", "expected": ["SI-2026-033"]},
     {"set": "canonical", "q": "Do young professionals prefer cashback or travel rewards on credit cards?", "expected": ["SI-2026-021", "SI-2026-027"]},
+    {"set": "canonical", "q": "What stops Gen Z customers from finishing digital card applications?", "expected": ["SI-2026-041", "SI-2025-018", "SI-2026-044", "SI-2025-036"]},
+    {"set": "canonical", "q": "How has satisfaction with the mobile app changed between survey waves?", "expected": ["SI-2026-025"]},
+    {"set": "canonical", "q": "Are long ATM queues a problem outside Metro Manila?", "expected": ["SI-2026-039"]},
 
     {"set": "paraphrase", "q": "What stops small business owners from finishing a digital loan?", "expected": ["SI-2026-014", "SI-2025-009", "SI-2025-031", "SI-2022-007"]},
     {"set": "paraphrase", "q": "Why do entrepreneurs quit halfway through applying for credit on the app?", "expected": ["SI-2026-014", "SI-2025-009", "SI-2025-031", "SI-2022-007"]},
@@ -17,16 +20,25 @@
     {"set": "paraphrase", "q": "Why do stall owners still prefer physical money over cashless?", "expected": ["SI-2026-033"]},
     {"set": "paraphrase", "q": "What perks do millennials want from their card?", "expected": ["SI-2026-021", "SI-2026-027"]},
     {"set": "paraphrase", "q": "Would airline miles beat money back for early-career cardholders?", "expected": ["SI-2026-021", "SI-2026-027"]},
+    {"set": "paraphrase", "q": "Why do young adults give up on getting a credit card through the app?", "expected": ["SI-2026-041", "SI-2025-018", "SI-2026-044", "SI-2025-036"]},
+    {"set": "paraphrase", "q": "Is the selfie ID check putting people off card onboarding?", "expected": ["SI-2026-041", "SI-2025-018", "SI-2026-044", "SI-2025-036"]},
+    {"set": "paraphrase", "q": "Does the annual fee discourage people from completing a card application?", "expected": ["SI-2026-041", "SI-2025-018", "SI-2026-044"]},
+    {"set": "paraphrase", "q": "Are older customers less happy with the banking app since the redesign?", "expected": ["SI-2026-025"]},
+    {"set": "paraphrase", "q": "Is it hard for people in rural areas to reach a cash machine?", "expected": ["SI-2026-039"]},
 
     {"set": "taglish", "q": "Bakit hindi tinatapos ng mga negosyante ang loan application online?", "expected": ["SI-2026-014", "SI-2025-009", "SI-2025-031", "SI-2022-007"]},
     {"set": "taglish", "q": "Ano ang tingin ng mga tindera sa palengke sa QR payments?", "expected": ["SI-2026-033"]},
     {"set": "taglish", "q": "Mas gusto ba ng mga young professionals ang cashback o travel rewards?", "expected": ["SI-2026-021", "SI-2026-027"]},
     {"set": "taglish", "q": "Okay lang ba sa SME owners ang fees basta may makakausap sila?", "expected": ["SI-2025-031", "SI-2026-014", "SI-2025-009", "SI-2022-007"]},
+    {"set": "taglish", "q": "Bakit hindi natatapos ng mga Gen Z ang credit card application sa app?", "expected": ["SI-2026-041", "SI-2025-018", "SI-2026-044", "SI-2025-036"]},
+    {"set": "taglish", "q": "Mahaba ba ang pila sa ATM sa Metro Manila?", "expected": ["SI-2026-039"]},
+    {"set": "taglish", "q": "Masaya pa ba ang mga users sa mobile app ng bangko?", "expected": ["SI-2026-025"]},
 
     {"set": "negative", "q": "What is the average home mortgage rate customers expect?", "expected": []},
     {"set": "negative", "q": "How satisfied are branch tellers with their shift schedules?", "expected": []},
     {"set": "negative", "q": "Do Gen Z investors trust cryptocurrency exchanges?", "expected": []},
     {"set": "negative", "q": "Which car insurance add-ons do families buy most?", "expected": []},
-    {"set": "negative", "q": "How should we price overseas remittance for seafarers?", "expected": []}
+    {"set": "negative", "q": "How should we price overseas remittance for seafarers?", "expected": []},
+    {"set": "negative", "q": "What savings goals do retirees set?", "expected": []}
   ]
 }
