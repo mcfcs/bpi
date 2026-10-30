@@ -2,12 +2,12 @@
 
 import dynamic from "next/dynamic";
 import Link from "next/link";
-import { Lock, Printer } from "lucide-react";
+import { Info, Lock, Printer } from "lucide-react";
 import { useState } from "react";
 import { api, ApiError } from "@/lib/api";
 import type { Brief, Claim, ContextNote, RestrictedMatch, SourceView } from "@/lib/types";
 import { dateTime, DIFFERS_LABELS, monthYear, n } from "@/lib/format";
-import { SourceList, TierBadge, uniqueByStudy, type CitationItem } from "./Citation";
+import { CiteChip, Meter, SourceList, TierBadge, uniqueByStudy, type CitationItem } from "./Citation";
 
 // recharts is the heaviest dependency; load it only for briefs that have charts.
 const MetricChart = dynamic(() => import("./MetricChart").then((m) => m.MetricChart), {
@@ -48,8 +48,8 @@ function Verbatim({ source }: { source: SourceView | undefined }) {
     <blockquote className="verbatim">
       “{source.text}”
       <footer>
-        {who ? `${who} · ` : ""}
-        {source.study_code}
+        {who && <span>{who}</span>}
+        <CiteChip code={source.study_code} page={(source as SourceView & { page?: number | null }).page} title={source.study_title} />
       </footer>
     </blockquote>
   );
@@ -60,7 +60,7 @@ function ClaimRow({ claim, sources, variant, first = true }: { claim: Claim; sou
     <div className="row">
       <div className="text">
         <p className={variant === "headline" ? "headline-text" : "claim-text"}>{claim.text}</p>
-        {claim.qual_only && variant !== "qual" && <span className="chip">Indicative · qualitative</span>}
+        {claim.qual_only && variant !== "qual" && <span className="chip qual-tag">Indicative, qualitative</span>}
         {variant === "qual" && claim.verbatim_ids.map((id) => <Verbatim key={id} source={sources[id]} />)}
       </div>
       <SourceList items={citations(claim, sources)} showLabel={first} />
@@ -117,15 +117,16 @@ function RestrictedRow({ match }: { match: RestrictedMatch }) {
   return (
     <li>
       <div className="line">
-        <span>
-          <Lock size={14} strokeWidth={1.5} aria-hidden style={{ verticalAlign: "-2px", marginRight: 6, color: "var(--muted)" }} />
-          <span className="mono small">{match.code}</span> {match.title}{" "}
-          <span className="muted small">· owned by {match.owner_team}</span>
+        <span className="what">
+          <Lock size={15} strokeWidth={1.75} aria-hidden style={{ color: "var(--muted)" }} />
+          <CiteChip code={match.code} />
+          <span>{match.title}</span>
+          <span className="muted small">Owned by {match.owner_team}</span>
         </span>
         {status === "pending" ? (
-          <span className="muted small">Access requested · waiting for {match.owner_team}</span>
+          <span className="status status-wait">Requested, waiting for {match.owner_team}</span>
         ) : status === "approved" ? (
-          <span className="muted small">Access approved · ask again to include it</span>
+          <span className="status status-ok">Approved: ask again to include it</span>
         ) : (
           !open && (
             <button type="button" className="btn" onClick={() => setOpen(true)}>
@@ -197,18 +198,6 @@ function AskAnalyst({ brief }: { brief: Brief }) {
   );
 }
 
-const LEVELS = { high: 3, medium: 2, low: 1 } as const;
-
-function Meter({ level }: { level: keyof typeof LEVELS }) {
-  return (
-    <span className="meter" aria-hidden>
-      {[1, 2, 3].map((i) => (
-        <i key={i} className={i <= LEVELS[level] ? "on" : ""} />
-      ))}
-    </span>
-  );
-}
-
 export function BriefView({ brief }: { brief: Brief }) {
   const { sources } = brief;
   const headline = brief.claims.filter((c) => c.kind === "headline");
@@ -220,7 +209,7 @@ export function BriefView({ brief }: { brief: Brief }) {
     <article>
       <title>{`${brief.question} · Evidence brief`}</title>
       <header className="brief-head">
-        <p className="eyebrow">Evidence brief</p>
+        <p className="crumbs no-print"><Link href="/">Ask another question</Link></p>
         <h1>{brief.question}</h1>
         <div className="brief-meta">
           <span>{dateTime(brief.created_at)}</span>
@@ -251,7 +240,7 @@ export function BriefView({ brief }: { brief: Brief }) {
             {brief.no_headline_message ?? "No single headline: the quantitative evidence does not support one summary statement."}
           </p>
         )}
-        {qual.length === 0 && brief.disclaimer && <p className="disclaimer">{brief.disclaimer}</p>}
+        {qual.length === 0 && brief.disclaimer && <p className="disclaimer"><Info size={16} strokeWidth={1.75} aria-hidden />{brief.disclaimer}</p>}
       </Section>
 
       {(breakdown.length > 0 || brief.charts.length > 0) && (
@@ -268,9 +257,12 @@ export function BriefView({ brief }: { brief: Brief }) {
                 <ul className="sources">
                   <li className="label">Chart sources</li>
                   {[...new Map(chart.bars.map((b) => [b.study_code, b])).values()].map((b) => (
-                    <li key={b.study_code}>
-                      <TierBadge tier={b.tier} sample={`n=${n(b.sample_size)}`} when={b.fieldwork_end?.slice(0, 4) ?? "n.d."} />{" "}
-                      <span className="mono small" title={b.study_title}>{b.study_code}</span>
+                    <li key={b.study_code} className="study-card">
+                      <div className="top">
+                        <CiteChip code={b.study_code} />
+                        <TierBadge tier={b.tier} sample={`n=${n(b.sample_size)}`} when={b.fieldwork_end?.slice(0, 4) ?? "n.d."} />
+                      </div>
+                      <div className="title">{b.study_title}</div>
                       <div className="source-meta">
                         {b.method_type === "quant" ? "Quantitative" : "Mixed method"} · {b.region_label} · fieldwork {monthYear(b.fieldwork_end)}
                       </div>
@@ -285,7 +277,7 @@ export function BriefView({ brief }: { brief: Brief }) {
 
       {qual.length > 0 && (
         <Section title="What people say" tag="Indicative · qualitative">
-          {brief.disclaimer && <p className="disclaimer">{brief.disclaimer}</p>}
+          {brief.disclaimer && <p className="disclaimer"><Info size={16} strokeWidth={1.75} aria-hidden />{brief.disclaimer}</p>}
           {qual.map((c, i) => (
             <ClaimRow key={i} claim={c} sources={sources} variant="qual" first={i === 0} />
           ))}

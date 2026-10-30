@@ -8,7 +8,7 @@ import { LoadError } from "@/components/LoadError";
 import { useApi } from "@/lib/useApi";
 import { api, ApiError } from "@/lib/api";
 import type { EscalationRow } from "@/lib/types";
-import { dateTime } from "@/lib/format";
+import { dateTime, stateLabel } from "@/lib/format";
 
 const REASONS = {
   user_request: "Asked by the user",
@@ -29,7 +29,7 @@ function Respond({ row, onDone }: { row: EscalationRow; onDone: () => void }) {
     }
   }
   return (
-    <form onSubmit={send} style={{ marginTop: 10 }}>
+    <form onSubmit={send}>
       <div className="field">
         <label htmlFor={`reply-${row.id}`}>Reply</label>
         <textarea id={`reply-${row.id}`} rows={3} value={response} onChange={(e) => setResponse(e.target.value)} required />
@@ -48,7 +48,6 @@ function Desk() {
   return (
     <>
       <section className="page-head">
-        <p className="eyebrow">Checkpoint 3 · escalation</p>
         <title>{`${isSi ? "Analyst desk" : "Ask an analyst"} · Evidence brief`}</title>
         <h1>{isSi ? "Analyst desk" : "Ask an analyst"}</h1>
         <p>
@@ -56,29 +55,30 @@ function Desk() {
             ? "Questions sent by business teams, and briefs routed here because studies of the same population disagree."
             : "Questions you have sent to S&I, and their replies. To ask about a brief, open it and choose Ask an analyst."}
         </p>
+        <p className="checkpoint">Human checkpoint 3 of 4: an analyst answers, not the system.</p>
       </section>
       {error && <LoadError message={error} onRetry={load} />}
       {rows === null ? (
         !error && <p className="loading" role="status">Loading…</p>
       ) : rows.length === 0 ? (
-        <p className="notice">Nothing here yet.</p>
+        <p className="empty">{isSi ? "No questions waiting. Briefs with unresolved conflicts arrive here on their own." : "You have not asked an analyst anything yet."}</p>
       ) : (
-        <ul className="list-plain" style={{ maxWidth: 900 }}>
+        <ul className="stack">
           {rows.map((r) => (
             <li key={r.id}>
-              <div className="actions" style={{ justifyContent: "space-between" }}>
-                <span>
+              <div className="item-head">
+                <span className="item-title">
                   {r.brief_id ? <Link href={`/briefs/${r.brief_id}`}>{r.question ?? "Open brief"}</Link> : "General question"}
                 </span>
-                <span className="chip">{r.status}</span>
+                <span className={r.status === "open" ? "status status-wait" : r.status === "answered" ? "status status-ok" : "status"}>{stateLabel(r.status)}</span>
               </div>
-              <div className="muted small">
-                {REASONS[r.reason]} · {r.requested_by}, {r.requester_team} · {dateTime(r.created_at)}
-                {r.confidence ? ` · confidence ${r.confidence}` : ""}
+              <div className="item-meta">
+                {REASONS[r.reason]} · {r.requested_by}, {r.requester_team} · <span className="nums">{dateTime(r.created_at)}</span>
+                {r.confidence ? ` · ${r.confidence} confidence` : ""}
               </div>
-              {r.note && <p style={{ marginTop: 6 }}>{r.note}</p>}
+              {r.note && <p className="item-body">{r.note}</p>}
               {r.response && (
-                <blockquote className="verbatim" style={{ fontStyle: "normal", fontFamily: "var(--sans)", fontSize: "1rem" }}>
+                <blockquote className="verbatim" style={{ fontStyle: "normal", fontSize: "1rem" }}>
                   {r.response}
                   <footer>{r.responded_by} · {r.responded_at ? dateTime(r.responded_at) : ""}</footer>
                 </blockquote>

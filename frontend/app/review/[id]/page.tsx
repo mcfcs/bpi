@@ -3,11 +3,11 @@
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
-import { TierBadge } from "@/components/Citation";
+import { CiteChip, TierBadge } from "@/components/Citation";
 import { SignedIn } from "@/components/SiteHeader";
 import { api, ApiError } from "@/lib/api";
 import type { FindingRow, StudyDetail, Tier } from "@/lib/types";
-import { monthYear, n } from "@/lib/format";
+import { monthYear, n, stateLabel } from "@/lib/format";
 
 type Status = { kind: "ok" | "error"; text: string } | null;
 
@@ -63,7 +63,7 @@ function StudyCard({ study, onSaved }: { study: StudyDetail; onSaved: (s: StudyD
 
   return (
     <form onSubmit={save} className="panel">
-      <h2 style={{ marginBottom: 14 }}>Study card</h2>
+      <h2>Study card</h2>
       <div className="field">
         <label htmlFor="title">Title</label>
         <input id="title" value={form.title} onChange={set("title")} />
@@ -92,7 +92,7 @@ function StudyCard({ study, onSaved }: { study: StudyDetail; onSaved: (s: StudyD
           <input id="fieldwork" type="date" value={form.fieldwork_end} onChange={set("fieldwork_end")} />
         </div>
       </div>
-      <div className="field-row">
+      <div className="field-row pairs">
         <div className="field">
           <label htmlFor="age-min">Youngest age</label>
           <input id="age-min" type="number" value={form.age_min} onChange={set("age_min")} />
@@ -147,7 +147,7 @@ function TierPanel({ study, onSaved }: { study: StudyDetail; onSaved: (s: StudyD
 
   return (
     <div className="panel">
-      <h2 style={{ marginBottom: 10 }}>Robustness tier</h2>
+      <h2>Robustness tier</h2>
       <p>
         Effective tier{" "}
         {study.effective_tier ? (
@@ -158,12 +158,12 @@ function TierPanel({ study, onSaved }: { study: StudyDetail; onSaved: (s: StudyD
         {study.tier_override && <span className="muted small"> (computed {study.robustness_tier}, overridden)</span>}
       </p>
       {b && (
-        <table style={{ maxWidth: 420, marginBottom: 14 }}>
+        <table className="score">
           <tbody>
-            <tr><td>Method</td><td className="num mono">{b.method_points >= 0 ? "+" : ""}{b.method_points}</td></tr>
-            <tr><td>Sample size</td><td className="num mono">+{b.sample_points}</td></tr>
-            <tr><td>Recency ({b.age_months} months since fieldwork)</td><td className="num mono">{b.recency_points >= 0 ? "+" : ""}{b.recency_points}</td></tr>
-            <tr><td><strong>Score → tier</strong></td><td className="num mono"><strong>{b.score} → {b.tier}</strong></td></tr>
+            <tr><td>Method</td><td className="num">{b.method_points >= 0 ? "+" : ""}{b.method_points}</td></tr>
+            <tr><td>Sample size</td><td className="num">+{b.sample_points}</td></tr>
+            <tr><td>Recency ({b.age_months} months since fieldwork)</td><td className="num">{b.recency_points >= 0 ? "+" : ""}{b.recency_points}</td></tr>
+            <tr><td><strong>Score → tier</strong></td><td className="num"><strong>{b.score} → {b.tier}</strong></td></tr>
           </tbody>
         </table>
       )}
@@ -230,7 +230,7 @@ function FindingEditor({ finding }: { finding: FindingRow }) {
   }
 
   return (
-    <li style={{ padding: "16px 0" }}>
+    <li>
       <div className="field">
         <label htmlFor={`text-${f.id}`}>Finding {f.ordinal + 1}</label>
         <textarea id={`text-${f.id}`} rows={2} value={f.text} onChange={(e) => update({ text: e.target.value })} />
@@ -337,8 +337,12 @@ function Review({ id }: { id: string }) {
   return (
     <>
       <section className="page-head">
-        <p className="eyebrow">
-          <Link href="/review">Review queue</Link> · {study.code} · {study.review_status.replace("_", " ")}
+        <p className="crumbs">
+          <Link href="/review">Review queue</Link>
+          <CiteChip code={study.code} />
+          <span className={study.review_status === "approved" ? "status status-ok" : study.review_status === "rejected" ? "status status-bad" : "status status-wait"}>
+            {stateLabel(study.review_status)}
+          </span>
         </p>
         <title>{`Review: ${study.title} · Evidence brief`}</title>
         <h1>{study.title}</h1>
@@ -353,7 +357,7 @@ function Review({ id }: { id: string }) {
         <div>
           <TierPanel key={`tier-${study.id}`} study={study} onSaved={setStudy} />
           <div className="panel">
-            <h2 style={{ marginBottom: 10 }}>Decision</h2>
+            <h2>Decision</h2>
             <div className="field">
               <label htmlFor="note">Note (optional)</label>
               <textarea id="note" rows={2} value={note} onChange={(e) => setNote(e.target.value)} />
@@ -376,7 +380,7 @@ function Review({ id }: { id: string }) {
           <h2>Findings</h2>
           <span className="tag">{study.findings.length} extracted · check type, metric, direction and base n</span>
         </div>
-        <ul className="list-plain" style={{ maxWidth: 980 }}>
+        <ul className="findings">
           {study.findings.map((f) => (
             <FindingEditor key={f.id} finding={f} />
           ))}

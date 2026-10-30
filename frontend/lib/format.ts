@@ -34,6 +34,12 @@ export function sampleLabel(source: Pick<SourceView, "method_type" | "sample_siz
   return source.method_type === "qual" ? `${n(source.sample_size)} participants` : `n=${n(source.sample_size)}`;
 }
 
+/** "pending_review" -> "Pending review": a stored state as it reads in a sentence. */
+export function stateLabel(state: string): string {
+  const s = state.replace(/_/g, " ");
+  return s.charAt(0).toUpperCase() + s.slice(1);
+}
+
 export const DIFFERS_LABELS: Record<DiffersBy, string> = {
   age: "Age",
   region: "Region",
