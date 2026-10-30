@@ -80,9 +80,24 @@ def create_app(settings: Settings | None = None, *, db: Database | None = None, 
     async def _duplicate(_: Request, exc: Exception):
         return _error(409, "That already exists (for example, a pending request for the same study).")
 
+    @app.exception_handler(psycopg.errors.ForeignKeyViolation)
+    async def _missing_reference(_: Request, exc: Exception):
+        return _error(422, "That refers to a record that does not exist. Check the id and try again.")
+
     @app.exception_handler(psycopg.errors.IntegrityError)
     async def _integrity(_: Request, exc: Exception):
         return _error(422, str(exc).splitlines()[0])
+
+    # A malformed id in a path or body ("abc" for a UUID) is a request for something that does not
+    # exist, not a server error.
+    @app.exception_handler(psycopg.errors.InvalidTextRepresentation)
+    async def _bad_id(_: Request, exc: Exception):
+        return _error(404, "Not found.")
+
+    # Values Postgres cannot store, e.g. text containing a NUL byte.
+    @app.exception_handler(psycopg.DataError)
+    async def _bad_value(_: Request, exc: Exception):
+        return _error(422, "That text contains characters that cannot be stored. Remove them and try again.")
 
     @app.exception_handler(review.ReviewError)
     @app.exception_handler(governance.GovernanceError)
@@ -91,6 +106,8 @@ def create_app(settings: Settings | None = None, *, db: Database | None = None, 
 
     @app.exception_handler(LookupError)
     async def _lookup(_: Request, exc: Exception):
+        if isinstance(exc, KeyError):  # a programming error, not "not found"
+            return _error(500, "Something went wrong on our side. Try again.")
         return _error(404, str(exc).capitalize() + ".")
 
     # ------------------------------------------------------------------ auth
@@ -99,8 +116,10 @@ def create_app(settings: Settings | None = None, *, db: Database | None = None, 
             raise HTTPException(401, "Sign in first.")
         try:
             claims = decode_token(authorization.split(" ", 1)[1], settings.jwt_secret)
-        except jwt.PyJWTError:
+        except jwt.ExpiredSignatureError:
             raise HTTPException(401, "Your session has expired. Sign in again.")
+        except jwt.PyJWTError:
+            raise HTTPException(401, "Your sign-in is not valid. Sign in again.")
         with db.as_user(claims["sub"], claims.get("email")) as conn:
             row = conn.execute(PROFILE_SQL + " where p.id = auth.uid()").fetchone()
         if row is None:

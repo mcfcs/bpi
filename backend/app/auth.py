@@ -7,6 +7,7 @@ In production the frontend signs in with Supabase Auth and sends its access toke
 from __future__ import annotations
 
 import time
+import uuid
 from dataclasses import dataclass
 
 import jwt
@@ -34,4 +35,12 @@ def issue_token(user_id: str, email: str, secret: str, ttl_seconds: int = 8 * 36
 
 
 def decode_token(token: str, secret: str) -> dict:
-    return jwt.decode(token, secret, algorithms=["HS256"], audience="authenticated")
+    """Verify signature, audience and expiry. A token must carry `exp` and a UUID `sub` (the user
+    id RLS keys on); anything else is rejected as invalid rather than failing later."""
+    claims = jwt.decode(token, secret, algorithms=["HS256"], audience="authenticated",
+                        options={"require": ["exp", "sub"]})
+    try:
+        uuid.UUID(str(claims["sub"]))
+    except ValueError as exc:
+        raise jwt.InvalidTokenError("sub is not a user id") from exc
+    return claims
