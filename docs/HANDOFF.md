@@ -53,6 +53,35 @@ _Last updated: 29 Oct 2026._
    `brief.sources`, which misses some bars); `brief.escalation` is only the latest escalation, so a
    reply disappears from the brief once a follow-up is sent; no group count for "6 FGDs" labels.
 
+### 30 Oct 2026 — frontend for brief intelligence (consultation 2)
+
+1. **Answer with audience modes**: Executive / Analyst / Plain language switch above the headline
+   (`components/brief/AudienceAnswer.tsx`), citing the summary's studies; the choice is kept per
+   browser (`si-evidence:audience`). "Prepared for <name> · <team>" with the framing note.
+2. **Segment statements** (`lib/segments.ts` parses the backend's deterministic explanations back into
+   lines; falls back to the prose if the wording differs): "It depends on who was asked" shows each
+   group as who/where/when → result; "Two trends in the same study" names the target respondents;
+   unresolved conflicts show what each study found and the analyst's status.
+3. **What people say**: emotion words on qualitative claims and quotes (`components/Emotion.tsx`,
+   "Detected from participants' words"); qualitative views that run against a survey show who said
+   them next to what the survey measured, never as a conflict. Study cards read
+   "6 FGDs · 48 participants · **Sep 2025** (1 year 1 month ago)"; the tier badge's tooltip gives the
+   tier basis.
+4. **Ask an analyst page** (`/analyst/new?brief=<id>`), prefilled from the escalation draft: found,
+   study codes, difference chips, gap checkboxes, editable question, who it is for, needed by, note,
+   and a "What happens next" stepper. The brief's panel shows the whole thread and a follow-up form.
+5. **Before you commission**: four coverage states (word + icon), newest fieldwork with its age,
+   conflict and restricted-study caveats (request access inline), a "New problems" summary, and the
+   existing submission on a repeat send. `?check=<id>` opens a check.
+6. **Analyst desk**: "Coverage checks sent to S&I" inbox for S&I, linking to each check.
+7. Payload problems for the backend: a brief whose conflict was linked to an earlier open escalation
+   has `escalation: null` on GET (the UI says "Sent to an analyst" for business users); QR claim text
+   says "frustration and worry" while its `emotions` are Worry and Convenience; a gap `ask` names a
+   study the brief does not cite (SI-2026-025 in the Gen Z brief); coverage marks "crypto savings
+   among OFWs" covered (stale) by the World Bank enterprise survey and "pet insurance add-on" covered
+   by SI-2026-027 for Carla; awkward generated wording ("on prefers cashback rewards", "Long ATM
+   queues moves in two directions", "Fees differs by ...").
+
 ## Retrieval results
 
 `python -m eval.retrieval_eval` (24 questions: 3 canonical, 12 paraphrase, 4 Taglish, 5 off-topic;

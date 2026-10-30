@@ -43,6 +43,27 @@ export interface SourceView {
   document_url: string | null;
   provenance: Provenance | null;
   publisher: string | null;
+  /** "Survey · n=1,200", "6 FGDs · 48 participants", "Tracking survey · n=2,000". */
+  method_detail?: string;
+  /** "Sep 2025", or "date not stated". */
+  fieldwork_label?: string;
+  evidence_kind?: "quant" | "qual";
+  /** What the tier was scored from: "Recency only (qualitative: ...)" for qualitative studies. */
+  tier_basis?: string | null;
+  /** "Metro Manila (urban)", "provincial cities", "nationwide". */
+  area_label?: string | null;
+  access_level?: "open" | "restricted";
+  /** Emotion cue read from a qualitative theme or verbatim's own words. */
+  emotion?: EmotionCue | null;
+}
+
+/** A feeling participants voiced, detected in code from their wording (a lexicon, not a model). */
+export interface EmotionCue {
+  key: string;
+  label: string;
+  tone: "negative" | "positive" | "neutral" | string;
+  basis: "lexicon" | string;
+  cues?: string[];
 }
 
 export interface Evidence {
@@ -56,6 +77,7 @@ export interface Claim {
   evidence: Evidence[];
   verbatim_ids: string[];
   qual_only: boolean;
+  emotions?: EmotionCue[];
 }
 
 export type DiffersBy = "age" | "region" | "segment" | "period" | "method";
@@ -105,6 +127,61 @@ export interface Escalation {
   status: "open" | "answered" | "closed";
   reason: "user_request" | "unresolved_conflict" | "low_confidence" | string;
   response?: string | null;
+  note?: string | null;
+  responded_by?: string | null;
+  responded_at?: string | null;
+  created_at?: string;
+  /** Set when the same open question was sent again; the open escalation comes back unchanged. */
+  duplicate?: boolean;
+}
+
+export type Audience = "executive" | "analyst" | "plain";
+
+export interface AudienceSummary {
+  text: string;
+  finding_ids: string[];
+}
+
+export interface PreparedFor {
+  name: string;
+  team: string;
+  role: string;
+  role_label: string;
+  focus_metrics: string[];
+  team_study_codes: string[];
+  note: string | null;
+}
+
+/** A qualitative theme that runs against a survey finding on the same topic: colour, never a conflict. */
+export interface QualContrast {
+  finding_id: string;
+  topic: string;
+  quant_finding_ids: string[];
+}
+
+export interface GapItem {
+  code: string;
+  text: string;
+  ask: string | null;
+}
+
+export interface EscalationDraft {
+  brief_id: string;
+  question: string;
+  found: string;
+  study_codes: string[];
+  confidence: "high" | "medium" | "low" | null;
+  gaps: { id: string; text: string; ask: string | null; checked: boolean }[];
+  differences: {
+    kind: "unresolved_conflict" | "context_difference" | "within_study";
+    topic: string;
+    label: string;
+    differs_by: DiffersBy[];
+    explanation: string;
+    study_codes: string[];
+  }[];
+  suggested_question: string;
+  note: string;
 }
 
 export interface Brief {
@@ -126,8 +203,16 @@ export interface Brief {
   sources: Record<string, SourceView>;
   restricted_matches: RestrictedMatch[];
   escalation: Escalation | null;
+  /** Every escalation on this brief, oldest first (stored briefs only). */
+  escalations?: Escalation[];
   dropped_claims: number;
   regenerated: boolean;
+  /** Two trends or patterns inside one study, each for its own group of respondents. */
+  study_patterns?: ContextNote[];
+  summaries?: Partial<Record<Audience, AudienceSummary>>;
+  prepared_for?: PreparedFor | null;
+  qual_contrasts?: QualContrast[];
+  gap_items?: GapItem[];
 }
 
 export interface BriefSummary {
@@ -271,10 +356,22 @@ export interface EscalationRow {
   responded_by: string | null;
 }
 
+export type CoverageState = "covered" | "covered_stale" | "partial" | "gap";
+
+export interface CoverageCaveat {
+  code: "conflict" | "restricted_match" | string;
+  text: string;
+  studies?: { study_id: string; code: string; title: string; owner_team: string }[];
+}
+
 export interface CoverageObjective {
   text: string;
-  coverage: "covered" | "partial" | "gap";
+  coverage: CoverageState;
   finding_ids: string[];
+  coverage_label?: string;
+  new_problem?: boolean;
+  newest_fieldwork?: string | null;
+  caveats?: CoverageCaveat[];
 }
 
 export interface CoverageCheck {
@@ -285,8 +382,21 @@ export interface CoverageCheck {
   adapter?: string | null;
   submission?: Record<string, unknown> | null;
   submitted_at?: string | null;
-  result: { objectives: CoverageObjective[]; recommended_new_scope: string };
+  result: { objectives: CoverageObjective[]; recommended_new_scope: string; new_problems?: string[] };
   findings?: Record<string, SourceView>;
+}
+
+/** A check a requester sent to S&I, as S&I's inbox lists it. */
+export interface SubmittedCheck {
+  id: string;
+  title: string;
+  created_at: string;
+  submitted_at: string;
+  adapter: string | null;
+  requested_by: string;
+  requester_team: string;
+  new_problems: number;
+  objectives: number;
 }
 
 export interface AuditRow {

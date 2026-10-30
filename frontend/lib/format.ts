@@ -24,6 +24,31 @@ export function fmtValue(value: number, unit: string): string {
   return v;
 }
 
+/** "12 Nov 2026": a calendar date without the time. */
+export function dayMonthYear(iso: string): string {
+  const [y, m, d] = iso.slice(0, 10).split("-");
+  return `${Number(d)} ${MONTHS[Number(m) - 1]} ${y}`;
+}
+
+/** Whole months from a fieldwork date to now; null when the date is not stated. */
+export function monthsSince(iso: string | null | undefined, now: Date = new Date()): number | null {
+  if (!iso) return null;
+  const [y, m] = iso.slice(0, 10).split("-").map(Number);
+  return Math.max(0, (now.getFullYear() - y) * 12 + (now.getMonth() + 1 - m));
+}
+
+/** "2 months ago", "1 year 3 months ago", "this month". */
+export function ageLabel(months: number): string {
+  if (months === 0) return "this month";
+  const years = Math.floor(months / 12);
+  const rest = months % 12;
+  const parts = [
+    years ? `${years} year${years > 1 ? "s" : ""}` : "",
+    rest ? `${rest} month${rest > 1 ? "s" : ""}` : "",
+  ].filter(Boolean);
+  return `${parts.join(" ")} ago`;
+}
+
 export function year(iso: string | null | undefined): string {
   return iso ? iso.slice(0, 4) : "n.d.";
 }

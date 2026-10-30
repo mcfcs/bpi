@@ -1,14 +1,20 @@
 import Link from "next/link";
 import type { SourceView, Tier } from "@/lib/types";
-import { monthYear, provenanceLabel, sampleLabel, year } from "@/lib/format";
+import { ageLabel, monthsSince, monthYear, provenanceLabel, sampleLabel, year } from "@/lib/format";
 import { CiteLink } from "./ReportLink";
 
-/** Tier letter on its colour, then sample and year: "A | n=1,200 · 2026". Either may be left out. */
-export function TierBadge({ tier, sample, when }: { tier: Tier | null; sample?: string; when?: string }) {
+/**
+ * Tier letter on its colour, then sample and year: "A | n=1,200 · 2026". Either may be left out.
+ * `basis` says what the tier was scored from ("Recency only" for qualitative work); it goes in the
+ * tooltip and the hidden reading.
+ */
+export function TierBadge({ tier, sample, when, basis }: { tier: Tier | null; sample?: string; when?: string; basis?: string | null }) {
   const rest = [sample, when].filter(Boolean).join(" · ");
-  const label = [`Tier ${tier ?? "not set"}`, sample, when].filter(Boolean).join(", ");
+  const scored = basis ? `scored from ${basis[0].toLowerCase()}${basis.slice(1)}` : "";
+  const label = [`Tier ${tier ?? "not set"}`, sample, when, scored].filter(Boolean).join(", ");
+  const title = `Robustness tier ${tier ?? "not set"}${basis ? `. Scored from: ${basis}` : ""}`;
   return (
-    <span className={`tier tier-${tier ?? "C"}`} title={`Robustness tier ${tier ?? "not set"}`}>
+    <span className={`tier tier-${tier ?? "C"}`} title={title}>
       {/* A plain span cannot carry an accessible name, so the reading goes in hidden text. */}
       <span className="visually-hidden">{label}</span>
       <b aria-hidden>{tier ?? "–"}</b>
@@ -44,25 +50,53 @@ export interface CitationItem {
   stance?: string;
 }
 
-/** A study card: code and tier, the study's title, then method, region and fieldwork date. */
+/** Survey or group work, from the backend's evidence kind when it is there. */
+export function isQualSource(source: Pick<SourceView, "evidence_kind" | "method_type">): boolean {
+  return source.evidence_kind ? source.evidence_kind === "qual" : source.method_type === "qual";
+}
+
+/**
+ * What kind of evidence a source is and when it was gathered: "6 FGDs · 48 participants · Sep 2025".
+ * For qualitative work recency is what its tier rests on, so the date is set in bold with its age.
+ */
+export function MethodLine({ source }: { source: SourceView }) {
+  const method = source.method_detail ?? `${source.method_label} · ${sampleLabel(source)}`;
+  const when = source.fieldwork_label ?? monthYear(source.fieldwork_end);
+  const qual = isQualSource(source);
+  const months = qual ? monthsSince(source.fieldwork_end) : null;
+  return (
+    <div className="method-line">
+      {method} · {qual ? <strong>{when}</strong> : when}
+      {months != null && <span className="age"> ({ageLabel(months)})</span>}
+    </div>
+  );
+}
+
+/** A study card: code and tier, the study's title, then method, sample and fieldwork, then who and where. */
 export function Citation({ source, stance }: CitationItem) {
   const details = [
     source.provenance === "public" ? provenanceLabel(source) : "",
-    source.method_label,
     source.region_label,
-    `fieldwork ${monthYear(source.fieldwork_end)}`,
     source.subgroup_label && source.finding_type !== "verbatim" ? source.subgroup_label : "",
     stance && stance !== "supports" ? stance : "",
     source.tier_overridden ? "tier set by S&I" : "",
   ].filter(Boolean);
+  // Older stored briefs carry no method_detail: fall back to the sample and year in the badge.
+  const legacy = !source.method_detail;
   return (
     <div className="study-card">
       <div className="top">
         <SourceChip source={source} />
-        <TierBadge tier={source.tier} sample={sampleLabel(source)} when={year(source.fieldwork_end)} />
+        <TierBadge
+          tier={source.tier}
+          sample={legacy ? sampleLabel(source) : undefined}
+          when={legacy ? year(source.fieldwork_end) : undefined}
+          basis={source.tier_basis}
+        />
       </div>
       <Link className="title" href={`/studies/${source.study_id}`}>{source.study_title}</Link>
-      <div className="source-meta">{details.join(" · ")}</div>
+      <MethodLine source={source} />
+      {details.length > 0 && <div className="source-meta">{details.join(" · ")}</div>}
     </div>
   );
 }

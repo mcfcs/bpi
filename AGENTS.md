@@ -91,6 +91,9 @@ tests are edited to pass.
   both themes. Themes: light by default whatever the device prefers; dark applies only with
   `data-theme="dark"`, chosen in the header switch (`components/ThemeToggle.tsx` sets `data-theme`
   on `<html>` before first paint and saves the choice). Print always uses the light tokens.
+- The brief shows segment statements as lines by parsing the explanations `backend/app/describe.py`
+  writes (`frontend/lib/segments.ts`). If you change that wording, check the parser; anything it
+  cannot read is shown as the original prose.
 - The browser calls `/api/*` on its own origin; `next.config.mjs` proxies to `BACKEND_URL`. Don't
   hard-code `localhost:8000` in the frontend.
 - Copy is plain English for BU readers: short sentences, no hype.
