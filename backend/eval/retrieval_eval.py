@@ -170,7 +170,8 @@ def table(rows: list[tuple[str, Scores]]) -> str:
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("--provider", choices=["hashing", "fastembed", "all"], default="all")
+    parser.add_argument("--provider", choices=["hashing", "fastembed", "bedrock", "all"], default="all",
+                        help="bedrock calls AWS (needs AWS_REGION and credentials), so it is never part of all")
     parser.add_argument("--model", action="append", help="fastembed model (repeatable)")
     parser.add_argument("--sweep", action="store_true", help="grid-search similarity floors per embedder")
     parser.add_argument("--show-misses", action="store_true")
@@ -191,6 +192,8 @@ def main() -> int:
         specs.append(("hashing", None))
     if args.provider in ("fastembed", "all"):
         specs += [("fastembed", m) for m in (args.model or [DEFAULT_FASTEMBED_MODEL])]
+    if args.provider == "bedrock":
+        specs += [("bedrock", m) for m in (args.model or ["cohere.embed-v4:0"])]
 
     server = pgserver.get_server(tempfile.mkdtemp(prefix="si-eval-"), cleanup_mode="delete")
     rows, raw = [], {}

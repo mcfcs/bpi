@@ -2,7 +2,7 @@ name: CI
 
 on:
   push:
-    branches: [main]
+    branches: [main, model-serve]
   pull_request:
 
 permissions:
@@ -22,6 +22,8 @@ jobs:
           cache: pip
           cache-dependency-path: backend/requirements.txt
       - run: pip install -r requirements.txt
+      # Bedrock providers are tested with fake clients; the extras let the Mantle client construct.
+      - run: pip install -r requirements-aws.txt
       # Embedded Postgres 16 + pgvector (pgserver); tests use the offline writer and hashing embedder.
       - run: python -m pytest
       - name: Retrieval evaluation (hashing embedder)

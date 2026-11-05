@@ -190,7 +190,62 @@ class FastEmbedEmbedder:
         return self._one("query", text)
 
 
-DEFAULT_FASTEMBED_MODEL = "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
+class BedrockEmbedder:
+    """Cohere Embed v4 on Amazon Bedrock (model-serve branch; docs/AWS_PLAN.md phase a, step 4).
+
+    Asks for 512-dimension float vectors, which fit the vector(512) column without a migration.
+    Findings are embedded as `search_document` and questions as `search_query`. Unlike fastembed,
+    text leaves the machine (to Bedrock in AWS_REGION): use only with synthetic or approved data,
+    and adopt it only if `python -m eval.retrieval_eval --provider bedrock` matches fastembed with zero
+    off-topic hits. It has no calibrated floors in EMBEDDER_FLOORS until that sweep is run.
+    Needs `pip install -r requirements-aws.txt`.
+    """
+
+    def __init__(self, model: str = "cohere.embed-v4:0", region: str | None = None, client=None,
+                 dimensions: int = EMBEDDING_DIM):
+        if client is None:
+            region = region or os.environ.get("AWS_REGION") or os.environ.get("AWS_DEFAULT_REGION")
+            if not region:
+                raise RuntimeError("EMBEDDING_PROVIDER=bedrock needs AWS_REGION (for example ap-southeast-1).")
+            try:
+                import boto3
+            except ImportError as exc:  # pragma: no cover - depends on the optional extra
+                raise RuntimeError("EMBEDDING_PROVIDER=bedrock needs: pip install -r requirements-aws.txt") from exc
+            client = boto3.client("bedrock-runtime", region_name=region)
+        self._client = client
+        self.model = model
+        self.dimensions = dimensions
+        self.name = f"bedrock:{model}"
+        self._cache: dict[tuple[str, str], list[float]] = {}
+
+    def _one(self, input_type: str, text: str) -> list[float]:
+        key = (input_type, text)
+        if key not in self._cache:
+            import json
+
+            response = self._client.invoke_model(
+                modelId=self.model, accept="application/json", contentType="application/json",
+                body=json.dumps({"texts": [text], "input_type": input_type, "embedding_types": ["float"],
+                                 "output_dimension": self.dimensions, "truncate": "RIGHT"}),
+            )
+            payload = json.loads(response["body"].read())
+            vectors = payload["embeddings"]
+            vector = vectors["float"][0] if isinstance(vectors, dict) else vectors[0]
+            norm = math.sqrt(sum(v * v for v in vector)) or 1.0
+            values = [float(v) / norm for v in vector]
+            self._cache[key] = values + [0.0] * (EMBEDDING_DIM - len(values))
+            if len(self._cache) > 2048:
+                self._cache.pop(next(iter(self._cache)))
+        return self._cache[key]
+
+    def embed(self, text: str) -> list[float]:
+        return self._one("search_document", text)
+
+    def embed_query(self, text: str) -> list[float]:
+        return self._one("search_query", text)
+
+
+DEFAULT_FASTEMBED_MODEL ="sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
 
 
 def build_embedder(provider: str | None = None, model: str | None = None) -> Embedder:
@@ -200,7 +255,9 @@ def build_embedder(provider: str | None = None, model: str | None = None) -> Emb
         return HashingEmbedder()
     if provider == "fastembed":
         return FastEmbedEmbedder(model or os.environ.get("EMBEDDING_MODEL") or DEFAULT_FASTEMBED_MODEL)
-    raise ValueError(f"Unknown EMBEDDING_PROVIDER {provider!r}; use 'hashing' or 'fastembed'.")
+    if provider == "bedrock":
+        return BedrockEmbedder(model or os.environ.get("EMBEDDING_MODEL") or "cohere.embed-v4:0")
+    raise ValueError(f"Unknown EMBEDDING_PROVIDER {provider!r}; use 'hashing', 'fastembed' or 'bedrock'.")
 
 
 def to_pgvector(vec: list[float]) -> str:

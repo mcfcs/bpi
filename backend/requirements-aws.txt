@@ -1,0 +1,4 @@
+# Amazon Bedrock experiment (model-serve branch; docs/AWS_PLAN.md). Not needed for tests.
+# Claude on Bedrock uses the SDK's Mantle client; Bedrock embeddings use boto3.
+anthropic[bedrock]>=2.3
+boto3>=1.35

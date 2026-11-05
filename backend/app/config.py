@@ -305,7 +305,7 @@ class Settings:
     database_url: str
     jwt_secret: str
     demo_mode: bool
-    llm_provider: str          # "anthropic" or "offline"
+    llm_provider: str          # "anthropic", "bedrock" or "offline"
     llm_model: str
     llm_effort: str
     commissioning_adapter: str  # "noop" or "webhook"
@@ -314,6 +314,11 @@ class Settings:
     cors_origins: tuple[str, ...]
     embedding_provider: str = "hashing"   # "hashing" or "fastembed"
     embedding_model: str | None = None    # fastembed model name; None for the default
+    # Amazon Bedrock (model-serve branch; see docs/AWS_PLAN.md). Credentials come from the AWS chain.
+    aws_region: str | None = None
+    aws_profile: str | None = None
+    bedrock_fallback_model: str | None = None   # client-side refusal fallback, e.g. claude-opus-4-8
+    bedrock_embedding_model: str = "cohere.embed-v4:0"
 
 
 @lru_cache
@@ -341,4 +346,8 @@ def get_settings() -> Settings:
         ),
         embedding_provider=env.get("EMBEDDING_PROVIDER", "hashing").lower(),
         embedding_model=env.get("EMBEDDING_MODEL") or None,
+        aws_region=env.get("AWS_REGION") or env.get("AWS_DEFAULT_REGION") or None,
+        aws_profile=env.get("AWS_PROFILE") or None,
+        bedrock_fallback_model=env.get("BEDROCK_FALLBACK_MODEL") or None,
+        bedrock_embedding_model=env.get("BEDROCK_EMBEDDING_MODEL") or "cohere.embed-v4:0",
     )

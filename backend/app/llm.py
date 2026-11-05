@@ -45,7 +45,15 @@ T = TypeVar("T", bound=BaseModel)
 
 
 class ClaudeLLM:
-    def __init__(self, model: str, effort: str, client=None):
+    """Claude through the Anthropic API (provider "anthropic") or Amazon Bedrock ("bedrock").
+
+    Both serve the same Messages API, so prompts, structured output, effort and prompt caching are
+    identical. Bedrock has no server-side refusal fallback: there a declined request either goes to
+    the SDK's client-side fallback middleware (when BEDROCK_FALLBACK_MODEL is set, see build_llm) or
+    becomes an LLMError, which the brief already turns into a template brief that says so.
+    """
+
+    def __init__(self, model: str, effort: str, client=None, provider: str = "anthropic"):
         import anthropic
 
         self._anthropic = anthropic
@@ -54,13 +62,12 @@ class ClaudeLLM:
         self.client = client or anthropic.Anthropic(timeout=120.0, max_retries=1)
         self.model = model
         self.effort = effort
-        self.name = model
+        self.provider = provider
+        self.name = model if provider == "anthropic" else f"{provider}:{model}"
 
     def _parse(self, system: str, content: str | list[dict], schema: type[T]) -> T:
         anthropic = self._anthropic
         try:
-            # Server-side fallback re-runs a declined request on Anthropic's recommended fallback
-            # model inside the same call.
             response = self.client.beta.messages.parse(
                 model=self.model,
                 max_tokens=16000,
@@ -68,8 +75,7 @@ class ClaudeLLM:
                 messages=[{"role": "user", "content": content}],
                 output_format=schema,
                 output_config={"effort": self.effort},
-                betas=["server-side-fallback-2026-07-01"],
-                fallbacks="default",
+                **self._fallback_params(),
             )
         except anthropic.RateLimitError as exc:
             raise LLMError("The Claude API rate limit was reached; try again shortly.") from exc
@@ -88,6 +94,13 @@ class ClaudeLLM:
         if response.parsed_output is None:
             raise LLMError("The model returned no structured output.")
         return response.parsed_output
+
+    def _fallback_params(self) -> dict:
+        # Server-side fallback re-runs a declined request on Anthropic's recommended fallback model
+        # inside the same call. The Claude API only: Bedrock rejects the parameter.
+        if self.provider == "anthropic":
+            return {"betas": ["server-side-fallback-2026-07-01"], "fallbacks": "default"}
+        return {}
 
     def write_brief(self, request: BriefRequest, feedback: list[str] | None = None) -> EvidenceBrief:
         # The findings block is marked for caching: a regeneration after failed checks resends the
@@ -334,7 +347,33 @@ class OfflineLLM:
         return " ".join(sentences)
 
 
+def bedrock_model_id(model: str) -> str:
+    """Bedrock names Claude models with a provider prefix ("anthropic.claude-opus-5-5"); a cross-region
+    inference profile adds a geography ("global.anthropic.claude-opus-5-5"). A first-party ID is
+    prefixed; anything already prefixed is left alone."""
+    return f"anthropic.{model}" if model.startswith("claude-") else model
+
+
 def build_llm(settings: Settings) -> LLM:
     if settings.llm_provider == "anthropic":
         return ClaudeLLM(settings.llm_model, settings.llm_effort)
+    if settings.llm_provider == "bedrock":
+        return ClaudeLLM(bedrock_model_id(settings.llm_model), settings.llm_effort,
+                         client=build_bedrock_client(settings), provider="bedrock")
     return OfflineLLM()
+
+
+def build_bedrock_client(settings: Settings):
+    """Claude in Amazon Bedrock through the SDK's Mantle client (the Messages API on Bedrock). AWS
+    credentials come from the usual chain (AWS_PROFILE, env vars, SSO); the region is required.
+    Needs `pip install -r requirements-aws.txt`."""
+    import anthropic
+
+    if not settings.aws_region:
+        raise RuntimeError("LLM_PROVIDER=bedrock needs AWS_REGION (for example ap-southeast-1).")
+    middleware = None
+    if settings.bedrock_fallback_model:
+        # Client-side stand-in for the server-side fallback Bedrock lacks.
+        middleware = [anthropic.BetaRefusalFallbackMiddleware([{"model": bedrock_model_id(settings.bedrock_fallback_model)}])]
+    return anthropic.AnthropicBedrockMantle(aws_region=settings.aws_region, aws_profile=settings.aws_profile,
+                                            timeout=120.0, max_retries=1, middleware=middleware)
