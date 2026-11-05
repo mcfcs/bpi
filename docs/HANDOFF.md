@@ -26,6 +26,18 @@ _Last updated: 30 Oct 2026._
 
 ## Session log
 
+### 5 Nov 2026: `model-serve` branch set up for the AWS / Kiro experiment
+
+Only on `model-serve` (not `main`):
+- Bedrock providers behind env switches: `LLM_PROVIDER=bedrock` (Anthropic SDK `AnthropicBedrockMantle`,
+  no server-side fallback, optional client-side fallback) and `EMBEDDING_PROVIDER=bedrock` (Cohere
+  Embed v4, 512 dims). Defaults unchanged. Tested with fake clients (`tests/test_bedrock.py`); no AWS
+  calls made. `requirements-aws.txt`, `backend/.env.aws.example`; CI also runs on `model-serve`.
+- Kiro: `.kiro/steering/` (pointers to `AGENTS.md` plus invariants, frontend and retrieval rules),
+  first spec `.kiro/specs/bedrock-providers/` (tasks 1–5 done; 6–10 need an AWS account or BPI),
+  hooks in `.kiro/hooks/` (tests/eval/typecheck on save, guard and handoff prompts).
+- Next: spec tasks 6–8 (AWS account, A7 comparison, embedding sweep). See `docs/AWS_PLAN.md` "Status".
+
 ### 30 Oct 2026: consultation 2, documents, redesign, multi-agent pass
 
 Work ran as parallel agents in git worktrees, merged into `main` by the lead (see `git log`).

@@ -1,0 +1,24 @@
+{
+  "version": "v1",
+  "hooks": [
+    {
+      "name": "No secrets or guard-test edits",
+      "description": "Before a write, remind the agent not to touch env files or weaken the acceptance and red-team tests.",
+      "trigger": "PreToolUse",
+      "matcher": "write",
+      "action": {
+        "type": "agent",
+        "prompt": "Before this write: never edit backend/.env, backend/.env.local or frontend/.env.local, never add AWS keys or API keys to any file, and never weaken backend/tests/test_acceptance.py, test_permissions.py or test_redteam.py to make a change pass (AGENTS.md invariants). If the write does any of these, stop and explain instead."
+      }
+    },
+    {
+      "name": "Update the handoff",
+      "description": "At the end of a session, keep docs/HANDOFF.md current for the next person or agent.",
+      "trigger": "AgentStop",
+      "action": {
+        "type": "agent",
+        "prompt": "If this session changed code, data or decisions, update docs/HANDOFF.md (session log, results, open questions, next steps) and tick finished tasks in .kiro/specs/*/tasks.md. Keep it short and factual."
+      }
+    }
+  ]
+}

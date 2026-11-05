@@ -106,6 +106,14 @@ tests are edited to pass.
   (playwright-cli) at 1440 px and 390 px, light and dark.
 - Never commit secrets: `backend/.env.local`, `frontend/.env.local` are git-ignored.
 
+## Branches
+
+- `main`: the demo submitted on 13 Nov. Keep it stable; everything merges here only when tested.
+- `model-serve`: the AWS / Bedrock / Kiro experiment (`docs/AWS_PLAN.md`, `.kiro/`). Provider code
+  lands behind env switches whose defaults keep today's behaviour, so a merge into `main` changes
+  nothing until someone sets `LLM_PROVIDER=bedrock` or `EMBEDDING_PROVIDER=bedrock`.
+- Kiro reads this file automatically; `.kiro/steering/` only adds Kiro-specific scoping.
+
 ## Continuity
 
 - `docs/HANDOFF.md` — current state, what changed last, open problems, next steps. **Update it at

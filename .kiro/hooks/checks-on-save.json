@@ -1,0 +1,38 @@
+{
+  "version": "v1",
+  "hooks": [
+    {
+      "name": "Backend tests on save",
+      "description": "Run the backend test suite (embedded Postgres, ~50 s) after a backend Python file is saved.",
+      "trigger": "FileSave",
+      "matcher": "^backend/.*\\.py$",
+      "action": {
+        "type": "command",
+        "command": "cd backend && .venv/Scripts/python -m pytest -q -x"
+      },
+      "timeout": 180
+    },
+    {
+      "name": "Retrieval eval on retrieval changes",
+      "description": "Retrieval, embeddings, topicality, floors or migrations changed: re-run the hashing retrieval eval (off-topic false positives must stay 0.00).",
+      "trigger": "FileSave",
+      "matcher": "^(backend/app/(retrieval|embeddings|topicality|config)\\.py|supabase/migrations/.*\\.sql)$",
+      "action": {
+        "type": "command",
+        "command": "cd backend && .venv/Scripts/python -m eval.retrieval_eval --provider hashing"
+      },
+      "timeout": 300
+    },
+    {
+      "name": "Frontend typecheck on save",
+      "description": "Typecheck the Next.js app after a frontend source file is saved.",
+      "trigger": "FileSave",
+      "matcher": "^frontend/(app|components|lib)/.*\\.(ts|tsx)$",
+      "action": {
+        "type": "command",
+        "command": "cd frontend && npx tsc --noEmit"
+      },
+      "timeout": 120
+    }
+  ]
+}

@@ -5,6 +5,22 @@ BPI said it "will maybe experiment with AWS (no migration though)", so this is a
 reversible experiments, not a migration. Nothing here has been built or run yet. Facts were checked
 on 30 Oct 2026 (sources at the end). Costs are estimates.
 
+## Status (branch `model-serve`, 5 Nov 2026)
+
+Phase (a)'s code is built on the `model-serve` branch and tested with fake clients; nothing has
+called AWS yet. `main` stays the submission demo.
+
+| Done on `model-serve` | Still needs an AWS account |
+|---|---|
+| `LLM_PROVIDER=bedrock`: `ClaudeLLM` through `AnthropicBedrockMantle`, same prompt and structured output, no server-side fallback, optional client-side fallback (`BEDROCK_FALLBACK_MODEL`) | Model access in `ap-southeast-1`; an SSO role limited to Bedrock invoke; a budget alarm |
+| `EMBEDDING_PROVIDER=bedrock`: Cohere Embed v4 at 512 dims; `eval.retrieval_eval --provider bedrock` | The A7 comparison runs and the embedding sweep (spec tasks 7–8) |
+| `requirements-aws.txt`, `backend/.env.aws.example`, `tests/test_bedrock.py`, CI on `model-serve` | BPI's answer on global inference vs in-region Sonnet 5 |
+| Kiro: `.kiro/steering/`, `.kiro/specs/bedrock-providers/`, `.kiro/hooks/` | Confirm hook trigger names in Kiro's hook panel (docs list `FileSave`/`AgentStop`) |
+
+To try it: `pip install -r backend/requirements-aws.txt`, `aws configure sso`, copy the lines you need
+from `backend/.env.aws.example` into `backend/.env.local`, restart the backend; `/api/health` then
+reports `bedrock:anthropic.claude-opus-5-5`.
+
 ## 1. Recommendation
 
 Start with **Claude through Amazon Bedrock behind the existing `LLM` protocol**, run from a laptop
