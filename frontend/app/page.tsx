@@ -10,8 +10,9 @@ import { api, ApiError } from "@/lib/api";
 import type { Brief, BriefSummary } from "@/lib/types";
 import { dateTime } from "@/lib/format";
 
-// What happens while a brief is prepared, in order. Shown as a list, not a fake progress bar:
-// the server does not report which step it is on.
+// What happens while a brief is prepared, in order. The server reports which step it is on
+// (GET /api/briefs/progress, indexes as in backend/app/progress.py), including a second writing pass
+// when the checks send the first draft back.
 const STEPS = [
   "Search approved studies your team can read",
   "Compare who each study asked, and when",
@@ -22,22 +23,48 @@ const STEPS = [
 const MAX_LENGTH = 500;
 const RECENT_SHOWN = 6;
 
+interface Health {
+  llm_ready?: boolean;
+  llm_problem?: string | null;
+  search_ready?: boolean;
+  search_problem?: string | null;
+}
+
+interface Progress {
+  step: number;
+  detail: string | null;
+}
+
 function Preparing() {
   const [seconds, setSeconds] = useState(0);
+  const [progress, setProgress] = useState<Progress | null>(null);
   useEffect(() => {
     const started = Date.now();
-    const timer = window.setInterval(() => setSeconds(Math.floor((Date.now() - started) / 1000)), 1000);
-    return () => window.clearInterval(timer);
+    let live = true;
+    const timer = window.setInterval(() => {
+      setSeconds(Math.floor((Date.now() - started) / 1000));
+      api<Progress | null>("/api/briefs/progress")
+        .then((p) => { if (live && p) setProgress(p); })
+        .catch(() => {});   // progress is a display aid; the brief request itself reports errors
+    }, 1000);
+    return () => {
+      live = false;
+      window.clearInterval(timer);
+    };
   }, []);
+  const current = progress?.step ?? 0;
   return (
-    <div className="preparing" role="status" aria-live="polite">
-      <p>
+    <div className="preparing">
+      <p role="status">
         <span className="pulse" aria-hidden />
         Preparing the brief <span className="muted nums" style={{ fontWeight: 400 }}>{seconds}s</span>
       </p>
-      <ol>
-        {STEPS.map((s) => (
-          <li key={s}>{s}</li>
+      <ol aria-live="polite">
+        {STEPS.map((s, i) => (
+          <li key={s} className={i < current ? "done" : i === current ? "current" : undefined} aria-current={i === current ? "step" : undefined}>
+            {s}
+            {i === current && progress?.detail && <span className="step-detail">{progress.detail}</span>}
+          </li>
         ))}
       </ol>
     </div>
@@ -100,10 +127,17 @@ function Ask() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [recent, setRecent] = useState<BriefSummary[]>([]);
+  const [health, setHealth] = useState<Health | null>(null);
 
   useEffect(() => {
     api<BriefSummary[]>("/api/briefs").then(setRecent).catch(() => setRecent([]));
   }, [profile?.id]);
+
+  // Warn before anyone asks: a hosted search model that can't be reached stops briefs altogether; a
+  // writer that can't be reached means briefs come from templates.
+  useEffect(() => {
+    api<Health>("/api/health").then(setHealth).catch(() => setHealth(null));
+  }, []);
 
   async function ask(text: string) {
     // Always a fresh brief, examples included: reopening an earlier one would hide studies the team
@@ -164,6 +198,22 @@ function Ask() {
                 </button>
               </div>
             </div>
+            {health?.search_ready === false ? (
+              <p className="disclaimer writer-down" role="status">
+                <span>
+                  Search can&rsquo;t reach its hosted model right now, so questions can&rsquo;t be answered until it is back.
+                  {health.search_problem && <span className="muted small"> {health.search_problem}</span>}
+                </span>
+              </p>
+            ) : health?.llm_ready === false ? (
+              <p className="disclaimer writer-down" role="status">
+                <span>
+                  The AI writer can&rsquo;t be reached right now, so briefs will be written from templates and will say
+                  so. Every claim is still checked against its sources.
+                  {health.llm_problem && <span className="muted small"> {health.llm_problem}</span>}
+                </span>
+              </p>
+            ) : null}
             {busy && <Preparing />}
             {error && <p className="error" role="alert" style={{ marginTop: 12 }}>{error}</p>}
           </form>

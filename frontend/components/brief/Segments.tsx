@@ -139,8 +139,16 @@ function AnalystStatus({ brief }: { brief: Brief }) {
   if (e?.status === "open") {
     return (
       <p className="analyst-status">
-        <span className="status status-wait">An analyst is checking</span>
-        <span>Don&rsquo;t rely on either figure alone until then.</span>
+        <span className="status status-wait">{e.existing ? "Joined an existing check" : "An analyst is checking"}</span>
+        <span>
+          {e.existing && (
+            <>
+              S&amp;I was already checking these studies from an earlier brief; their reply appears under{" "}
+              <Link href="/analyst">Ask an analyst</Link>.{" "}
+            </>
+          )}
+          Don&rsquo;t rely on either figure alone until then.
+        </span>
       </p>
     );
   }

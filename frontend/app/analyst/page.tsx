@@ -40,6 +40,52 @@ function Respond({ row, onDone }: { row: EscalationRow; onDone: () => void }) {
   );
 }
 
+/** One request: who asked, their note, the analyst's reply and, for S&I, the reply form. */
+function EscalationItem({ r, isSi, onDone, followUp = false }: { r: EscalationRow; isSi: boolean; onDone: () => void; followUp?: boolean }) {
+  return (
+    <>
+      <div className="item-head">
+        <span className="item-title">
+          {followUp ? (
+            <>Follow-up{r.brief_id && <> · <Link href={`/briefs/${r.brief_id}`}>open brief</Link></>}</>
+          ) : r.brief_id ? (
+            <Link href={`/briefs/${r.brief_id}`}>{r.question ?? "Open brief"}</Link>
+          ) : (
+            "General question"
+          )}
+        </span>
+        <span className={r.status === "open" ? "status status-wait" : r.status === "answered" ? "status status-ok" : "status"}>{stateLabel(r.status)}</span>
+      </div>
+      <div className="item-meta">
+        {REASONS[r.reason]} · {r.requested_by}, {r.requester_team} · <span className="nums">{dateTime(r.created_at)}</span>
+        {r.confidence ? ` · ${r.confidence} confidence` : ""}
+      </div>
+      {r.note && <p className="item-body" style={{ whiteSpace: "pre-line" }}>{r.note}</p>}
+      {r.response && (
+        <blockquote className="verbatim" style={{ fontStyle: "normal", fontSize: "1rem", whiteSpace: "pre-line" }}>
+          {r.response}
+          <footer>{r.responded_by} · {r.responded_at ? dateTime(r.responded_at) : ""}</footer>
+        </blockquote>
+      )}
+      {isSi && r.status === "open" && <Respond row={r} onDone={onDone} />}
+    </>
+  );
+}
+
+/** Requests grouped into conversations: the first request, then its follow-ups oldest first. Open
+ * conversations come first, then the most recently active. */
+function threads(rows: EscalationRow[]): EscalationRow[][] {
+  const byThread = new Map<string, EscalationRow[]>();
+  for (const r of rows) {
+    const key = r.thread_id ?? r.id;
+    byThread.set(key, [...(byThread.get(key) ?? []), r]);
+  }
+  const groups = [...byThread.values()].map((g) => [...g].sort((a, b) => a.created_at.localeCompare(b.created_at)));
+  const latest = (g: EscalationRow[]) => g[g.length - 1].created_at;
+  return groups.sort((a, b) =>
+    Number(b.some((r) => r.status === "open")) - Number(a.some((r) => r.status === "open")) || latest(b).localeCompare(latest(a)));
+}
+
 function Desk() {
   const { profile } = useSession();
   const isSi = profile?.role === "si_analyst";
@@ -70,26 +116,18 @@ function Desk() {
         <p className="empty">{isSi ? "No questions waiting. Briefs with unresolved conflicts arrive here on their own." : "You have not asked an analyst anything yet."}</p>
       ) : (
         <ul className="stack">
-          {rows.map((r) => (
-            <li key={r.id}>
-              <div className="item-head">
-                <span className="item-title">
-                  {r.brief_id ? <Link href={`/briefs/${r.brief_id}`}>{r.question ?? "Open brief"}</Link> : "General question"}
-                </span>
-                <span className={r.status === "open" ? "status status-wait" : r.status === "answered" ? "status status-ok" : "status"}>{stateLabel(r.status)}</span>
-              </div>
-              <div className="item-meta">
-                {REASONS[r.reason]} · {r.requested_by}, {r.requester_team} · <span className="nums">{dateTime(r.created_at)}</span>
-                {r.confidence ? ` · ${r.confidence} confidence` : ""}
-              </div>
-              {r.note && <p className="item-body" style={{ whiteSpace: "pre-line" }}>{r.note}</p>}
-              {r.response && (
-                <blockquote className="verbatim" style={{ fontStyle: "normal", fontSize: "1rem", whiteSpace: "pre-line" }}>
-                  {r.response}
-                  <footer>{r.responded_by} · {r.responded_at ? dateTime(r.responded_at) : ""}</footer>
-                </blockquote>
+          {threads(rows).map(([first, ...followUps]) => (
+            <li key={first.id}>
+              <EscalationItem r={first} isSi={isSi} onDone={load} />
+              {followUps.length > 0 && (
+                <ol className="desk-thread" aria-label={`${followUps.length} follow-up${followUps.length === 1 ? "" : "s"}`}>
+                  {followUps.map((r) => (
+                    <li key={r.id}>
+                      <EscalationItem r={r} isSi={isSi} onDone={load} followUp />
+                    </li>
+                  ))}
+                </ol>
               )}
-              {isSi && r.status === "open" && <Respond row={r} onDone={load} />}
             </li>
           ))}
         </ul>

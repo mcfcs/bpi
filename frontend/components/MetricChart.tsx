@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Bar, BarChart, CartesianGrid, LabelList, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { Bar, BarChart, CartesianGrid, Cell, LabelList, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import type { ChartBar, ChartSpec } from "@/lib/types";
 import { fmtValue, monthYear, n } from "@/lib/format";
 import { TierBadge } from "./Citation";
@@ -51,6 +51,7 @@ function ChartTooltip({ active, payload }: { active?: boolean; payload?: Readonl
     <div className="chart-tooltip">
       <strong>{fmtValue(bar.value, bar.unit)}</strong> <span className="muted">base n={n(bar.base_n)}</span>
       <div>{bar.label}</div>
+      {bar.disputed && <div className="flag-text">Studies differ; an S&amp;I analyst is checking this figure.</div>}
       <div className="muted">
         {bar.study_code} · Tier {bar.tier ?? "not set"} · {bar.region_label} · fieldwork ended {monthYear(bar.fieldwork_end)}
       </div>
@@ -63,16 +64,21 @@ function ChartTooltip({ active, payload }: { active?: boolean; payload?: Readonl
 export function MetricChart({ chart }: { chart: ChartSpec }) {
   const narrow = useNarrow();
   const [showTable, setShowTable] = useState(false);
+  // A disputed bar says so in its row label, not only by its style, so the table and screen readers carry it too.
   const data: Datum[] = chart.bars.map((b) => ({
     ...b,
+    detail: b.disputed ? `${b.detail} · S&I checking` : b.detail,
     tipLabel: `${fmtValue(b.value, b.unit)} · n=${n(b.base_n)} · ${b.tier ?? "–"}`,
   }));
+  const anyDisputed = data.some((d) => d.disputed);
   const { top, ticks } = axis(Math.max(...data.map((d) => d.value)), chart.unit);
   // Size the label column to the longest label (bounded) so long groups are not clipped.
   const longest = Math.max(...data.map((d) => Math.max(d.label.length, (d.detail ?? "").length)));
   const labelWidth = Math.round(Math.min(narrow ? 170 : 280, Math.max(narrow ? 124 : 168, (narrow ? 22 : longest) * 6.6 + 16)));
   const rowHeight = narrow ? 58 : 46;
-  const summary = data.map((d) => `${d.label}: ${fmtValue(d.value, d.unit)}, base ${n(d.base_n)}, tier ${d.tier}`).join("; ");
+  const summary = data
+    .map((d) => `${d.label}: ${fmtValue(d.value, d.unit)}, base ${n(d.base_n)}, tier ${d.tier}${d.disputed ? ", studies differ, S&I checking" : ""}`)
+    .join("; ");
 
   // Row label: the group on one line (two on narrow screens, split at the comma), study and year below.
   const renderTick = ({ x, y, index, payload }: TickProps) => {
@@ -91,7 +97,7 @@ export function MetricChart({ chart }: { chart: ChartSpec }) {
             <tspan key={i} x={0} dy={i === 0 ? top : 13}>{line}</tspan>
           ))}
         </text>
-        <text textAnchor="end" fill="var(--muted)" fontSize={11} fontFamily="var(--sans)" dy={12}>
+        <text textAnchor="end" fill={datum?.disputed ? "var(--flag)" : "var(--muted)"} fontSize={11} fontFamily="var(--sans)" dy={12}>
           {datum?.detail}
         </text>
       </g>
@@ -120,6 +126,12 @@ export function MetricChart({ chart }: { chart: ChartSpec }) {
           {chart.unit === "%" ? "Share of respondents (%)" : "Score"}. Each bar uses its own study&apos;s base; labels
           show value, base n and robustness tier.
         </p>
+        {anyDisputed && (
+          <p className="chart-sub flag-text">
+            Bars marked &ldquo;S&amp;I checking&rdquo; come from studies that found different results for the same group; neither is
+            settled yet.
+          </p>
+        )}
       </figcaption>
       <div style={{ width: "100%", height: data.length * rowHeight + 34 }} role="img" aria-label={`${chart.title}. ${summary}`}>
         <ResponsiveContainer>
@@ -142,6 +154,16 @@ export function MetricChart({ chart }: { chart: ChartSpec }) {
               isAnimationActive={false}
             />
             <Bar dataKey="value" fill="var(--link)" barSize={18} radius={[0, 4, 4, 0]} isAnimationActive={false}>
+              {data.map((d) => (
+                <Cell
+                  key={d.finding_id}
+                  fill="var(--link)"
+                  fillOpacity={d.disputed ? 0.35 : 1}
+                  stroke={d.disputed ? "var(--flag)" : undefined}
+                  strokeWidth={d.disputed ? 1.5 : 0}
+                  strokeDasharray={d.disputed ? "4 3" : undefined}
+                />
+              ))}
               <LabelList dataKey="tipLabel" content={renderValue} />
             </Bar>
           </BarChart>
@@ -165,7 +187,10 @@ export function MetricChart({ chart }: { chart: ChartSpec }) {
             <tbody>
               {data.map((d) => (
                 <tr key={d.finding_id}>
-                  <td>{d.label}</td>
+                  <td>
+                    {d.label}
+                    {d.disputed && <span className="chip chip-flag disputed-tag">S&amp;I checking</span>}
+                  </td>
                   <td className="num">{fmtValue(d.value, d.unit)}</td>
                   <td>
                     <span className="code">{d.study_code}</span> <span className="muted">{d.study_title}</span>

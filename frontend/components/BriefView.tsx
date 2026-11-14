@@ -34,12 +34,15 @@ function Section({ title, tag, intro, id, children }: { title: string; tag?: str
 }
 
 function citations(claim: Claim, sources: Record<string, SourceView>): CitationItem[] {
+  // One card per study page and place: a claim citing two figures from the same table (cashback and
+  // travel, both p.3, both NCR) would otherwise show two identical cards.
   const seen = new Set<string>();
   const items: CitationItem[] = [];
   for (const e of claim.evidence) {
     const source = sources[e.finding_id];
-    if (source && !seen.has(e.finding_id)) {
-      seen.add(e.finding_id);
+    const key = source && [source.study_code, source.page ?? "", source.region_label, e.stance].join("|");
+    if (source && key && !seen.has(key)) {
+      seen.add(key);
       items.push({ source, stance: e.stance });
     }
   }
@@ -117,6 +120,9 @@ function ClaimRow({ claim, brief, variant, first = true }: { claim: Claim; brief
         <p className={variant === "headline" ? "headline-text" : "claim-text"}>{text}</p>
         {variant === "qual" && <EmotionTags emotions={claim.emotions} />}
         {claim.qual_only && variant !== "qual" && <span className="chip qual-tag">Indicative, qualitative</span>}
+        {claim.disputed?.length ? (
+          <span className="chip chip-flag disputed-tag">Studies differ, S&amp;I checking: {claim.disputed.join(", ")}</span>
+        ) : null}
         {contrast && <SurveyContext contrast={contrast} sources={sources} />}
         {variant === "qual" && claim.verbatim_ids.map((id) => <Verbatim key={id} source={sources[id]} />)}
       </div>

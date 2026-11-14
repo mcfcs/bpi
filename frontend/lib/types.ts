@@ -78,6 +78,8 @@ export interface Claim {
   verbatim_ids: string[];
   qual_only: boolean;
   emotions?: EmotionCue[];
+  /** Topics of unresolved conflicts whose figures this claim cites. */
+  disputed?: string[];
 }
 
 export type DiffersBy = "age" | "region" | "segment" | "period" | "method";
@@ -91,6 +93,8 @@ export interface ContextNote {
 
 export interface ChartBar {
   finding_id: string;
+  /** Part of an unresolved conflict: an S&I analyst is checking this figure. */
+  disputed?: boolean;
   study_id: string;
   study_code: string;
   label: string;
@@ -133,6 +137,8 @@ export interface Escalation {
   created_at?: string;
   /** Set when the same open question was sent again; the open escalation comes back unchanged. */
   duplicate?: boolean;
+  /** Set when a new brief joined a check S&I already had open from an earlier brief. */
+  existing?: boolean;
 }
 
 export type Audience = "executive" | "analyst" | "plain";
@@ -354,6 +360,8 @@ export interface EscalationRow {
   requested_by: string;
   requester_team: string;
   responded_by: string | null;
+  /** The first request in this conversation: the same person asking about the same question again. */
+  thread_id: string;
 }
 
 export type CoverageState = "covered" | "covered_stale" | "partial" | "gap";
@@ -397,6 +405,27 @@ export interface SubmittedCheck {
   requester_team: string;
   new_problems: number;
   objectives: number;
+}
+
+/** GET /api/audit/summary: counts from the audit log for S&I. */
+export interface UsageSummary {
+  days: number;
+  briefs: {
+    total: number;
+    confidence: { high: number; medium: number; low: number };
+    by_team: { team: string; count: number }[];
+    restricted_also_matched: number;
+    regenerated: number;
+    dropped_claims: number;
+    written_by_model: number;
+    written_from_templates: number;
+  };
+  most_asked: { question: string; count: number }[];
+  unanswered: { question: string; team: string; asked_at: string }[];
+  unanswered_total: number;
+  escalations: { automatic: number; from_users: number; open: number; answered: number };
+  access_requests: { pending: number; approved: number; denied: number };
+  coverage_checks: { run: number; sent_to_si: number };
 }
 
 export interface AuditRow {

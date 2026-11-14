@@ -357,6 +357,23 @@ button.cite[aria-busy="true"] { cursor: progress; opacity: 0.7; }
 .preparing p { color: var(--ink); margin-bottom: 8px; display: flex; align-items: center; gap: 10px; font-weight: 550; }
 .preparing ol { margin: 0; padding-left: 1.3em; }
 .preparing li + li { margin-top: 3px; }
+.preparing li.done { color: var(--muted); }
+.preparing li.done::marker { content: "✓  "; }
+.preparing li.current { color: var(--ink); font-weight: 600; }
+.step-detail { display: block; font-weight: 400; color: var(--muted); font-size: 0.86rem; }
+.writer-down { margin-top: 12px; }
+/* Audit page summary: counts in text colours, one line of context each. */
+.usage { margin-bottom: 40px; }
+.stats { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 12px; margin-bottom: 24px; }
+.stat { background: var(--wash); border-radius: var(--r-panel); padding: 14px 16px; }
+.stat-label { font-size: 0.86rem; color: var(--muted); margin: 0 0 2px; }
+.stat-value { font-size: 1.9rem; font-weight: 650; color: var(--ink); margin: 0; line-height: 1.15; }
+.stat-note { font-size: 0.82rem; color: var(--muted); margin: 4px 0 0; }
+.usage-lists { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 24px; }
+.usage-lists h3 { font-size: 1rem; margin: 0 0 8px; }
+.usage-list { margin: 0; padding-left: 1.2em; display: grid; gap: 6px; font-size: 0.92rem; }
+.usage-list li > span:first-child { overflow-wrap: anywhere; }
+.log-title { font-size: 1.15rem; margin: 0 0 12px; }
 /* The one moving thing: a slow pulse while the brief is being prepared. */
 .pulse { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); flex: none; animation: pulse 1.6s ease-in-out infinite; }
 @keyframes pulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.35; transform: scale(0.7); } }
@@ -461,6 +478,11 @@ button.cite[aria-busy="true"] { cursor: progress; opacity: 0.7; }
 .disclaimer svg { flex: none; margin-top: 3px; color: var(--warn-ink); }
 
 .qual-tag { display: inline-flex; margin-top: 4px; }
+.disputed-tag { display: inline-flex; margin: 4px 0 0 6px; white-space: normal; }
+.row .disputed-tag { margin-left: 0; }
+.flag-text { color: var(--flag); }
+/* Follow-ups on the analyst desk, under the request they continue. */
+.desk-thread { list-style: none; margin: 14px 0 0; padding: 0 0 0 16px; border-left: 2px solid var(--control); display: grid; gap: 14px; }
 
 .note-title { font-weight: 600; margin-bottom: 8px; display: flex; flex-wrap: wrap; align-items: center; gap: 8px; font-size: 1.04rem; }
 .differs { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 4px; font-weight: 400; }
