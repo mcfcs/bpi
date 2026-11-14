@@ -107,9 +107,12 @@ def _method_paragraphs(study: dict) -> list[str]:
     if not segment.split()[0].isupper():   # keep acronyms such as "SME owners"
         segment = segment[:1].lower() + segment[1:]
     if study["method_type"] == "qual":
+        # Studies outside small business set their own recruitment sentence; the default suits SMEs.
+        recruited = study.get("recruitment") or (
+            f"Groups were recruited through local business associations and screened for {segment} who "
+            "had been in operation for at least two years.")
         return [
-            f"Fieldwork took place {window}. Groups were recruited through local business associations "
-            f"and screened for {segment} who had been in operation for at least two years.",
+            f"Fieldwork took place {window}. {recruited}",
             "Each discussion ran for about two hours, was moderated in the participants' preferred "
             "language and was recorded with consent. Quotations are translated where needed.",
             "Qualitative findings describe the range of views expressed. They do not measure how "

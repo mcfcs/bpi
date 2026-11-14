@@ -178,10 +178,25 @@ METRIC_LABELS.update({
     "app_trend:satisfaction": "Satisfaction with the mobile app",
     "atm:long_queues": "Long ATM queues",
     "atm:distance": "Distance to the nearest ATM",
+    # Metrics that get charts in the wider synthetic corpus (scams, service, literacy, climate, work).
+    "fraud:fake_text_exposure": "Received a fake bank text",
+    "fraud:clicked_fake_link": "Clicked a link in a fake bank text",
+    "fraud:reporting_unclear": "Did not know how to report a fake bank text",
+    "service:first_call_resolution": "Issue resolved in the first call",
+    "literacy:compound_interest": "Answered the compound interest question correctly",
+    "literacy_trend:workshop_gain": "Answered the compound interest question correctly after the workshop",
+    "climate:income_loss": "Lost income to a typhoon or flood",
+    "gig:income_volatility": "Weekly income swings of more than a quarter",
+    "green:solar_interest": "Would install rooftop solar with instalments",
+    "privacy_trend:offer_comfort": "Comfort with data use for offers",
+    "privacy:prefers_tailored_offers": "Prefers offers based on how they bank",
+    "wellness:short_before_payday": "Ran out of money before payday",
+    "treasury:signoff_delay": "Multi-level sign-off slowed urgent releases",
 })
 METRIC_CHART_TITLES.update({
     "card_dropoff:": "Cited {label_lower} as a reason for not finishing a card application",
     "app_trend:": "{label} (latest wave)",
+    "privacy_trend:": "{label} (latest wave)",
     "atm:": "Named {label_lower} as a problem",
 })
 
@@ -192,6 +207,9 @@ METRIC_STANCE_PHRASES: dict[str, tuple[str, str]] = {
     "card_dropoff:": ("a driver of drop-off", "not a driver of drop-off"),
     "reward_pref:": ("the preferred reward", "not the preferred reward"),
     "app_trend:": ("improving", "declining"),
+    "privacy_trend:": ("rising", "falling"),
+    "literacy_trend:": ("improving", "barely improving"),
+    "privacy:prefers_tailored_offers": ("wanted", "not wanted"),
     "atm:": ("a pain point", "not a main pain point"),
 }
 DEFAULT_STANCE_PHRASES = ("prominent", "not prominent")
@@ -305,9 +323,11 @@ class Settings:
     database_url: str
     jwt_secret: str
     demo_mode: bool
-    llm_provider: str          # "anthropic" or "offline"
+    llm_provider: str          # "anthropic", "bedrock", or "offline"
     llm_model: str
     llm_effort: str
+    aws_region: str
+    aws_bedrock_model: str
     commissioning_adapter: str  # "noop" or "webhook"
     commissioning_webhook_url: str | None
     commissioning_webhook_headers: dict[str, str]
@@ -333,6 +353,8 @@ def get_settings() -> Settings:
         llm_provider=env.get("LLM_PROVIDER", "anthropic" if has_claude_credentials else "offline"),
         llm_model=env.get("LLM_MODEL", "claude-opus-5-5"),
         llm_effort=env.get("LLM_EFFORT", "high"),
+        aws_region=env.get("AWS_REGION", "ap-southeast-1"),
+        aws_bedrock_model=env.get("AWS_BEDROCK_MODEL", "anthropic.claude-sonnet-5-5"),
         commissioning_adapter=env.get("COMMISSIONING_ADAPTER", "noop"),
         commissioning_webhook_url=env.get("COMMISSIONING_WEBHOOK_URL") or None,
         commissioning_webhook_headers=json.loads(env.get("COMMISSIONING_WEBHOOK_HEADERS", "{}")),

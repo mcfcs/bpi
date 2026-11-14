@@ -334,7 +334,80 @@ class OfflineLLM:
         return " ".join(sentences)
 
 
+class BedrockLLM:
+    """LLM client backed by Amazon Bedrock's Converse API.
+
+    Structured output is achieved via tool use: each call defines a single tool whose input schema
+    matches the target Pydantic model, forces the model to call it (toolChoice={"tool": name}), then
+    parses the toolUse input block. This mirrors what ClaudeLLM does with client.beta.messages.parse.
+    """
+
+    def __init__(self, model: str, region: str, client=None):
+        import boto3
+
+        self.model = model
+        self.name = model
+        self.client = client or boto3.client("bedrock-runtime", region_name=region)
+
+    def _call(self, system: str, user: str, schema: type[T], tool_name: str) -> T:
+        import json as _json
+        from botocore.exceptions import ClientError
+
+        tool_spec = {
+            "name": tool_name,
+            "description": f"Return a {tool_name} object.",
+            "inputSchema": {"json": schema.model_json_schema()},
+        }
+        try:
+            response = self.client.converse(
+                modelId=self.model,
+                system=[{"text": system}],
+                messages=[{"role": "user", "content": [{"text": user}]}],
+                toolConfig={
+                    "tools": [{"toolSpec": tool_spec}],
+                    "toolChoice": {"tool": {"name": tool_name}},
+                },
+                inferenceConfig={"maxTokens": 16000},
+            )
+        except ClientError as exc:
+            code = exc.response["Error"]["Code"]
+            raise LLMError(f"Bedrock error {code}: {exc.response['Error']['Message']}") from exc
+
+        stop = response.get("stopReason", "")
+        if stop == "max_tokens":
+            raise LLMError("The model's answer was cut off.")
+
+        for block in response.get("output", {}).get("message", {}).get("content", []):
+            if block.get("toolUse", {}).get("name") == tool_name:
+                raw = block["toolUse"]["input"]
+                # Bedrock may return the input as a dict or a JSON string.
+                if isinstance(raw, str):
+                    raw = _json.loads(raw)
+                try:
+                    return schema.model_validate(raw)
+                except ValidationError as exc:
+                    raise LLMError(f"Model output did not match schema: {exc.error_count()} errors.") from exc
+
+        raise LLMError("Model did not call the expected tool.")
+
+    def write_brief(self, request: BriefRequest, feedback: list[str] | None = None) -> EvidenceBrief:
+        user = render_brief_prompt(request)
+        if feedback:
+            user += "\n\n" + render_feedback(feedback)
+        return self._call(BRIEF_SYSTEM, user, EvidenceBrief, "write_brief")
+
+    def extract_study_card(self, report_text: str, known_metric_keys: list[str]) -> StudyCardExtraction:
+        return self._call(EXTRACT_SYSTEM, render_extract_prompt(report_text, known_metric_keys),
+                          StudyCardExtraction, "extract_study_card")
+
+    def write_scope(self, title: str, objectives: list[dict]) -> str:
+        return self._call(SCOPE_SYSTEM, render_scope_prompt(title, objectives),
+                          ScopeDraft, "write_scope").recommended_new_scope
+
+
 def build_llm(settings: Settings) -> LLM:
     if settings.llm_provider == "anthropic":
         return ClaudeLLM(settings.llm_model, settings.llm_effort)
+    if settings.llm_provider == "bedrock":
+        return BedrockLLM(settings.aws_bedrock_model, settings.aws_region)
     return OfflineLLM()

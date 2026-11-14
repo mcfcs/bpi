@@ -22,7 +22,9 @@ MONTHS.update({name.lower(): i for i, name in enumerate(calendar.month_abbr) if 
 
 AGE_RANGE = re.compile(r"aged\s+(\d{1,2})\s*(?:-|–|to)\s*(\d{1,2})", re.IGNORECASE)
 PERCENT = re.compile(r"(\d+(?:\.\d+)?)\s?%")
-RANK = re.compile(r"rank(?:ed)?\s+(\d+)(?:\s+of\s+\d+)?", re.IGNORECASE)
+# "rose from 61% in wave 1 to 72% in wave 2": the finding's value is the latest figure, not the first.
+CHANGE = re.compile(r"\bfrom (\d+(?:\.\d+)?)\s?%.{0,60}?\bto (\d+(?:\.\d+)?)\s?%")
+RANK =re.compile(r"rank(?:ed)?\s+(\d+)(?:\s+of\s+\d+)?", re.IGNORECASE)
 BASE_N = re.compile(r"(?:base\s+)?n\s*=\s*([\d,]+)", re.IGNORECASE)
 
 # Most specific first: "would renew online if their documents were on file" is about renewal, not documents.
@@ -218,8 +220,10 @@ def extract(report_text: str) -> StudyCardExtraction:
         text = line.lstrip("-* ").strip()
         value, unit = None, None
         if method_type != "qual":
-            pct, rank = PERCENT.search(text), RANK.search(text)
-            if pct:
+            pct, rank, change = PERCENT.search(text), RANK.search(text), CHANGE.search(text)
+            if change:
+                value, unit = float(change.group(2)), "%"
+            elif pct:
                 value, unit = float(pct.group(1)), "%"
             elif rank:
                 value, unit = float(rank.group(1)), "rank"

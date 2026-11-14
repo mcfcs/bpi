@@ -248,6 +248,383 @@
         {"text": "In rural barangays, 41% of customers said the nearest ATM is too far away.", "finding_type": "quant_stat", "metric_key": "atm:distance", "value": 41, "unit": "%", "base_n": 620, "direction": "high", "subgroup": {"segment": "Customers in rural barangays"}},
         {"text": "In urban barangays, 9% of customers said the nearest ATM is too far away.", "finding_type": "quant_stat", "metric_key": "atm:distance", "value": 9, "unit": "%", "base_n": 980, "direction": "low", "subgroup": {"segment": "Customers in urban barangays"}}
       ]
+    },
+    {
+      "code": "SI-2026-050",
+      "title": "Bank Impersonation Text Survey 2026",
+      "summary": "Nationwide survey of 1,800 retail banking customers on text messages that pretend to be from a bank, clicking their links and reporting them.",
+      "owner_team": "Strategy & Insights",
+      "access_level": "open",
+      "method_type": "quant",
+      "sample_size": 1800,
+      "fieldwork_end": "2026-06-05",
+      "population": {"age_min": 18, "age_max": 65, "regions": ["Nationwide"], "segment": "Retail banking customers"},
+      "theme": "scam_awareness",
+      "findings": [
+        {"text": "52% received at least one text message pretending to be from a bank in the past three months.", "finding_type": "quant_stat", "metric_key": "fraud:fake_text_exposure", "value": 52, "unit": "%", "base_n": 1800, "direction": "high"},
+        {"text": "7% said they had clicked a link in such a message.", "finding_type": "quant_stat", "metric_key": "fraud:clicked_fake_link", "value": 7, "unit": "%", "base_n": 1800, "direction": "low"},
+        {"text": "Among customers aged 55-65, 13% had clicked a link in such a message.", "finding_type": "quant_stat", "metric_key": "fraud:clicked_fake_link", "value": 13, "unit": "%", "base_n": 300, "direction": "low", "subgroup": {"age_band": "55-65"}},
+        {"text": "Among customers aged 18-24, 4% had clicked a link in such a message.", "finding_type": "quant_stat", "metric_key": "fraud:clicked_fake_link", "value": 4, "unit": "%", "base_n": 320, "direction": "low", "subgroup": {"age_band": "18-24"}},
+        {"text": "61% did not know how to report a fake bank message.", "finding_type": "quant_stat", "metric_key": "fraud:reporting_unclear", "value": 61, "unit": "%", "base_n": 1800, "direction": "high"}
+      ]
+    },
+    {
+      "code": "SI-2022-051",
+      "title": "Bank Impersonation Text Survey 2022",
+      "summary": "2022 wave of the survey on fake bank text messages, with 1,200 retail banking customers nationwide.",
+      "owner_team": "Strategy & Insights",
+      "access_level": "open",
+      "method_type": "quant",
+      "sample_size": 1200,
+      "fieldwork_end": "2022-07-29",
+      "population": {"age_min": 18, "age_max": 65, "regions": ["Nationwide"], "segment": "Retail banking customers"},
+      "theme": "scam_awareness",
+      "findings": [
+        {"text": "In 2022, 31% received at least one text message pretending to be from a bank in the past three months.", "finding_type": "quant_stat", "metric_key": "fraud:fake_text_exposure", "value": 31, "unit": "%", "base_n": 1200, "direction": "high"},
+        {"text": "In 2022, 11% said they had clicked a link in such a message.", "finding_type": "quant_stat", "metric_key": "fraud:clicked_fake_link", "value": 11, "unit": "%", "base_n": 1200, "direction": "low"},
+        {"text": "In 2022, 72% did not know how to report a fake bank message.", "finding_type": "quant_stat", "metric_key": "fraud:reporting_unclear", "value": 72, "unit": "%", "base_n": 1200, "direction": "high"}
+      ]
+    },
+    {
+      "code": "SI-2025-052",
+      "title": "Scam Victim Focus Groups 2025",
+      "summary": "Four focus groups with people who lost money to a caller or message pretending to be from a bank.",
+      "owner_team": "Strategy & Insights",
+      "access_level": "open",
+      "method_type": "qual",
+      "sample_size": 30,
+      "groups": 4,
+      "recruitment": "Participants were recruited through a fraud-support hotline and screened for people who had lost money to a caller or message pretending to be from a bank in the past year.",
+      "fieldwork_end": "2025-12-05",
+      "population": {"age_min": 25, "age_max": 70, "regions": ["NCR", "Cavite", "Iloilo", "Davao City"], "segment": "People who lost money to bank impersonation scams"},
+      "theme": "scam_awareness",
+      "findings": [
+        {"text": "Participants described the scam call creating panic about a blocked account, which pushed them to act before checking.", "finding_type": "qual_theme", "metric_key": "fraud:urgency_tactic", "direction": "high"},
+        {"text": "In the NCR, Cavite, Iloilo and Davao groups, participants described telling no one for days because they felt foolish.", "finding_type": "qual_theme", "metric_key": "fraud:silence_after_loss", "direction": "high"},
+        {"text": "He knew my name and my last transaction. Paano ko hindi paniniwalaan? (How could I not believe him?)", "finding_type": "verbatim", "metric_key": "fraud:urgency_tactic", "subgroup": {"segment": "Retired teacher, 66", "region": "Iloilo City"}},
+        {"text": "I only told my daughter a week later.", "finding_type": "verbatim", "metric_key": "fraud:silence_after_loss", "subgroup": {"segment": "Bakeshop owner, 58", "region": "Cavite"}}
+      ]
+    },
+    {
+      "code": "SI-2026-053",
+      "title": "Contact Center Experience Survey 2026",
+      "summary": "Post-call survey of 1,000 customers on first-call resolution and hold times at the contact center.",
+      "owner_team": "Digital Channels",
+      "access_level": "restricted",
+      "method_type": "quant",
+      "sample_size": 1000,
+      "fieldwork_end": "2026-08-14",
+      "population": {"age_min": 18, "age_max": 70, "regions": ["Nationwide"], "segment": "Customers who called the contact center"},
+      "theme": "contact_center",
+      "findings": [
+        {"text": "46% had their issue resolved in the first call.", "finding_type": "quant_stat", "metric_key": "service:first_call_resolution", "value": 46, "unit": "%", "base_n": 1000, "direction": "high"},
+        {"text": "Among callers aged 60-70, 28% had their issue resolved in the first call.", "finding_type": "quant_stat", "metric_key": "service:first_call_resolution", "value": 28, "unit": "%", "base_n": 180, "direction": "neutral", "subgroup": {"age_band": "60-70"}},
+        {"text": "39% held for more than 10 minutes before speaking to an agent.", "finding_type": "quant_stat", "metric_key": "service:long_hold", "value": 39, "unit": "%", "base_n": 1000, "direction": "high"}
+      ]
+    },
+    {
+      "code": "SI-2024-054",
+      "title": "Complaint Handling Focus Groups 2024",
+      "summary": "Four focus groups with customers who filed a complaint, on how their cases were handled and closed.",
+      "owner_team": "Strategy & Insights",
+      "access_level": "open",
+      "method_type": "qual",
+      "sample_size": 28,
+      "groups": 4,
+      "recruitment": "Participants were recruited, with consent, from customers who had filed a complaint in the previous six months.",
+      "fieldwork_end": "2024-11-08",
+      "population": {"age_min": 25, "age_max": 65, "regions": ["NCR", "Cebu", "Cagayan de Oro"], "segment": "Customers who filed complaints"},
+      "theme": "complaints",
+      "findings": [
+        {"text": "Participants described having to explain their problem again to each new agent as the point at which they considered closing their account.", "finding_type": "qual_theme", "metric_key": "service:repeat_explaining", "direction": "high"},
+        {"text": "In the NCR, Cebu and Cagayan de Oro groups, participants described never being told that a case had been closed.", "finding_type": "qual_theme", "metric_key": "service:closure_not_told", "direction": "high"},
+        {"text": "Tatlong beses ko nang ikinuwento. (I've told the story three times already.)", "finding_type": "verbatim", "metric_key": "service:repeat_explaining", "subgroup": {"segment": "Small contractor, 49", "region": "Cebu City"}},
+        {"text": "They closed the ticket. Nobody told me.", "finding_type": "verbatim", "metric_key": "service:closure_not_told", "subgroup": {"segment": "Freelance editor, 32", "region": "Pasig"}}
+      ]
+    },
+    {
+      "code": "SI-2024-055",
+      "title": "Financial Literacy Baseline Survey 2024",
+      "summary": "Nationwide baseline of basic money knowledge among 2,000 adults, and how much practical help they want.",
+      "owner_team": "Strategy & Insights",
+      "access_level": "open",
+      "method_type": "quant",
+      "sample_size": 2000,
+      "fieldwork_end": "2024-02-23",
+      "population": {"age_min": 18, "age_max": 65, "regions": ["Nationwide"], "segment": "Adults"},
+      "theme": "financial_literacy",
+      "findings": [
+        {"text": "34% correctly answered a simple compound interest question.", "finding_type": "quant_stat", "metric_key": "literacy:compound_interest", "value": 34, "unit": "%", "base_n": 2000, "direction": "high"},
+        {"text": "Among adults aged 18-24, 39% answered the compound interest question correctly.", "finding_type": "quant_stat", "metric_key": "literacy:compound_interest", "value": 39, "unit": "%", "base_n": 400, "direction": "high", "subgroup": {"age_band": "18-24"}},
+        {"text": "Among adults aged 55-65, 25% answered the compound interest question correctly.", "finding_type": "quant_stat", "metric_key": "literacy:compound_interest", "value": 25, "unit": "%", "base_n": 380, "direction": "neutral", "subgroup": {"age_band": "55-65"}},
+        {"text": "61% wanted more practical money lessons from their bank.", "finding_type": "quant_stat", "metric_key": "literacy:lesson_demand", "value": 61, "unit": "%", "base_n": 2000, "direction": "high"}
+      ]
+    },
+    {
+      "code": "SI-2026-056",
+      "title": "Money Skills Workshop Evaluation 2026",
+      "summary": "Survey of 640 attendees in two waves, before and after a money skills workshop, plus 18 in-depth interviews.",
+      "owner_team": "Strategy & Insights",
+      "access_level": "open",
+      "method_type": "mixed",
+      "sample_size": 640,
+      "interviews": 18,
+      "fieldwork_start": "2026-06-01",
+      "fieldwork_end": "2026-09-25",
+      "population": {"age_min": 18, "age_max": 65, "regions": ["NCR", "Laguna", "Iloilo"], "segment": "Workshop attendees"},
+      "theme": "financial_literacy",
+      "findings": [
+        {"text": "Among attendees aged 18-29, correct answers to the compound interest question rose from 38% before the workshop to 61% after.", "finding_type": "quant_stat", "metric_key": "literacy_trend:workshop_gain", "value": 61, "unit": "%", "base_n": 280, "direction": "high", "subgroup": {"age_band": "18-29"}},
+        {"text": "Among attendees aged 50-65, correct answers rose only from 27% before the workshop to 29% after.", "finding_type": "quant_stat", "metric_key": "literacy_trend:workshop_gain", "value": 29, "unit": "%", "base_n": 150, "direction": "low", "subgroup": {"age_band": "50-65"}},
+        {"text": "In the interviews, participants described worked examples using their own payslip as what made the lessons stick.", "finding_type": "qual_theme", "metric_key": "literacy:practical_examples", "direction": "high"},
+        {"text": "When she used my own payslip, I finally saw where the money goes.", "finding_type": "verbatim", "metric_key": "literacy:practical_examples", "subgroup": {"segment": "Factory worker, 27", "region": "Laguna"}}
+      ]
+    },
+    {
+      "code": "SI-2023-057",
+      "title": "Typhoon and Household Finances Survey 2023",
+      "summary": "Survey of 1,200 households in typhoon-prone areas of the Visayas and Mindanao on income losses and money set aside for emergencies.",
+      "owner_team": "Strategy & Insights",
+      "access_level": "open",
+      "method_type": "quant",
+      "sample_size": 1200,
+      "fieldwork_end": "2023-12-08",
+      "population": {"age_min": 25, "age_max": 65, "regions": ["Visayas", "Mindanao"], "segment": "Households in typhoon-prone areas"},
+      "theme": "climate_resilience",
+      "findings": [
+        {"text": "62% had lost income to a typhoon or flood in the past three years.", "finding_type": "quant_stat", "metric_key": "climate:income_loss", "value": 62, "unit": "%", "base_n": 1200, "direction": "high"},
+        {"text": "In Eastern Visayas, 74% had lost income to a typhoon or flood.", "finding_type": "quant_stat", "metric_key": "climate:income_loss", "value": 74, "unit": "%", "base_n": 300, "direction": "high", "subgroup": {"region": "Eastern Visayas"}},
+        {"text": "14% had money set aside that would last a month after a disaster.", "finding_type": "quant_stat", "metric_key": "climate:emergency_fund", "value": 14, "unit": "%", "base_n": 1200, "direction": "low"}
+      ]
+    },
+    {
+      "code": "SI-2025-058",
+      "title": "Typhoon Recovery Focus Groups: Eastern Visayas 2025",
+      "summary": "Four focus groups in Tacloban and Leyte with households rebuilding after a typhoon, on how they raised money.",
+      "owner_team": "Strategy & Insights",
+      "access_level": "open",
+      "method_type": "qual",
+      "sample_size": 32,
+      "groups": 4,
+      "recruitment": "Participants were recruited through barangay offices in areas hit by a typhoon in the previous year.",
+      "fieldwork_end": "2025-10-24",
+      "population": {"age_min": 25, "age_max": 65, "regions": ["Tacloban", "Leyte"], "segment": "Households rebuilding after a typhoon"},
+      "theme": "climate_resilience",
+      "findings": [
+        {"text": "In the Tacloban and Leyte groups, participants described selling livestock and pawning jewellery as the first ways to raise money after the storm.", "finding_type": "qual_theme", "metric_key": "climate:distress_sales", "direction": "high"},
+        {"text": "Participants described relatives working abroad and in Manila as the help that arrived fastest after the storm.", "finding_type": "qual_theme", "metric_key": "climate:family_support", "direction": "high"},
+        {"text": "Naibenta namin ang baboy para may pambili ng yero. (We sold the pig so we could buy roofing sheets.)", "finding_type": "verbatim", "metric_key": "climate:distress_sales", "subgroup": {"segment": "Fisherman's wife, 41", "region": "Tacloban"}},
+        {"text": "My brother in Manila sent money before the government aid came.", "finding_type": "verbatim", "metric_key": "climate:family_support", "subgroup": {"segment": "Tricycle driver, 38", "region": "Leyte"}}
+      ]
+    },
+    {
+      "code": "SI-2025-059",
+      "title": "Gig and Delivery Workers Income Survey 2025",
+      "summary": "Survey of 900 delivery, ride-hailing and online freelance workers on how much their income moves from week to week.",
+      "owner_team": "Strategy & Insights",
+      "access_level": "open",
+      "method_type": "quant",
+      "sample_size": 900,
+      "fieldwork_end": "2025-09-26",
+      "population": {"age_min": 21, "age_max": 40, "regions": ["NCR", "Calabarzon", "Cebu"], "segment": "Delivery, ride-hailing and online freelance workers"},
+      "theme": "gig_work",
+      "findings": [
+        {"text": "55% said their weekly income changed by more than a quarter from one week to the next.", "finding_type": "quant_stat", "metric_key": "gig:income_volatility", "value": 55, "unit": "%", "base_n": 900, "direction": "high"},
+        {"text": "Among delivery and ride-hailing workers, 64% had income that swung this much.", "finding_type": "quant_stat", "metric_key": "gig:income_volatility", "value": 64, "unit": "%", "base_n": 480, "direction": "high", "subgroup": {"segment": "Delivery and ride-hailing workers"}},
+        {"text": "Among online freelancers, 41% had income that swung this much.", "finding_type": "quant_stat", "metric_key": "gig:income_volatility", "value": 41, "unit": "%", "base_n": 420, "direction": "high", "subgroup": {"segment": "Online freelancers"}},
+        {"text": "Only 12% had money set aside to cover a bad month.", "finding_type": "quant_stat", "metric_key": "gig:bad_month_buffer", "value": 12, "unit": "%", "base_n": 900, "direction": "low"}
+      ]
+    },
+    {
+      "code": "SI-2026-060",
+      "title": "Delivery Rider Income Focus Groups 2026",
+      "summary": "Four focus groups with delivery and ride-hailing workers in Metro Manila and Cebu on uneven income and cashing out.",
+      "owner_team": "Strategy & Insights",
+      "access_level": "open",
+      "method_type": "qual",
+      "sample_size": 30,
+      "groups": 4,
+      "recruitment": "Participants were recruited through rider community groups and screened for at least six months of active riding.",
+      "fieldwork_end": "2026-07-03",
+      "population": {"age_min": 21, "age_max": 40, "regions": ["NCR", "Cebu"], "segment": "Delivery and ride-hailing workers"},
+      "theme": "gig_work",
+      "findings": [
+        {"text": "In the NCR and Cebu groups, participants described good weeks and bad weeks as unpredictable and used good weeks to cover bad ones.", "finding_type": "qual_theme", "metric_key": "gig:income_volatility", "direction": "high"},
+        {"text": "Participants described cashing out their earnings every day because waiting felt risky.", "finding_type": "qual_theme", "metric_key": "gig:daily_cash_out", "direction": "high"},
+        {"text": "Araw-araw ako nagca-cash out. Baka bukas wala na. (I cash out every day. Tomorrow it might be gone.)", "finding_type": "verbatim", "metric_key": "gig:daily_cash_out", "subgroup": {"segment": "Delivery rider, 28", "region": "Quezon City"}},
+        {"text": "Rainy days are good for orders, bad for my motorbike.", "finding_type": "verbatim", "metric_key": "gig:income_volatility", "subgroup": {"segment": "Ride-hailing driver, 34", "region": "Cebu City"}}
+      ]
+    },
+    {
+      "code": "SI-2026-061",
+      "title": "Fisherfolk Household Finances Focus Groups 2026",
+      "summary": "Five focus groups with fisherfolk households in Zamboanga, General Santos and Bohol on lean months and boat owners.",
+      "owner_team": "Strategy & Insights",
+      "access_level": "open",
+      "method_type": "qual",
+      "sample_size": 36,
+      "groups": 5,
+      "recruitment": "Participants were recruited through fisherfolk associations in coastal barangays.",
+      "fieldwork_end": "2026-01-23",
+      "population": {"age_min": 25, "age_max": 60, "regions": ["Zamboanga", "General Santos", "Bohol"], "segment": "Fisherfolk households"},
+      "theme": "fisherfolk",
+      "findings": [
+        {"text": "In the Zamboanga, General Santos and Bohol groups, participants described lean months when the catch falls and advances from boat owners fill the gap.", "finding_type": "qual_theme", "metric_key": "fisherfolk:lean_month_gap", "direction": "high"},
+        {"text": "Participants described repaying boat owners with part of each catch, which tied them to selling at the boat owner's price.", "finding_type": "qual_theme", "metric_key": "fisherfolk:boat_owner_ties", "direction": "high"},
+        {"text": "Kapag habagat, walang huli, kaya utang muna. (In the monsoon season there is no catch, so we run up a debt first.)", "finding_type": "verbatim", "metric_key": "fisherfolk:lean_month_gap", "subgroup": {"segment": "Fisherman, 44", "region": "Zamboanga"}},
+        {"text": "The boat owner gives us an advance, so we sell to him.", "finding_type": "verbatim", "metric_key": "fisherfolk:boat_owner_ties", "subgroup": {"segment": "Fisherman, 37", "region": "General Santos"}}
+      ]
+    },
+    {
+      "code": "SI-2025-062",
+      "title": "Rooftop Solar Interest Survey 2025",
+      "summary": "Survey of 850 homeowners in Luzon on installing rooftop solar if they could pay in instalments.",
+      "owner_team": "Strategy & Insights",
+      "access_level": "open",
+      "method_type": "quant",
+      "sample_size": 850,
+      "fieldwork_end": "2025-07-25",
+      "population": {"age_min": 30, "age_max": 60, "regions": ["NCR", "Calabarzon", "Central Luzon"], "segment": "Homeowners"},
+      "theme": "green_finance",
+      "findings": [
+        {"text": "46% of homeowners would install rooftop solar if they could pay for it in instalments.", "finding_type": "quant_stat", "metric_key": "green:solar_interest", "value": 46, "unit": "%", "base_n": 850, "direction": "high"},
+        {"text": "In NCR, 41% would install rooftop solar with instalments.", "finding_type": "quant_stat", "metric_key": "green:solar_interest", "value": 41, "unit": "%", "base_n": 320, "direction": "high", "subgroup": {"region": "NCR"}},
+        {"text": "In Central Luzon, 54% would install rooftop solar with instalments.", "finding_type": "quant_stat", "metric_key": "green:solar_interest", "value": 54, "unit": "%", "base_n": 260, "direction": "high", "subgroup": {"region": "Central Luzon"}},
+        {"text": "Upfront cost held back 71% of interested homeowners.", "finding_type": "quant_stat", "metric_key": "green:upfront_cost", "value": 71, "unit": "%", "base_n": 391, "direction": "high", "subgroup": {"segment": "Interested homeowners"}}
+      ]
+    },
+    {
+      "code": "SI-2026-063",
+      "title": "Green Products Attitudes Focus Groups 2026",
+      "summary": "Four focus groups with working adults in Metro Manila and Cebu on green banking products and proof of impact.",
+      "owner_team": "Strategy & Insights",
+      "access_level": "open",
+      "method_type": "qual",
+      "sample_size": 30,
+      "groups": 4,
+      "recruitment": "Participants were recruited through an online panel and screened for an interest in environmental causes.",
+      "fieldwork_end": "2026-08-07",
+      "population": {"age_min": 21, "age_max": 40, "regions": ["NCR", "Cebu"], "segment": "Working adults"},
+      "theme": "green_finance",
+      "findings": [
+        {"text": "In the NCR and Cebu groups, participants described supporting green causes but balked at paying more for a green product without proof of impact.", "finding_type": "qual_theme", "metric_key": "green:pay_more_for_green", "direction": "low"},
+        {"text": "Participants described wanting to see which projects their money funded before trusting a green label.", "finding_type": "qual_theme", "metric_key": "green:impact_proof", "direction": "high"},
+        {"text": "Show me the trees, not the logo.", "finding_type": "verbatim", "metric_key": "green:impact_proof", "subgroup": {"segment": "Architect, 30", "region": "Cebu City"}},
+        {"text": "Green is nice, pero mahal ang bilihin. (Green is nice, but everything is expensive.)", "finding_type": "verbatim", "metric_key": "green:pay_more_for_green", "subgroup": {"segment": "Teacher, 27", "region": "Pasig"}}
+      ]
+    },
+    {
+      "code": "SI-2026-064",
+      "title": "Customers with Disabilities Focus Groups 2026",
+      "summary": "Four focus groups with customers who have visual or mobility disabilities, on branches and the bank's website.",
+      "owner_team": "Strategy & Insights",
+      "access_level": "open",
+      "method_type": "qual",
+      "sample_size": 26,
+      "groups": 4,
+      "recruitment": "Participants were recruited through disability organisations; sessions were held in accessible venues with sign-language interpretation.",
+      "fieldwork_end": "2026-02-13",
+      "population": {"age_min": 25, "age_max": 65, "regions": ["NCR", "Cebu"], "segment": "Customers with visual or mobility disabilities"},
+      "theme": "accessibility",
+      "findings": [
+        {"text": "Participants described ramps that led to locked side doors and counters placed too high to use from a wheelchair.", "finding_type": "qual_theme", "metric_key": "inclusive:physical_barriers", "direction": "high"},
+        {"text": "In the NCR and Cebu groups, participants described buttons on the bank's website without labels, which screen readers announce only as button.", "finding_type": "qual_theme", "metric_key": "inclusive:screen_reader_gaps", "direction": "high"},
+        {"text": "The ramp is there, but the door at the end is locked.", "finding_type": "verbatim", "metric_key": "inclusive:physical_barriers", "subgroup": {"segment": "Wheelchair user, 38", "region": "Quezon City"}},
+        {"text": "My screen reader says button, button, button.", "finding_type": "verbatim", "metric_key": "inclusive:screen_reader_gaps", "subgroup": {"segment": "Call center agent with low vision, 29", "region": "Cebu City"}}
+      ]
+    },
+    {
+      "code": "SI-2026-065",
+      "title": "Data Sharing Comfort Tracker 2025-2026",
+      "summary": "Two-wave tracking survey of 1,500 retail banking customers nationwide per wave (wave 1 October 2025, wave 2 April 2026) on the bank using their data for offers.",
+      "owner_team": "Digital Channels",
+      "access_level": "open",
+      "method_type": "quant",
+      "sample_size": 1500,
+      "fieldwork_start": "2026-03-27",
+      "fieldwork_end": "2026-04-24",
+      "population": {"age_min": 21, "age_max": 60, "regions": ["Nationwide"], "segment": "Retail banking customers"},
+      "theme": "data_privacy",
+      "findings": [
+        {"text": "Among customers aged 21-34, comfort with the bank using their transaction history to tailor offers rose from 52% in wave 1 to 61% in wave 2.", "finding_type": "quant_stat", "metric_key": "privacy_trend:offer_comfort", "value": 61, "unit": "%", "base_n": 520, "direction": "high", "subgroup": {"age_band": "21-34"}},
+        {"text": "Among customers aged 45-60, comfort fell from 41% in wave 1 to 33% in wave 2, after a data breach at another company was in the news.", "finding_type": "quant_stat", "metric_key": "privacy_trend:offer_comfort", "value": 33, "unit": "%", "base_n": 480, "direction": "low", "subgroup": {"age_band": "45-60"}},
+        {"text": "Across all customers, 48% were comfortable in wave 2, up from 46% in wave 1.", "finding_type": "quant_stat", "metric_key": "privacy_trend:offer_comfort", "value": 48, "unit": "%", "base_n": 1500, "direction": "neutral"},
+        {"text": "44% said they would rather get offers based on how they bank than generic ones.", "finding_type": "quant_stat", "metric_key": "privacy:prefers_tailored_offers", "value": 44, "unit": "%", "base_n": 1500, "direction": "high"},
+        {"text": "71% wanted a simple switch to turn off data use for offers.", "finding_type": "quant_stat", "metric_key": "privacy:opt_out_control", "value": 71, "unit": "%", "base_n": 1500, "direction": "high"}
+      ]
+    },
+    {
+      "code": "SI-2025-066",
+      "title": "Provincial Customers Data Sharing Pulse 2025",
+      "summary": "Pulse survey of 600 customers aged 45-70 in the Visayas and Mindanao on how they want their data used.",
+      "owner_team": "Strategy & Insights",
+      "access_level": "open",
+      "method_type": "quant",
+      "sample_size": 600,
+      "fieldwork_end": "2025-10-17",
+      "population": {"age_min": 45, "age_max": 70, "regions": ["Visayas", "Mindanao"], "segment": "Retail banking customers"},
+      "theme": "data_privacy",
+      "findings": [
+        {"text": "12% of customers aged 45-70 in the Visayas and Mindanao said they would rather get offers based on how they bank than generic ones.", "finding_type": "quant_stat", "metric_key": "privacy:prefers_tailored_offers", "value": 12, "unit": "%", "base_n": 600, "direction": "low"},
+        {"text": "58% said they would want to be asked each time before their data is used.", "finding_type": "quant_stat", "metric_key": "privacy:ask_each_time", "value": 58, "unit": "%", "base_n": 600, "direction": "high"}
+      ]
+    },
+    {
+      "code": "SI-2025-067",
+      "title": "Payday Budget Focus Groups 2025",
+      "summary": "Three focus groups with entry-level workers in Metro Manila, Cavite and Pampanga on making their pay last.",
+      "owner_team": "Strategy & Insights",
+      "access_level": "open",
+      "method_type": "qual",
+      "sample_size": 22,
+      "groups": 3,
+      "recruitment": "Participants were recruited through workplace partners and screened for monthly pay at or near the minimum wage.",
+      "fieldwork_end": "2025-07-04",
+      "population": {"age_min": 22, "age_max": 40, "regions": ["NCR", "Cavite", "Pampanga"], "segment": "Entry-level workers"},
+      "theme": "payday_budgets",
+      "findings": [
+        {"text": "Participants described their pay being spoken for before it arrives, with rent, debts and family support taking the first share.", "finding_type": "qual_theme", "metric_key": "budget:payday_depletion", "direction": "high"},
+        {"text": "In the NCR, Cavite and Pampanga groups, participants described keeping coins and small change aside as the only way of holding money back that felt possible.", "finding_type": "qual_theme", "metric_key": "budget:small_change", "direction": "high"},
+        {"text": "Sweldo today, wala na bukas. (Payday today, gone tomorrow.)", "finding_type": "verbatim", "metric_key": "budget:payday_depletion", "subgroup": {"segment": "Factory worker, 26", "region": "Cavite"}},
+        {"text": "I keep a jar for coins. That's what I can put aside.", "finding_type": "verbatim", "metric_key": "budget:small_change", "subgroup": {"segment": "Cashier, 23", "region": "Pampanga"}}
+      ]
+    },
+    {
+      "code": "SI-2025-068",
+      "title": "Workplace Money Wellness Programme Evaluation 2025",
+      "summary": "Survey of 520 employees of payroll client companies before and after a money wellness programme, plus 16 in-depth interviews.",
+      "owner_team": "SME Banking",
+      "access_level": "restricted",
+      "method_type": "mixed",
+      "sample_size": 520,
+      "interviews": 16,
+      "fieldwork_start": "2025-05-05",
+      "fieldwork_end": "2025-11-28",
+      "population": {"age_min": 22, "age_max": 55, "regions": ["NCR", "Calabarzon"], "segment": "Employees of payroll client companies"},
+      "theme": "workplace_wellness",
+      "findings": [
+        {"text": "The share of employees who ran out of money before payday fell from 48% before the programme to 36% after.", "finding_type": "quant_stat", "metric_key": "wellness:short_before_payday", "value": 36, "unit": "%", "base_n": 520, "direction": "high"},
+        {"text": "Among employees aged 22-29, the share who ran out of money before payday fell from 55% to 37%.", "finding_type": "quant_stat", "metric_key": "wellness:short_before_payday", "value": 37, "unit": "%", "base_n": 210, "direction": "high", "subgroup": {"age_band": "22-29"}},
+        {"text": "In the interviews, participants described the salary advance as the part they valued and the budgeting sessions as useful but hard to attend during shifts.", "finding_type": "qual_theme", "metric_key": "wellness:salary_advance_value", "direction": "high"},
+        {"text": "I don't go to the five-six collector any more; the advance comes from payroll.", "finding_type": "verbatim", "metric_key": "wellness:salary_advance_value", "subgroup": {"segment": "Warehouse staff, 29", "region": "Laguna"}}
+      ]
+    },
+    {
+      "code": "SI-2024-069",
+      "title": "Corporate Treasury Online Banking Survey 2024",
+      "summary": "Survey of 320 corporate treasury staff in Metro Manila and Cebu on bulk transfers and sign-off in the online banking portal.",
+      "owner_team": "Digital Channels",
+      "access_level": "restricted",
+      "method_type": "quant",
+      "sample_size": 320,
+      "fieldwork_end": "2024-10-04",
+      "population": {"age_min": 28, "age_max": 60, "regions": ["NCR", "Cebu"], "segment": "Corporate treasury staff"},
+      "theme": "corporate_treasury",
+      "findings": [
+        {"text": "58% of treasury teams used bulk transfer files for payroll each month.", "finding_type": "quant_stat", "metric_key": "treasury:bulk_transfer_use", "value": 58, "unit": "%", "base_n": 320, "direction": "high"},
+        {"text": "41% said multi-level sign-off in the online portal slowed urgent supplier releases.", "finding_type": "quant_stat", "metric_key": "treasury:signoff_delay", "value": 41, "unit": "%", "base_n": 320, "direction": "high"},
+        {"text": "Among treasury teams in Cebu, 49% said multi-level sign-off slowed urgent releases.", "finding_type": "quant_stat", "metric_key": "treasury:signoff_delay", "value": 49, "unit": "%", "base_n": 110, "direction": "high", "subgroup": {"region": "Cebu"}}
+      ]
     }
   ]
 }

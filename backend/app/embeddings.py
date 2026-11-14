@@ -191,6 +191,46 @@ class FastEmbedEmbedder:
 
 
 DEFAULT_FASTEMBED_MODEL = "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
+DEFAULT_BEDROCK_EMBED_MODEL = "cohere.embed-multilingual-v3"
+
+
+class BedrockEmbedder:
+    """Cohere Embed v3 (or any Bedrock embedding model) via the Bedrock Runtime InvokeModel API.
+
+    Cohere returns 1024 dimensions; we truncate to EMBEDDING_DIM (512) and renormalise — cosine
+    similarity is preserved because the first 512 dimensions are the most significant. Document
+    and query sides use Cohere's input_type to get the right representation.
+    """
+
+    def __init__(self, model: str, region: str, client=None):
+        import boto3
+        self.model = model
+        self.name = f"bedrock:{model}"
+        self._client = client or boto3.client("bedrock-runtime", region_name=region)
+
+    def _embed(self, text: str, input_type: str) -> list[float]:
+        import json as _json
+        from botocore.exceptions import ClientError
+        try:
+            response = self._client.invoke_model(
+                modelId=self.model,
+                body=_json.dumps({"texts": [text], "input_type": input_type, "truncate": "END"}),
+                contentType="application/json",
+                accept="application/json",
+            )
+        except ClientError as exc:
+            raise RuntimeError(f"Bedrock embed error: {exc.response['Error']['Message']}") from exc
+        values: list[float] = _json.loads(response["body"].read())["embeddings"][0]
+        # Truncate to the column dimension and renormalise.
+        values = values[:EMBEDDING_DIM]
+        norm = math.sqrt(sum(v * v for v in values)) or 1.0
+        return [v / norm for v in values]
+
+    def embed(self, text: str) -> list[float]:
+        return self._embed(text, "search_document")
+
+    def embed_query(self, text: str) -> list[float]:
+        return self._embed(text, "search_query")
 
 
 def build_embedder(provider: str | None = None, model: str | None = None) -> Embedder:
@@ -200,7 +240,11 @@ def build_embedder(provider: str | None = None, model: str | None = None) -> Emb
         return HashingEmbedder()
     if provider == "fastembed":
         return FastEmbedEmbedder(model or os.environ.get("EMBEDDING_MODEL") or DEFAULT_FASTEMBED_MODEL)
-    raise ValueError(f"Unknown EMBEDDING_PROVIDER {provider!r}; use 'hashing' or 'fastembed'.")
+    if provider == "bedrock":
+        m = model or os.environ.get("EMBEDDING_MODEL") or DEFAULT_BEDROCK_EMBED_MODEL
+        region = os.environ.get("AWS_REGION", "ap-southeast-1")
+        return BedrockEmbedder(m, region)
+    raise ValueError(f"Unknown EMBEDDING_PROVIDER {provider!r}; use 'hashing', 'fastembed', or 'bedrock'.")
 
 
 def to_pgvector(vec: list[float]) -> str:

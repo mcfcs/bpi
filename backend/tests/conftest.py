@@ -93,7 +93,8 @@ def study_ids(db) -> dict[str, str]:
 
 TEST_SETTINGS = Settings(
     database_url="", jwt_secret=DEV_JWT_SECRET, demo_mode=True, llm_provider="offline", llm_model="offline",
-    llm_effort="low", commissioning_adapter="noop", commissioning_webhook_url=None,
+    llm_effort="low", aws_region="ap-southeast-1", aws_bedrock_model="anthropic.claude-sonnet-5-5",
+    commissioning_adapter="noop", commissioning_webhook_url=None,
     commissioning_webhook_headers={}, cors_origins=("http://localhost:3000",),
 )
 

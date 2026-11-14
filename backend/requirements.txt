@@ -5,6 +5,7 @@ psycopg[binary]>=3.2
 psycopg-pool>=3.2
 pyjwt>=2.9
 anthropic>=2.3
+boto3>=1.34
 httpx>=0.27
 fpdf2>=2.7
 pypdf>=5.0               # PDF text extraction for report ingestion
