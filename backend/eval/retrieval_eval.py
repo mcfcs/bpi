@@ -120,6 +120,24 @@ def score(outcomes: list[Outcome]) -> Scores:
     return s
 
 
+class CachedQueries:
+    """Embeds each question once. A sweep reruns every question for each of its ~300 floor settings,
+    and a hosted embedder (Bedrock) would bill every repeat."""
+
+    def __init__(self, embedder: Embedder):
+        self._inner = embedder
+        self.name = embedder.name
+        self._queries: dict[str, list[float]] = {}
+
+    def embed(self, text: str) -> list[float]:
+        return self._inner.embed(text)
+
+    def embed_query(self, text: str) -> list[float]:
+        if text not in self._queries:
+            self._queries[text] = self._inner.embed_query(text)
+        return self._queries[text]
+
+
 def run(conn: psycopg.Connection, embedder: Embedder, questions: list[dict], config: dict) -> list[Outcome]:
     outcomes = []
     for item in questions:
@@ -170,7 +188,9 @@ def table(rows: list[tuple[str, Scores]]) -> str:
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("--provider", choices=["hashing", "fastembed", "all"], default="all")
+    parser.add_argument("--provider", choices=["hashing", "fastembed", "bedrock", "all"], default="all",
+                        help="all = hashing + fastembed (bedrock is billed, so only when named)")
+    parser.add_argument("--bedrock-model", default=None, help="Bedrock embedding model (default: EMBEDDING_MODEL or Cohere Multilingual v3)")
     parser.add_argument("--model", action="append", help="fastembed model (repeatable)")
     parser.add_argument("--sweep", action="store_true", help="grid-search similarity floors per embedder")
     parser.add_argument("--show-misses", action="store_true")
@@ -191,13 +211,18 @@ def main() -> int:
         specs.append(("hashing", None))
     if args.provider in ("fastembed", "all"):
         specs += [("fastembed", m) for m in (args.model or [DEFAULT_FASTEMBED_MODEL])]
+    if args.provider == "bedrock":
+        from app.config import get_settings
+
+        get_settings()  # loads backend/.env.local: AWS_PROFILE and AWS_REGION for the Bedrock client
+        specs.append(("bedrock", args.bedrock_model))
 
     server = pgserver.get_server(tempfile.mkdtemp(prefix="si-eval-"), cleanup_mode="delete")
     rows, raw = [], {}
     try:
         for i, (provider, model) in enumerate(specs):
             started = time.perf_counter()
-            embedder = build_embedder(provider, model)
+            embedder = CachedQueries(build_embedder(provider, model))
             db = fresh_database(server, f"eval_{i}", embedder)
             try:
                 with db.as_user(persona_id(ANALYST), ANALYST) as conn:
