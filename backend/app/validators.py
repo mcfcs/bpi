@@ -15,6 +15,7 @@ from dataclasses import dataclass
 
 from .describe import build_summaries, explain_group, numbers_in, source_numbers
 from .divergence import DivergenceGroup
+from .geography import QUESTION_AREA_PHRASES, in_area, question_area
 from .retrieval import Source
 from .schemas import AudienceSummary, Claim, ContextNote, EvidenceBrief
 
@@ -131,8 +132,30 @@ def validate_summary(i: int, summary: AudienceSummary, sources: dict[str, Source
     return issues
 
 
+def in_question_area(source: Source, area: str) -> bool:
+    _, _, regions, segment = source.population_view()
+    return in_area(area, regions, segment)
+
+
+def place_issue(question: str | None, where: str, claim: Claim, sources: dict[str, Source],
+                show_id: Callable[[str], str] = str) -> Issue | None:
+    """A headline that leads with another place's figure when the question names a place and Tier A/B
+    figures for that place were retrieved ("Are long ATM queues a problem outside Metro Manila?" led
+    with the Metro Manila 57%). Section "brief": it asks for a rewrite but never drops the headline."""
+    area = question_area(question)
+    if not area:
+        return None
+    local = [fid for fid, s in sources.items() if is_ab_quant(s) and in_question_area(s, area)]
+    if not local or any(in_question_area(sources[f], area) for f in cited_ids(claim) if f in sources):
+        return None
+    place = QUESTION_AREA_PHRASES.get(area, area)
+    return Issue("brief", None, "headline_ignores_place",
+                 f"{where} leads with figures for another place, but the question asks about {place}. "
+                 f"Lead with the findings for {place}: {', '.join(map(show_id, local))}.")
+
+
 def validate_brief(brief: EvidenceBrief, sources: dict[str, Source], groups: list[DivergenceGroup],
-                   show_id: Callable[[str], str] = str) -> list[Issue]:
+                   show_id: Callable[[str], str] = str, question: str | None = None) -> list[Issue]:
     issues: list[Issue] = []
 
     for i, claim in enumerate(brief.claims):
@@ -155,10 +178,15 @@ def validate_brief(brief: EvidenceBrief, sources: dict[str, Source], groups: lis
             issues.append(Issue("claims", i, "headline_without_ab_quant",
                                 f"{where} is a headline but cites no Tier A or B quantitative finding."))
         if claim.kind == "headline":
+            wrong_place = place_issue(question, where, claim, sources, show_id)
+            if wrong_place:
+                issues.append(wrong_place)
+        if claim.kind != "qualitative_insight":
+            # A disputed figure stated alone reads as the answer, in a headline or a breakdown alike.
             cited = set(cited_ids(claim))
             for group in groups:
                 if group.kind == "unresolved_conflict" and cited & set(group.finding_ids) and not set(group.finding_ids) <= cited:
-                    issues.append(Issue("claims", i, "headline_hides_conflict",
+                    issues.append(Issue("claims", i, f"{claim.kind}_hides_conflict",
                                         f"{where} states one side of an unresolved conflict on {group.topic} as the answer. "
                                         f"Cite every finding in that conflict ({', '.join(map(show_id, group.finding_ids))}) "
                                         f"and say what each study found, for whom."))

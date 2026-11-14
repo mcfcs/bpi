@@ -139,7 +139,7 @@ def list_escalations(conn: psycopg.Connection) -> list[dict]:
         """
         select e.id::text as id, e.brief_id::text as brief_id, b.question, b.confidence, e.reason, e.note,
                e.status, e.response, e.created_at, e.responded_at, p.display_name as requested_by,
-               t.name as requester_team, rp.display_name as responded_by
+               t.name as requester_team, rp.display_name as responded_by, e.requested_by::text as requester_id
         from public.escalations e
         join public.profiles p on p.id = e.requested_by
         join public.teams t on t.id = p.team_id
@@ -148,7 +148,14 @@ def list_escalations(conn: psycopg.Connection) -> list[dict]:
         order by (e.status = 'open') desc, e.created_at desc
         """
     ).fetchall()
-    return [_jsonable(r) for r in rows]
+    # Thread follow-ups under the first request: the same person asking about the same question again
+    # (from the same brief, or from a new brief after asking again) continues one conversation.
+    first: dict[tuple, str] = {}
+    for row in sorted(rows, key=lambda r: r["created_at"]):
+        question = " ".join((row["question"] or "").lower().split())
+        key = (row["requester_id"], question or row["brief_id"] or row["id"])
+        row["thread_id"] = first.setdefault(key, row["id"])
+    return [_jsonable({k: v for k, v in r.items() if k != "requester_id"}) for r in rows]
 
 
 def respond_escalation(conn: psycopg.Connection, escalation_id: str, response: str, user_id: str) -> dict:

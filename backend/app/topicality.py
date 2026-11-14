@@ -52,7 +52,10 @@ _PRE = (
 _EXTRA_SYNONYMS = {"online": "digital", "app": "digital", "apps": "digital", "mobile": "digital",
                    "e-wallet": "digital", "ewallet": "digital", "renewal": "renew", "renewals": "renew",
                    "slow": "delay", "slowed": "delay", "delays": "delay", "waiting": "wait",
-                   "happy": "satisfaction", "masaya": "satisfaction", "satisfi": "satisfaction"}
+                   "happy": "satisfaction", "masaya": "satisfaction", "satisfi": "satisfaction",
+                   # In the Philippines a text message is "a text"; phishing is a scam message;
+                   # the studies call small merchants "vendors".
+                   "sms": "text", "phish": "scam", "merchant": "vendor"}
 
 # Signs that the "question" is code or an injection attempt rather than a question.
 JUNK = re.compile(r"(--\s*$|;\s*--|/\*|\*/|<\s*/?\s*script|\bdrop\s+table\b|\bunion\s+select\b|\bselect\s+\S+\s+from\b|\x00)",
@@ -65,6 +68,9 @@ def _norm(word: str) -> str:
         if len(word) > len(suffix) + 3 and word.endswith(suffix):
             word = word[: -len(suffix)]
             break
+    # "impersonate" meets "impersonation" (-> "impersonat"), "automate" meets "automation".
+    if len(word) > 6 and word.endswith("ate"):
+        word = word[:-1]
     # "stopped" -> "stopp" after stemming; fold the doubled consonant so it meets "stops" -> "stop".
     if len(word) > 4 and word[-1] == word[-2] and word[-1] not in "aeiouls":
         word = word[:-1]
@@ -201,6 +207,19 @@ def facet_multiplier(question_facets: dict[str, frozenset[str]], source, weights
     own = source_facets(source)
     return 1.0 + sum(w for dim, w in weights.items()
                      if question_facets.get(dim) and question_facets[dim] & own.get(dim, frozenset()))
+
+
+def answers_question(question: str, sources, bypass_similarity: float) -> bool:
+    """Whether any retrieved finding speaks to the question's concept. Semantic search ranks
+    something for every question, so "What savings goals do retirees set?" still pulls household
+    budgeting findings above the floor. A brief built on those is a false answer, so when no finding
+    shares the question's specific terms (or a concept phrase, or a topic facet) and none is a
+    near-exact match, nothing answers the question. A question with no specific terms ("What do we
+    know about QR payments?") is answered by whatever was retrieved."""
+    if not specific_terms(question):
+        return True
+    findings = [s for s in sources if getattr(s, "finding_type", None) != "verbatim"]
+    return any(overlap(question, s) or s.similarity >= bypass_similarity for s in findings)
 
 
 def is_junk(question: str) -> bool:

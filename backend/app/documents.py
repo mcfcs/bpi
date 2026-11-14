@@ -398,9 +398,16 @@ def map_finding_pages(card: StudyCardExtraction, pages: list[str]) -> tuple[dict
     found: dict[int, int | None] = {}
     excerpts: dict[int, str | None] = {}
     for ordinal, f in enumerate(card.findings):
-        page, _ = locate_page(f.text, pages)
+        # The report's own words first (a model's finding text is usually a paraphrase), then the text.
+        page, located_by = None, f.text
+        for candidate in (getattr(f, "source_text", None), f.text):
+            if candidate:
+                page, _ = locate_page(candidate, pages)
+                if page:
+                    located_by = candidate
+                    break
         found[ordinal] = page
-        excerpts[ordinal] = excerpt_on_page(f.text, pages[page - 1]) if page else None
+        excerpts[ordinal] = excerpt_on_page(located_by, pages[page - 1]) if page else None
     return found, excerpts
 
 

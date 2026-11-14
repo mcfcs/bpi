@@ -18,7 +18,7 @@ from datetime import date
 
 from psycopg.types.json import Jsonb
 
-from . import audit, charts, divergence, emotion, governance, retrieval, topicality
+from . import audit, charts, divergence, emotion, governance, progress, retrieval, topicality
 from .auth import CurrentUser
 from .confidence import compute_confidence
 from .config import ROLE_LABELS, TEAM_METRIC_FOCUS, retrieval_config, topicality_config
@@ -96,8 +96,10 @@ class BriefService:
         self.fallback_llm = fallback_llm
         self.today = today
 
-    def ask(self, user: CurrentUser, question: str, reader_role: str | None = None) -> dict:
+    def ask(self, user: CurrentUser, question: str, reader_role: str | None = None,
+            report: Callable[[int, str | None], None] = progress.ignore) -> dict:
         question = question.strip()
+        report(progress.SEARCH)
         vector = self.embedder.embed_query(question)
         junk = topicality.is_junk(question)
         focus = topicality.specific_terms(question)
@@ -105,9 +107,14 @@ class BriefService:
             sources, restricted = [], []
             if not junk:
                 sources = retrieval.search(conn, question, self.embedder, query_embedding=vector)
-                if focus and topicality_config(self.embedder.name)["filter_off_topic"]:
+                topical = topicality_config(self.embedder.name)
+                if focus and topical["filter_off_topic"]:
                     # Lexical search: findings that share only generic words ("SME", "loan") are false hits.
                     sources = [s for s in sources if topicality.overlap(question, s)]
+                elif topical.get("brief_needs_concept") and not topicality.answers_question(
+                        question, sources, topical["coverage_bypass_similarity"]):
+                    # Semantic search: nothing retrieved speaks to the question's concept.
+                    sources = []
                 sources = retrieval.attach_verbatims(conn, sources)
                 if sources or not focus or not topicality_config(self.embedder.name)["filter_off_topic"]:
                     restricted = retrieval.restricted_matches(conn, vector, retrieval_config(self.embedder.name),
@@ -116,6 +123,7 @@ class BriefService:
                 s.metric_key for s in sources if s.finding_type == "quant_stat" and s.is_quant and s.metric_key
             })
 
+        report(progress.COMPARE)
         by_id = {s.finding_id: s for s in sources}
         groups = divergence.analyze([s.ctx() for s in sources if s.finding_type != "verbatim"])
         available_charts = {key: charts.build_chart(key, rows) for key, rows in points.items()}
@@ -128,7 +136,7 @@ class BriefService:
         generated_by, dropped, regenerated, llm_note = None, [], False, None
         if sources:
             brief, generated_by, dropped, regenerated, llm_note = self._write(
-                question, sources, groups, chartable, computed_gaps, reader, contrasts)
+                question, sources, groups, chartable, computed_gaps, reader, contrasts, report)
         else:
             brief = EvidenceBrief(claims=[], context_notes=[], unresolved_conflicts=[], chart_requests=[],
                                   gaps=["No approved study you can read covers this question."])
@@ -153,10 +161,17 @@ class BriefService:
         cited_studies = {by_id[i].study_id for i in cited if i in by_id}
         chart_specs = [spec for k in chart_keys
                        if (spec := charts.build_chart(k, [r for r in points.get(k, []) if r["study_id"] in cited_studies]))]
+        # Figures in an unresolved conflict are marked wherever they appear (claims and bars), so a
+        # disputed number is never read as settled.
+        disputed = {fid: n.topic for n in brief.unresolved_conflicts for fid in n.finding_ids}
+        for spec in chart_specs:
+            for bar in spec["bars"]:
+                bar["disputed"] = bar["finding_id"] in disputed
         cited_findings = [by_id[i] for i in cited if i in by_id and by_id[i].finding_type != "verbatim"]
         unmatched = sorted(focus) if focus and cited_findings and not any(
             topicality.overlap(question, s) for s in cited_findings) else []
-        confidence = compute_confidence(brief, by_id, restricted_matches=len(restricted), unmatched_terms=unmatched)
+        confidence = compute_confidence(brief, by_id, restricted_matches=len(restricted), unmatched_terms=unmatched,
+                                        question=question)
 
         def claim_emotions(claim) -> list[dict]:
             if claim.kind != "qualitative_insight":
@@ -183,7 +198,9 @@ class BriefService:
             "generator_note": llm_note,
             "no_headline_message": no_headline_message,
             "disclaimer": QUAL_DISCLAIMER if any(qual_only) else None,
-            "claims": [{**c.model_dump(), "qual_only": q, "emotions": claim_emotions(c)}
+            "claims": [{**c.model_dump(), "qual_only": q, "emotions": claim_emotions(c),
+                        "disputed": sorted({topic_label(disputed[e.finding_id]) for e in c.evidence
+                                            if e.finding_id in disputed})}
                        for c, q in zip(brief.claims, qual_only)],
             "context_notes": [n.model_dump() for n in brief.context_notes],
             "unresolved_conflicts": [n.model_dump() for n in brief.unresolved_conflicts],
@@ -239,7 +256,8 @@ class BriefService:
 
     def _write(self, question: str, sources: list[Source], groups: list[divergence.DivergenceGroup],
                chartable: list[str], computed_gaps: list[str], reader: Reader | None = None,
-               contrasts: list[dict] | None = None):
+               contrasts: list[dict] | None = None,
+               report: Callable[[int, str | None], None] = progress.ignore):
         refs = {s.finding_id: f"F{i}" for i, s in enumerate(sources, 1)}
         ids = {ref: fid for fid, ref in refs.items()}
         by_id = {s.finding_id: s for s in sources}
@@ -258,6 +276,7 @@ class BriefService:
                             for c in contrasts or []],
         )
         writer, note = self.llm, None
+        report(progress.WRITE)
         try:
             draft = _map_ids(writer.write_brief(request), ids)
         except LLMError as exc:
@@ -267,15 +286,18 @@ class BriefService:
         def show(fid: str) -> str:
             return refs.get(fid, fid)
 
-        issues = validate_brief(draft, by_id, groups, show_id=show)
+        report(progress.CHECK)
+        issues = validate_brief(draft, by_id, groups, show_id=show, question=question)
         regenerated = False
         if issues:
             regenerated = True
+            report(progress.WRITE, f"Rewriting once: {len(issues)} check{'s' if len(issues) != 1 else ''} failed on the first draft")
             try:
                 draft = _map_ids(writer.write_brief(request, feedback=[i.message for i in issues]), ids)
             except LLMError:
                 pass  # keep the first draft; claims that fail are dropped below
-            issues = validate_brief(draft, by_id, groups, show_id=show)
+            report(progress.CHECK, "Checking the rewritten draft")
+            issues = validate_brief(draft, by_id, groups, show_id=show, question=question)
         final, dropped = finalize(draft, issues, by_id, groups, chartable)
         return final, writer.name, dropped, regenerated, note
 

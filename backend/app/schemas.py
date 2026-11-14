@@ -87,6 +87,10 @@ class ExtractedFinding(BaseModel):
     base_n: int | None
     subgroup: ExtractedSubgroup | None
     direction: Literal["high", "low", "neutral"] | None
+    # The report's own words for the finding (sentence, bullet or table row), copied exactly: the
+    # finding's page is found by searching the PDF for it. A model's paraphrase in `text` rarely
+    # matches the page; the offline extractor's text already is the report's text.
+    source_text: str | None = None
 
 
 class StudyCardExtraction(BaseModel):

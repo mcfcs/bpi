@@ -135,10 +135,90 @@ def load_sources(conn: psycopg.Connection, where: str, params: list) -> list[Sou
     return [Source(**row) for row in rows]
 
 
+# Words that end a conjunct when reading outwards from "and": articles, prepositions, auxiliaries and
+# question words. "Are fees and approval time a problem for SME owners?" -> "fees" | "approval time".
+_BOUNDARY = frozenset("""
+a an the of for in on to with about among by from at into over under than between within across
+is are was were be been do does did can could would should will has have had
+how what why which who whom whether when where while if that this these those their our your its
+""".split())
+_CONJUNCT_WORDS = 4
+_CLAUSE_START = frozenset("how what why which who whom when where whether do does did is are was were can could should will".split())
+
+
+def split_question(question: str) -> list[str]:
+    """A question that asks about two things joined by "and", once per thing: "Are fees and approval
+    time a problem for SME owners?" -> ["Are fees a problem for SME owners?", "Are approval time a
+    problem for SME owners?"]. Searched as one, the stronger part's best match sets the relative
+    floor and the weaker part's findings fall under it. Split only when each side has a concept of
+    its own and the two differ ("ID and document checks", "..., and does it matter?" stay whole)."""
+    words = question.split()
+    for i, word in enumerate(words):
+        if word.lower() != "and" or i == 0 or i == len(words) - 1:
+            continue
+        # Two questions in one: "How do typhoons affect income and how do workshops change literacy?"
+        if words[i + 1].lower() in _CLAUSE_START:
+            first, second = " ".join(words[:i]).rstrip(",;"), " ".join(words[i + 1:])
+            c1, c2 = topicality.concept_terms(first), topicality.concept_terms(second)
+            if c1 and c2 and c1 != c2:
+                return [first + "?", second[0].upper() + second[1:]]
+            continue
+        if words[i - 1].endswith((",", ";")):
+            continue
+        left, right = [], []
+        for w in reversed(words[:i]):
+            core = w.strip("?.,;:!").lower()
+            if core in _BOUNDARY or w.endswith((",", ";")) or len(left) == _CONJUNCT_WORDS:
+                break
+            left.insert(0, w)
+        article = ""
+        for w in words[i + 1:]:
+            core = w.strip("?.,;:!").lower()
+            if core in ("a", "an", "the") and not right and not article:
+                article = w   # "the selfie check and the annual fee": the second part may start with one
+                continue
+            if core in _BOUNDARY or len(right) == _CONJUNCT_WORDS:
+                break
+            if core.endswith("ing") and len(right) >= 2:
+                break   # "the annual fee putting ...": the verb after a two-word noun phrase
+            right.append(w)
+            if w.endswith(("?", ".", ",", ";", "!")):
+                break
+        if article and right:
+            right.insert(0, article)
+        a, b = " ".join(left), " ".join(right[1:] if article else right).rstrip("?.,;:!")
+        ca, cb = topicality.concept_terms(a), topicality.concept_terms(b)
+        if not a or not b or not ca or not cb or ca == cb:
+            continue
+        joined = " ".join(left + ["and"] + right)
+        start = question.index(joined)
+        tail = question[start + len(joined):]
+        if right[-1] != b.split()[-1] or not right[-1].endswith(b.split()[-1]):
+            tail = right[-1][len(b.split()[-1]):] + tail   # keep the "?" that ended the conjunct
+        return [question[:start] + a + tail, question[:start] + b + tail]
+    return []
+
+
 def search(conn: psycopg.Connection, question: str, embedder: Embedder, *,
            query_embedding: list[float] | None = None, config: dict | None = None) -> list[Source]:
     cfg = {**retrieval_config(embedder.name), **(config or {})}
     vector = query_embedding or embedder.embed_query(question)
+    whole = _search_once(conn, question, vector, cfg)
+    parts = split_question(question)
+    if not parts:
+        return whole
+    # Each part keeps its own best matches: merge the result lists in turn (whole, part 1, part 2),
+    # dropping repeats, up to the usual number of findings.
+    lists = [whole] + [_search_once(conn, part, embedder.embed_query(part), cfg) for part in parts]
+    merged: dict[str, Source] = {}
+    for rank in range(max(len(x) for x in lists)):
+        for found in lists:
+            if rank < len(found) and found[rank].finding_id not in merged:
+                merged[found[rank].finding_id] = found[rank]
+    return list(merged.values())[: cfg["match_count"]]
+
+
+def _search_once(conn: psycopg.Connection, question: str, vector: list[float], cfg: dict) -> list[Source]:
     rows = conn.execute(
         "select finding_id::text as finding_id, similarity, score "
         "from public.match_findings(%s::extensions.vector, %s, %s, %s, %s)",

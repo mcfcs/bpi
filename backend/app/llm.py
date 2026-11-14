@@ -8,11 +8,12 @@ for tests and for demos without Claude credentials. Both go through the same val
 
 from __future__ import annotations
 
+import logging
 from typing import TypeVar
 
 from pydantic import BaseModel, ValidationError
 
-from . import offline_extract
+from . import geography, offline_extract
 from .config import Settings, metric_label
 from . import topicality
 from .describe import (
@@ -40,7 +41,7 @@ from .prompts import (
 )
 from .retrieval import Source
 from .schemas import Claim, ContextNote, EvidenceBrief, Evidence, ScopeDraft, StudyCardExtraction
-from .validators import QUAL_FORBIDDEN, has_hedge
+from .validators import QUAL_FORBIDDEN, has_hedge, in_question_area
 
 T = TypeVar("T", bound=BaseModel)
 
@@ -162,6 +163,13 @@ def _with_details(text: str, details: str) -> str:
     return text[:-1] + f" ({details})."
 
 
+def _disputed_text(metric_key: str, members: list[Source]) -> str:
+    """An unresolved conflict stated as what each study found, never as one answer."""
+    return (f"{metric_label(metric_key)}: " + "; ".join(
+        f"{m.study_code} found {fmt_value(m.value, m.unit)} among {who_short(m)} ({method_short(m)}, {fieldwork_label(m)})"
+        for m in members) + ". An S&I analyst is checking why the results differ before either is used.")
+
+
 class OfflineLLM:
     name = "offline-template"
 
@@ -183,8 +191,11 @@ class OfflineLLM:
         by_ref = dict(request.findings)
         focus = topicality.specific_terms(request.question)
         conflicts = {g.topic: g for g in request.groups if g.kind == "unresolved_conflict"}
+        area = geography.question_area(request.question)
+        in_place = [(r, s) for r, s in ab_quant if area and in_question_area(s, area)]
         if ab_quant:
-            totals = [(r, s) for r, s in ab_quant if not s.subgroup] or ab_quant
+            # A question about a place ("outside Metro Manila") leads with that place's figures.
+            totals = in_place or [(r, s) for r, s in ab_quant if not s.subgroup] or ab_quant
             matching = [(r, s) for r, s in totals if focus & topicality.finding_terms(s)]
             candidates = sorted(matching or totals, key=lambda rs: rs[1].effective_tier or "C")   # stable: keeps rank order
             lead_study = candidates[0][1].study_id
@@ -192,9 +203,7 @@ class OfflineLLM:
             ref, lead = max(pool, key=lambda rs: (rs[1].unit == "%", float(rs[1].value)))
             if lead.metric_key in conflicts:
                 members = [(r, by_ref[r]) for r in conflicts[lead.metric_key].refs]
-                text = (f"{metric_label(lead.metric_key)}: " + "; ".join(
-                    f"{m.study_code} found {fmt_value(m.value, m.unit)} among {who_short(m)} ({method_short(m)}, {fieldwork_label(m)})"
-                    for _, m in members) + ". An S&I analyst is checking why the results differ before either is used.")
+                text = _disputed_text(lead.metric_key, [m for _, m in members])
                 refs = [r for r, _ in members]
             else:
                 agreeing = [
@@ -205,7 +214,11 @@ class OfflineLLM:
                 text = _with_details(lead.text, _population_phrase(lead))
                 for _, s in agreeing:
                     text += f" {s.study_code} ({_short_population(s)}) reports {fmt_value(s.value, s.unit)} on the same measure."
-                refs = [ref] + [r for r, _ in agreeing]
+                # The other figures for the asked-for place on the same measure ("In Visayas, 19% ...").
+                same_place = [(r, s) for r, s in pool if in_place and r != ref and s.metric_key == lead.metric_key]
+                for _, s in sorted(same_place, key=lambda rs: -float(rs[1].value)):
+                    text += " " + _sentence(s.text)
+                refs = [ref] + [r for r, _ in agreeing] + [r for r, _ in same_place]
             claims.append(Claim(text=text, kind="headline",
                                 evidence=[Evidence(finding_id=r, stance="supports") for r in refs]))
             used.update(refs)
@@ -229,6 +242,15 @@ class OfflineLLM:
                 kind="breakdown", evidence=[Evidence(finding_id=r, stance="supports") for r, _ in rows],
             ))
             used.update(r for r, _ in rows)
+            breakdowns += 1
+        # A disputed figure the headline doesn't cover: one breakdown with what each study found.
+        for topic, group in conflicts.items():
+            if breakdowns >= self.MAX_BREAKDOWNS or set(group.refs) & used:
+                continue
+            members = [by_ref[r] for r in group.refs]
+            claims.append(Claim(text=_disputed_text(topic, members), kind="breakdown",
+                                evidence=[Evidence(finding_id=r, stance="supports") for r in group.refs]))
+            used.update(group.refs)
             breakdowns += 1
         # Figures that take part in a divergence come first (the reader needs them to follow the
         # context notes), then the largest remaining figures, skipping the headline's own metric.
@@ -356,6 +378,27 @@ def bedrock_client(region: str):
     from anthropic import AnthropicBedrock
 
     return AnthropicBedrock(aws_region=region, timeout=120.0, max_retries=1)
+
+
+def writer_ready(llm) -> tuple[bool, str | None]:
+    """Whether the brief writer can be reached now, without a billed call. An expired AWS sign-in or a
+    dropped connection makes every brief fall back to templates, which a reader only notices in the
+    small "drafted by" line, so the ask page warns before anyone asks. Bedrock: the AWS credentials
+    (STS, free); Claude API: the models list (free)."""
+    platform = getattr(llm, "platform", None)
+    try:
+        if platform == "bedrock":
+            import boto3
+
+            boto3.client("sts").get_caller_identity()
+        elif platform == "anthropic":
+            llm.client.models.list(limit=1)
+        return True, None
+    except Exception as exc:   # noqa: BLE001 - any failure means briefs will come from templates
+        logging.getLogger(__name__).warning("Brief writer not reachable: %s", exc)
+        if platform == "bedrock":
+            return False, "The AWS sign-in has expired or the network is down (run aws sso login)."
+        return False, "The Claude API cannot be reached."
 
 
 def build_llm(settings: Settings) -> LLM:

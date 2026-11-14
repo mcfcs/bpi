@@ -7,6 +7,7 @@ still open; until then this map is the one place to extend.
 
 from __future__ import annotations
 
+import re
 from collections.abc import Iterable
 
 REGION_ISLAND_GROUP: dict[str, str] = {
@@ -180,6 +181,49 @@ def where_phrase(locations: Iterable[str] | None) -> str:
     if kind == "rural":
         return "in " + names[:1].lower() + names[1:]
     return f"in {names}"
+
+
+# Places a question can ask about. Checked in this order: "rural areas outside Metro Manila" is rural.
+_Q_RURAL = re.compile(r"\b(?:rural|countryside|probinsya)\b", re.IGNORECASE)
+_Q_OUTSIDE = re.compile(r"\b(?:outside (?:of )?(?:metro manila|ncr|manila)|the provinces?|provincial|provinces)\b",
+                        re.IGNORECASE)
+_Q_ISLAND = re.compile(r"\b(luzon|visayas|mindanao)\b", re.IGNORECASE)
+_Q_METRO = re.compile(r"\b(?:metro manila|ncr|manila)\b", re.IGNORECASE)
+QUESTION_AREA_PHRASES = {"rural": "rural areas", "provincial": "areas outside Metro Manila",
+                         "metro_manila": "Metro Manila"}
+
+
+def question_area(question: str | None) -> str | None:
+    """The place a question asks about: "rural", "provincial" (outside Metro Manila), "metro_manila"
+    or an island group ("Visayas"); None when it names none. Used so a headline answers for that place
+    rather than leading with another place's figure."""
+    q = question or ""
+    if _Q_RURAL.search(q):
+        return "rural"
+    if _Q_OUTSIDE.search(q):
+        return "provincial"
+    island = _Q_ISLAND.search(q)
+    if island:
+        return island.group(1).capitalize()
+    if _Q_METRO.search(q):
+        return "metro_manila"
+    return None
+
+
+def in_area(area: str, locations: Iterable[str] | None, segment: str | None = None) -> bool:
+    """Whether a finding's population (its regions, and a segment such as "Customers in rural
+    barangays") lies in the area a question asks about."""
+    kind = area_type(locations)
+    rural_segment = "rural" in (segment or "").lower()
+    if area == "rural":
+        return kind == "rural" or rural_segment
+    if area == "provincial":
+        return kind in ("provincial", "provincial_city", "rural") or rural_segment
+    if area == "metro_manila":
+        return kind == "metro_manila"
+    if area in ISLAND_GROUPS:
+        return kind not in (None, "nationwide", "mixed") and island_groups(locations) == [area]
+    return False
 
 
 def contrast_note(a: Iterable[str] | None, b: Iterable[str] | None) -> str | None:

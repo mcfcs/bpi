@@ -5,6 +5,7 @@ from __future__ import annotations
 from collections.abc import Callable
 from datetime import date
 
+import time
 import httpx
 import jwt
 import psycopg
@@ -12,15 +13,15 @@ from fastapi import Depends, FastAPI, Header, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, Response
 
-from . import audit, commissioning, governance, ingestion, review
+from . import audit, commissioning, governance, ingestion, progress, review, usage
 from .auth import CurrentUser, decode_token, issue_token
 from .commissioning import CommissioningAdapter, build_adapter
 from .config import Settings, get_settings
 from .db import Database
 from .describe import source_view
-from .embeddings import Embedder, build_embedder
+from .embeddings import Embedder, EmbeddingUnavailable, build_embedder, search_ready
 from .jobs.recompute_tiers import recompute_all
-from .llm import OfflineLLM, build_llm
+from .llm import OfflineLLM, build_llm, writer_ready
 from .llm_types import LLM, LLMError
 from .retrieval import load_sources
 from .schemas import (
@@ -67,6 +68,12 @@ def create_app(settings: Settings | None = None, *, db: Database | None = None, 
     # ------------------------------------------------------------------ errors
     def _error(status: int, message: str) -> JSONResponse:
         return JSONResponse(status_code=status, content={"detail": message})
+
+    @app.exception_handler(EmbeddingUnavailable)
+    async def embedding_unavailable(request: Request, exc: EmbeddingUnavailable):
+        return JSONResponse(status_code=503, content={
+            "detail": "Search can't run right now: the hosted search model can't be reached. Try again in a few "
+                      "minutes, or ask whoever runs the app to sign in to AWS again."})
 
     @app.exception_handler(psycopg.errors.InsufficientPrivilege)
     async def _forbidden(_: Request, exc: Exception):
@@ -138,9 +145,18 @@ def create_app(settings: Settings | None = None, *, db: Database | None = None, 
     def as_user(user: CurrentUser):
         return db.as_user(user.id, user.email)
 
+    # The writer and search checks are cached for a minute: the ask page calls health on every visit.
+    checks = {"at": float("-inf")}
+
     @app.get("/api/health")
     def health():
-        return {"ok": True, "llm": llm.name, "embedder": embedder.name, "commissioning_adapter": adapter.name}
+        now = time.monotonic()
+        if now - checks["at"] > 60:
+            llm_ready, llm_problem = writer_ready(llm)
+            ready, problem = search_ready(embedder)
+            checks.update(at=now, llm_ready=llm_ready, llm_problem=llm_problem, search_ready=ready, search_problem=problem)
+        return {"ok": True, "llm": llm.name, "embedder": embedder.name, "commissioning_adapter": adapter.name,
+                **{k: v for k, v in checks.items() if k != "at"}}
 
     if settings.demo_mode:
         @app.get("/api/demo/personas")
@@ -168,10 +184,18 @@ def create_app(settings: Settings | None = None, *, db: Database | None = None, 
     # ------------------------------------------------------------------ briefs
     @app.post("/api/briefs")
     def ask(body: AskBody, user: CurrentUser = Depends(current_user)):
-        brief = briefs.ask(user, body.question, body.reader_role)
+        try:
+            brief = briefs.ask(user, body.question, body.reader_role, report=progress.reporter(user.id))
+        finally:
+            progress.clear(user.id)
         with as_user(user) as conn:   # page numbers and report links for citations ("SI-2026-014 · p.4")
             documents.attach_citations(conn, brief.get("sources") or {})
         return brief
+
+    @app.get("/api/briefs/progress")
+    def brief_progress(user: CurrentUser = Depends(current_user)):
+        """The step the caller's brief is on (polled by the ask page), or null when none is running."""
+        return progress.current(user.id)
 
     @app.get("/api/briefs")
     def my_briefs(user: CurrentUser = Depends(current_user)):
@@ -387,6 +411,12 @@ def create_app(settings: Settings | None = None, *, db: Database | None = None, 
         return governance.draft_escalation({**row["payload"], "id": row["id"]})
 
     # ------------------------------------------------------------------ audit
+    @app.get("/api/audit/summary")
+    def usage_summary(days: int = 30, user: CurrentUser = Depends(require_si)):
+        """What business teams asked and what happened next, for S&I (counts from the audit log)."""
+        with as_user(user) as conn:
+            return usage.summary(conn, min(max(days, 1), 365))
+
     @app.get("/api/audit")
     def audit_log(limit: int = 200, user: CurrentUser = Depends(require_si)):
         with as_user(user) as conn:
