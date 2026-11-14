@@ -6,6 +6,7 @@ that the expected studies are among the cited findings, and whether a restricted
 
     python -m eval.coverage_eval                          # hashing + default fastembed model
     python -m eval.coverage_eval --provider fastembed -v
+    python -m eval.coverage_eval --provider bedrock      # Cohere on Bedrock (billed, fractions of a cent)
     python -m eval.coverage_eval --public-pdfs ../data/public/pdfs   # include public studies (PUB-*)
 
 Public studies are seeded only when their PDFs are present (they are git-ignored); without them the
@@ -74,7 +75,8 @@ def check(db: Database, embedder, case: dict, seeded: set[str]) -> dict:
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("--provider", choices=["hashing", "fastembed", "all"], default="all")
+    parser.add_argument("--provider", choices=["hashing", "fastembed", "bedrock", "all"], default="all",
+                        help="all = hashing + fastembed (bedrock is billed, so only when named)")
     parser.add_argument("--public-pdfs", type=Path, help="directory holding the downloaded public report PDFs")
     parser.add_argument("-v", "--verbose", action="store_true")
     args = parser.parse_args()
@@ -85,6 +87,11 @@ def main() -> int:
     cases = json.loads(CASES.read_text(encoding="utf-8"))["cases"]
     specs = ([("hashing", None)] if args.provider in ("hashing", "all") else []) + \
             ([("fastembed", DEFAULT_FASTEMBED_MODEL)] if args.provider in ("fastembed", "all") else [])
+    if args.provider == "bedrock":
+        from app.config import get_settings
+
+        get_settings()  # loads backend/.env.local: AWS_PROFILE and AWS_REGION for the Bedrock client
+        specs.append(("bedrock", None))
     server = pgserver.get_server(tempfile.mkdtemp(prefix="si-coverage-"), cleanup_mode="delete")
     failures = 0
     try:

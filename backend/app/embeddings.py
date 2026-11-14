@@ -194,6 +194,25 @@ DEFAULT_FASTEMBED_MODEL = "sentence-transformers/paraphrase-multilingual-MiniLM-
 DEFAULT_BEDROCK_EMBED_MODEL = "cohere.embed-multilingual-v3"
 
 
+class EmbeddingUnavailable(RuntimeError):
+    """A hosted embedder could not be reached (expired AWS sign-in, network). Stored findings were
+    embedded by that model, so no local model can stand in: the request fails with a plain message."""
+
+
+def search_ready(embedder: Embedder) -> tuple[bool, str | None]:
+    """Whether question search can run now, without a billed call. Local embedders always can; the
+    Bedrock embedder needs a valid AWS sign-in (checked with STS, which is free)."""
+    if not embedder.name.startswith("bedrock:"):
+        return True, None
+    try:
+        import boto3
+
+        boto3.client("sts").get_caller_identity()
+        return True, None
+    except Exception:   # noqa: BLE001 - any failure means search will fail
+        return False, "The AWS sign-in has expired or the network is down (run aws sso login)."
+
+
 class BedrockEmbedder:
     """Cohere Embed v3 (or any Bedrock embedding model) via the Bedrock Runtime InvokeModel API.
 
@@ -211,18 +230,26 @@ class BedrockEmbedder:
 
     def _embed(self, text: str, input_type: str) -> list[float]:
         import json as _json
-        from botocore.exceptions import ClientError
+        from botocore.exceptions import BotoCoreError, ClientError
+        body = {"texts": [text], "input_type": input_type, "truncate": "END"}
+        v4 = "embed-v4" in self.model
+        if v4:
+            # Embed v4 returns the column's 512 dimensions itself (trained for shorter outputs).
+            body.update(embedding_types=["float"], output_dimension=EMBEDDING_DIM)
         try:
             response = self._client.invoke_model(
                 modelId=self.model,
-                body=_json.dumps({"texts": [text], "input_type": input_type, "truncate": "END"}),
+                body=_json.dumps(body),
                 contentType="application/json",
                 accept="application/json",
             )
         except ClientError as exc:
-            raise RuntimeError(f"Bedrock embed error: {exc.response['Error']['Message']}") from exc
-        values: list[float] = _json.loads(response["body"].read())["embeddings"][0]
-        # Truncate to the column dimension and renormalise.
+            raise EmbeddingUnavailable(f"Bedrock embed error: {exc.response['Error']['Message']}") from exc
+        except BotoCoreError as exc:   # expired SSO token, no credentials, connection failures
+            raise EmbeddingUnavailable(f"Bedrock embed error: {exc}") from exc
+        embeddings = _json.loads(response["body"].read())["embeddings"]
+        values: list[float] = embeddings["float"][0] if v4 else embeddings[0]
+        # v3: keep the column dimension and renormalise.
         values = values[:EMBEDDING_DIM]
         norm = math.sqrt(sum(v * v for v in values)) or 1.0
         return [v / norm for v in values]

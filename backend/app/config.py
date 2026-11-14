@@ -67,6 +67,27 @@ EMBEDDER_FLOORS: dict[str, dict[str, dict]] = {
                       "restricted_bypass_similarity": 0.7},
         "coverage": {"min_similarity": 0.5, "relative_floor": 0.8},
     },
+    # Cohere Multilingual v3 on Bedrock (cut to 512 dims, see BedrockEmbedder). Sweep on the tune half
+    # of the 64 questions (14 Nov): best 0.48 / 0.8; 0.48 / 0.7 kept canonical recall at 1.00 on both
+    # halves with held-out micro F1 0.83 (fastembed 0.67) and Taglish recall 0.88 (fastembed 0.67).
+    # Off-topic questions still get hits (3 of 6, best match ~0.51). Coverage cases pass 13/13 for any
+    # coverage floor from 0.50 to 0.62 and restricted floor 0.48 or 0.52, so those are mid-range picks
+    # the cases don't discriminate. Proposed defaults, not validated by S&I.
+    "bedrock:cohere.embed-multilingual-v3": {
+        "retrieval": {"min_similarity": 0.48, "relative_floor": 0.7, "restricted_min_similarity": 0.52,
+                      "restricted_bypass_similarity": 0.7},
+        "coverage": {"min_similarity": 0.56, "relative_floor": 0.8},
+    },
+    # Cohere Embed v4 on Bedrock (512 dims natively; Singapore serves it only through the global
+    # profile). Tune-half sweep (14 Nov): best 0.34 / 0.7, held-out micro F1 0.88 (v3 0.83), all 64:
+    # 0.87 with paraphrase precision 0.91 and 1 of 6 off-topic questions with hits (v3: 3 of 6), but
+    # Taglish recall 0.77 (v3 0.88). Coverage cases pass 13/13 for any coverage floor 0.38-0.54 and
+    # restricted floor 0.34 or 0.38: mid-range picks. Proposed defaults, not validated by S&I.
+    "bedrock:global.cohere.embed-v4:0": {
+        "retrieval": {"min_similarity": 0.34, "relative_floor": 0.7, "restricted_min_similarity": 0.38,
+                      "restricted_bypass_similarity": 0.7},
+        "coverage": {"min_similarity": 0.46, "relative_floor": 0.8},
+    },
 }
 
 
@@ -233,9 +254,14 @@ TEAM_METRIC_FOCUS: dict[str, tuple[str, ...]] = {
 # just generic words like "SME" or "loan". With the lexical hashing embedder, off-topic findings are
 # dropped from briefs; with a semantic embedder lexical overlap misses true paraphrases, so it only
 # caps confidence. Coverage checks drop off-topic findings unless their similarity reaches the bypass.
+# brief_needs_concept: with a semantic embedder, a question none of whose retrieved findings shares
+# its concept (topicality.answers_question) gets "no study covers this" instead of a brief. On the
+# 64 eval questions with Bedrock search (14 Nov) it removed 3 of the 4 off-topic questions that still
+# retrieved findings and blocked no answerable one. Proposed default, not validated by S&I.
 TOPICALITY_CONFIG: dict[str, dict] = {
-    "hashing": {"filter_off_topic": True, "coverage_bypass_similarity": 2.0},   # never bypassed
-    "default": {"filter_off_topic": False, "coverage_bypass_similarity": 0.7},
+    "hashing": {"filter_off_topic": True, "coverage_bypass_similarity": 2.0,   # never bypassed
+                "brief_needs_concept": False},   # already filtered finding by finding
+    "default": {"filter_off_topic": False, "coverage_bypass_similarity": 0.7, "brief_needs_concept": True},
 }
 
 
