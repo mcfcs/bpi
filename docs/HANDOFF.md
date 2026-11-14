@@ -14,7 +14,7 @@ _Last updated: 14 Nov 2026._
   S&I inbox); RLS-enforced permissions on findings and documents; append-only audit log.
 - **Deadlines:** submission 13 Nov 2026 (pitch deck + prototype); top-5 pitch 27 Nov. Next
   consultation 4 Nov: bring the open questions below.
-- **Tests:** 181 backend tests pass (`cd backend && .venv/Scripts/python -m pytest`, ~50 s).
+- **Tests:** 205 backend tests pass (`cd backend && .venv/Scripts/python -m pytest`, ~60 s).
   Frontend typechecks and builds. CI: `.github/workflows/ci.yml` (first run not checked: private repo).
 - **LLM:** Claude on Amazon Bedrock works (`LLM_PROVIDER=bedrock`, Singapore, global inference
   profiles). 12-question comparison below: Opus 5.5 and Sonnet 5.5 never fell back to templates.
@@ -52,9 +52,79 @@ _Last updated: 14 Nov 2026._
 3. **`eval/brief_eval.py`**: same questions and retrieval (fastembed), different writer; records
    fall-backs, regenerations with the validator feedback, dropped claims, seconds, tokens and cost;
    `--blind` writes an A/B file for people to judge wording. Results below.
-4. **`eval/retrieval_eval.py --provider bedrock`** for the Cohere embedder committed in `009ddfa`,
-   and each question is embedded once per run (sweeps no longer re-embed 300 times).
-   `extraction_eval.py --claude` also runs with `LLM_PROVIDER=bedrock`.
+4. **Bedrock search measured and given floors**: `retrieval_eval.py` and `coverage_eval.py` take
+   `--provider bedrock` for the Cohere embedder committed in `009ddfa`; retrieval_eval embeds each
+   question once per run (sweeps no longer re-embed 300 times). New `EMBEDDER_FLOORS` entry in
+   `config.py` (results below). `extraction_eval.py --claude` also runs with `LLM_PROVIDER=bedrock`.
+5. **Faster briefs.** `BRIEF_SYSTEM` ends with an explicit check of the qualitative wording rules
+   (every rewrite in the first eval was one of them). Sonnet 5.5 at effort **medium** on the same 12
+   questions: 0 rewrites, 0 dropped claims, median 12 s, max 52 s, $0.025 per brief, against 2 / 1 /
+   18 s / 70 s / $0.042 at high; wording read as good. `LLM_EFFORT=medium` set in the local
+   `.env.local` (code default stays `high`). At high effort Sonnet still wrote "all" in focus-group
+   claims despite the rule.
+6. **"No study covers this" for off-topic questions** (`topicality.answers_question`,
+   `TOPICALITY_CONFIG["brief_needs_concept"]`): with a semantic embedder, a question none of whose
+   findings shares its concept gets no brief. Bedrock search: blocks 3 of the 4 off-topic questions
+   that still retrieved findings, wrongly blocks 0 of 52 answerable ones. Fastembed: blocks 3 of 6;
+   before the "merchant = vendor" fix it wrongly blocked 2 (one, a Taglish delivery-rider question,
+   had retrieved the wrong studies anyway). Normalisation fixes in `topicality.py`: SMS = text,
+   phishing = scam, merchant = vendor, "impersonate" meets "impersonation".
+7. **QA gaps from 30 Oct fixed:** the headline honours a place the question names
+   (`geography.question_area` / `in_area`; validator `headline_ignores_place` asks for one rewrite
+   and never drops; the template writer leads with that place's figures); disputed figures are marked
+   wherever they appear (`disputed` on claims and chart bars, a flag chip and dashed bars in the UI;
+   the template writer states a disputed pair as one claim; validator `breakdown_hides_conflict`);
+   the analyst desk threads a person's follow-ups on the same question (`thread_id`); a new brief that
+   joins an open check says "Joined an existing check". A claim's sources list shows one card per
+   study page and place (two figures from one table showed two identical cards).
+8. **Confidence counts only conflicts that bear on the question** (C6, `confidence.py`): cited by
+   the headline, sharing the question's concept, or a generic question. A conflict elsewhere caps at
+   Medium with a reason instead of forcing Low.
+9. **Demo robustness:** the ask page shows the real step (`GET /api/briefs/progress`, in-memory per
+   user, `app/progress.py`), including "Rewriting once: N checks failed"; `/api/health` reports
+   `llm_ready` and `search_ready` (free STS / models-list checks, cached a minute) and the ask page
+   warns when either is down; an unreachable Bedrock search model now gives a plain 503 instead of a
+   500 (asking failed outright when the SSO login expired on 14 Nov).
+10. **S&I usage summary** on the audit page (`GET /api/audit/summary`, `app/usage.py`): briefs by
+   confidence and team, questions no readable study answered (demand to weigh before commissioning),
+   restricted matches, analyst requests, access requests, rewrites and template fall-backs.
+11. **Two-part questions** (A9, `retrieval.split_question`): "fees and approval time ..." and "... and
+   how do workshops ..." are searched part by part, each with its own relative floor, and merged in
+   turn. The 64 eval questions score exactly as before (fastembed micro F1 0.70, hashing 0.63); on
+   five two-part checks it rescued the missing half once per embedder (typhoon + delivery-rider
+   income with fastembed; QR + scams with hashing) and lost nothing.
+
+**After 5-11, measured with Bedrock** (Sonnet 5.5, effort medium, same 12 questions): 0 fall-backs,
+0 rewrites, 0 dropped claims, median 10.5 s, max 20 s, $0.026 per brief. `extraction_eval.py
+--claude` with Bedrock on the 37 synthetic reports: every field right, finding recall 99% and page
+99% (one finding missed in SI-2026-060, one page wrong in SI-2025-059); the offline extractor is at
+100% on these by construction.
+
+**Real reports** (`extraction_eval.py --claude --only public`; only the two BSP PDFs are here, see
+below): Sonnet on Bedrock finds 67-83% of the hand-labelled findings, the offline extractor 0%. Its
+findings were paraphrases, so pages came out 0-20% right; extraction now also asks for each
+finding's `source_text` (the report's own words, copied exactly) and places the finding by that
+first (`documents.map_finding_pages`). After that, Consumer Expectations pages were 100% right. The
+Financial Inclusion Survey still scores 0% against the labels, but every page it gives contains the
+quoted sentence word for word: that report states each finding twice, in its highlights (pp.10-15,
+which the labels cite) and in its chapters (pp.22-35, where the model quoted from). One run per
+report, so treat the percentages as rough.
+
+**Public PDFs here:** `bsp-financial-inclusion-survey-2021.pdf` and
+`bsp-consumer-expectations-survey-q4-2025.pdf` are the labelled reports and are seeded as
+PUB-BSP-FIS21 and PUB-BSP-CES25Q4. Four other PDFs in `data/public/pdfs/` are different documents
+(the Philippine Development Plan 2023-2028, ADB Asia SME Monitor 2020 volume 1, CGAP's 2015
+multi-country synthesis, a CGAP COVID-19 G2P case study) and are deliberately not named as the
+labelled reports: their cards cite pages in other documents. The World Bank Enterprise Survey 2023,
+ADB Philippines fintech note and the two CGAP Philippines papers are still missing (URLs in
+`data/public/manifest.json`; save as `<slug>.pdf`).
+
+**Checked in the browser (14 Nov, 1440 px and a 390 px frame, light and dark):** live progress steps;
+the ATM question's headline gives the provincial figures; the cashback brief marks both disputed
+pairs on claims and chart bars, with Low confidence; asking it again shows "Joined an existing
+check"; the analyst desk nests follow-ups; the audit page shows the usage summary; the mortgage
+question gets "No approved study you can read answers this" with no model call. Found and fixed
+while checking: duplicate source cards, and a `.thread` class clash that hid the desk indent.
 
 ### 30 Oct 2026: consultation 2, documents, redesign, multi-agent pass
 
@@ -122,18 +192,39 @@ wait…" pulls card/QR studies; the generic "abandon digital applications" has l
 | fastembed (demo) | 0.87 | 0.79 | 0.75 | 0.67 | 0.87 | 0.67 | 0.70 |
 | hashing (tests) | 0.75 | 0.69 | 0.46 | 0.81 | 0.82 | 0.50 | 0.63 |
 | Bedrock Cohere Multilingual v3, no floors of its own | 1.00 | 0.83 | 0.41 | 1.00 | 0.93 | 1.00 | 0.39 |
+| Bedrock Cohere Multilingual v3, floors 0.48 / 0.7 | 0.85 | 0.83 | 0.79 | 0.88 | 0.90 | 0.50 | **0.86** |
 
 On the original 43 questions the larger corpus cost micro F1 0.80 → 0.75 (fastembed) and
 0.76 → 0.68 (hashing). The loss is off-topic questions: 0/6 had hits before, now 4/6 (fastembed:
 mortgage rates → solar/literacy/typhoon studies at 0.52; retiree savings goals → household budgeting
-studies at 0.48). A floor can't remove a 0.52 hit without losing real answers. Coverage checks are
+studies at 0.48). A floor can't remove a 0.52 hit without losing real answers: the tune-half sweep's
+best fastembed setting (floor 0.42, relative 0.8) raises held-out micro F1 0.67 → 0.72 and precision
+0.72 → 0.88, but drops held-out canonical recall 1.00 → 0.75 and leaves off-topic hits unchanged
+there. Floors kept at 0.38 / 0.7: a writer can say a finding doesn't answer the question, but it
+can't cite a study retrieval missed. (Hashing's best, 0.2 / 0.6, removes off-topic hits by
+cutting paraphrase recall 0.73 → 0.41; not adopted.) Coverage checks are
 unchanged (fastembed 13/13, hashing 12/13, public PDFs absent). "Ilan ang nakakatanggap ng pekeng
 text mula sa bangko?" finds nothing with either local embedder; fastembed also finds nothing for the
 Tagalog fisherfolk and compound-interest questions.
-Bedrock Cohere finds everything (recall 1.00, Taglish included) but has no `EMBEDDER_FLOORS` entry,
-so it runs on the hashing defaults (0.12) and every off-topic question gets hits. Its floor sweep
-was still running at the time of writing. Until it has floors, keep `EMBEDDING_PROVIDER=fastembed`
-for demos.
+**Bedrock search beats fastembed** once it has its own floors (`EMBEDDER_FLOORS` entry
+`bedrock:cohere.embed-multilingual-v3`, added 14 Nov). Without them it ran on the hashing defaults
+(0.12) and every off-topic question got hits. Tune-half sweep best 0.48 / 0.8; 0.48 / 0.7 chosen to
+keep canonical recall 1.00 on both halves. Held-out micro F1 0.83 vs fastembed 0.67; all 64: 0.86 vs
+0.70; Taglish 0.88 vs 0.67. Still failing: 3 of 6 off-topic questions (mortgage rates, tellers'
+shifts, retiree savings goals; best match ~0.5) and the metal-card near-miss. Coverage eval
+(`--provider bedrock`) 13/13 for every coverage floor 0.50–0.62, so the coverage (0.56) and
+restricted-hint (0.52) floors are mid-range picks the cases can't separate. Cost: Cohere is billed
+per call (one per finding when seeding, one per question); fractions of a cent for the eval.
+Bedrock embeddings also send every question and finding text to AWS, where fastembed sends nothing.
+
+**Cohere Embed v4** (`EMBEDDING_MODEL=global.cohere.embed-v4:0`, 512 dims natively; floors added
+14 Nov: 0.34 / 0.7, coverage 0.46, restricted 0.38). Against v3 at its floors, all 64 questions:
+micro F1 0.87 vs 0.86 (held-out 0.88 vs 0.83), paraphrase recall 0.94 vs 0.85, precision 0.91 vs
+0.79, top result right 0.93 vs 0.83, off-topic questions with hits 1 of 6 vs 3 of 6, but Taglish
+recall 0.77 vs 0.88. Coverage 13/13. With the brief concept gate both end with one off-topic question
+answered, and v4 wrongly blocks none of 54 answerable ones. v4 gives cleaner English results; v3
+handles Taglish better. Switching is two lines in `backend/.env.local` (`EMBEDDING_MODEL`) and a
+restart, which re-embeds.
 
 ## Brief writers (Bedrock, 14 Nov)
 
@@ -192,28 +283,21 @@ Models download to `%LOCALAPPDATA%\si-evidence-assistant\models`; the dev databa
 
 ## Next steps, in order
 
-1. Pick the Bedrock model after reading the blind A/B file (`eval/brief_eval.py --blind`); then
-   state the two qualitative wording rules in `BRIEF_SYSTEM` and rerun the brief eval to see whether
-   rewrites drop. Run `eval/extraction_eval.py --claude` with Bedrock on the public PDFs.
-   Bedrock search: add `EMBEDDER_FLOORS` from the sweep (and a coverage-eval run) before using
-   `EMBEDDING_PROVIDER=bedrock` in a demo.
+1. Sign in to AWS (`aws sso login`), restart, and rerun the brief eval with Sonnet at medium effort
+   after the 14 Nov changes; compare Cohere Embed v4 (`cohere.embed-v4:0`, 512 dims natively) with
+   the cut-down v3; run `eval/extraction_eval.py --claude` with Bedrock (public PDFs need
+   `dev_db.py --fetch-public` first). Write coverage cases that separate coverage floors.
 2. Check the CI run in the GitHub Actions tab.
 3. Pitch deck: the consultation example before/after, the retrieval table, the four checkpoints,
    documents with page citations, and the AWS slide from `docs/AWS_PLAN.md`.
-4. Confidence should count only unresolved conflicts among findings relevant to the question (the
-   facet rerank fixed the known case; the rule itself is still "any conflict → Low").
+4. S&I to confirm the new proposed rules: "no study covers this" for off-topic questions, the
+   conflict rule for confidence (C6) and the place rule for headlines.
 5. Supabase Auth in the frontend for a non-demo deployment (S6).
 
 ## Known gaps not to forget
 
-From the final browser QA (30 Oct), not yet fixed:
-- "Are long ATM queues a problem outside Metro Manila?": the headline is the Metro Manila figure;
-  the provincial figures are only in Breakdown. Headline choice should honour a place in the question.
-- Cashback brief: the two disputed figures also appear as plain breakdown claims and as two chart bars
-  with the same label; the Plain-language summary leads on cashback while the headline is on travel.
-  Mark claims and bars that belong to an unresolved conflict.
-- Analyst desk shows a follow-up as a new card instead of threading it under the first question.
-- Asking again joins the open escalation, but the new brief doesn't say "joined an existing check".
+From the final browser QA (30 Oct), still open (the headline place, disputed figures, follow-up
+threading and "joined an existing check" were fixed 14 Nov):
 - Public study cards (World Bank PUB-WB-ES23): several "Wording in the report" excerpts are table
   fragments that don't show the figure; re-label `data/public/cards/*.json` excerpts.
 - A study's sources list shows one card per study, so a two-trends section lists one source.

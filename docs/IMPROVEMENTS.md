@@ -26,9 +26,9 @@ exact failure S&I described.
 | A4 | P1 | **Headline vs unresolved conflict.** For "cashback or travel?", a confident headline ("54% prefer cashback") sits above an unresolved conflict on the same metric. Proposed rule: a headline may not cite a finding that is part of an unresolved conflict; demote it to a breakdown and say the studies disagree. This is S&I's call, not ours. | Done (consultation 2): a headline on a disputed figure says what each study found, with populations |
 | A5 | P1 | Prompt caching for the regeneration call (findings block cached, feedback appended). | Done — "Cache the findings prompt…" |
 | A6 | P1 | Test the Claude path with a fake client (request shape, refusal / truncation / timeout mapping). | Done |
-| A7 | P1 | Run the brief pipeline once with a real Claude key and record: validator failure rate, regeneration rate, dropped claims, latency, cost per brief. Then decide `LLM_EFFORT` per route (brief vs scope note vs extraction). | Open — needs API key |
-| A8 | P2 | Stream the brief (or at least report pipeline stage) so the UI can show real progress instead of a step list and a timer. | Open |
-| A9 | P2 | Query understanding for multi-part questions ("fees **and** approval time in Visayas") — split into sub-queries, retrieve per part, merge. | Open |
+| A7 | P1 | Run the brief pipeline once with a real Claude key and record: validator failure rate, regeneration rate, dropped claims, latency, cost per brief. Then decide `LLM_EFFORT` per route (brief vs scope note vs extraction). | Done with Bedrock (14 Nov): Sonnet 5.5 at medium effort, 0 rewrites in 12, median 12 s, $0.025 per brief; `eval/brief_eval.py` |
+| A8 | P2 | Stream the brief (or at least report pipeline stage) so the UI can show real progress instead of a step list and a timer. | Done (14 Nov): `GET /api/briefs/progress`, steps marked live |
+| A9 | P2 | Query understanding for multi-part questions ("fees **and** approval time in Visayas") — split into sub-queries, retrieve per part, merge. | Done (14 Nov): `retrieval.split_question`; 64-question eval unchanged |
 | A10 | P2 | Coverage check ("Before you commission") floors per embedder were set from the retrieval sweep; evaluate coverage separately with labelled objectives. | Done: `eval/coverage_eval.py` (14 cases) and coverage states covered / stale / partial / new problem |
 | A11 | P2 | Ingestion: the offline extractor only reads the semi-structured synthetic reports. Add an extraction eval (field-level accuracy on a few hand-labelled reports) before trusting Claude extraction on prose reports. | Done offline: `eval/extraction_eval.py` (synthetic 100%, public 7% finding recall); Claude run pending a key |
 
@@ -45,7 +45,7 @@ exact failure S&I described.
 | S7 | P2 | Pages are all client components, so per-page metadata uses React 19 `<title>`. Moving data loading to server components would need the token in a cookie rather than localStorage; worth it with S6. | Open |
 | S8 | P2 | Brief sharing: a stable link a colleague on the same team can open (RLS already decides what they see), and "copy citation" for decks. | Partly: citations open the report PDF at the cited page; brief sharing links still open |
 | S9 | P2 | **Visual identity.** BPI colours are in (red `#9A191E` header band with a gold `#D5B625` rule, white page, red actions, gold-on-red icon), sampled from the current logo. Still open: several choices are common generated-UI defaults (hairline broadsheet rules, all-caps tracked mono eyebrows on every page, middle-dot meta strings). With official brand guidelines: drop eyebrows that carry no information, use BPI's typeface if licensed, and decide whether the crest may appear in the header. | Colours done; typeface/logo need brand guidelines |
-| S10 | P2 | Analytics for the pitch: which questions were asked, how many hit restricted studies, how many escalated — from the audit log, as an S&I dashboard. | Open |
+| S10 | P2 | Analytics for the pitch: which questions were asked, how many hit restricted studies, how many escalated — from the audit log, as an S&I dashboard. | Done (14 Nov): summary on the audit page |
 
 ## Added after consultation 2 (30 Oct 2026)
 
@@ -56,9 +56,9 @@ exact failure S&I described.
 | C3 | P1 | Qualitative tiers by recency; method labels ("6 FGDs · 48 participants") and fieldwork dates | Done; thresholds for S&I to confirm |
 | C4 | P1 | Emotion cues, geography (Metro Manila vs provincial/rural), two trends in one study | Done (lexicon-based emotions) |
 | C5 | P1 | Audience modes, "Prepared for", generated ask-an-analyst draft, escalation threads | Done |
-| C6 | P1 | Confidence counts only conflicts relevant to the question | Open |
+| C6 | P1 | Confidence counts only conflicts relevant to the question | Done (14 Nov); rule for S&I to confirm |
 | C7 | P2 | Tier design weighting (probability sample, national frame) beyond n bands | Open, S&I to decide |
-| C8 | P2 | AWS experiment: Claude on Bedrock behind the LLM protocol (`docs/AWS_PLAN.md`) | Planned |
+| C8 | P2 | AWS experiment: Claude on Bedrock behind the LLM protocol (`docs/AWS_PLAN.md`) | Done (14 Nov): writer and Cohere search on Bedrock, both measured (HANDOFF) |
 
 ## Platform and operations
 
