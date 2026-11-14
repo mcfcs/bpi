@@ -75,11 +75,15 @@ class Recorder:
         content = kwargs["messages"][0]["content"]
         # A regeneration carries the validator problems as a second text block.
         feedback = content[1]["text"] if isinstance(content, list) and len(content) > 1 else None
+        parsed = getattr(response, "parsed_output", None)
         self.calls.append({"seconds": time.perf_counter() - start, "stop": response.stop_reason,
                            "input": u.input_tokens, "output": u.output_tokens,
                            "cache_read": getattr(u, "cache_read_input_tokens", 0) or 0,
                            "cache_write": getattr(u, "cache_creation_input_tokens", 0) or 0,
-                           "feedback": feedback})
+                           "feedback": feedback,
+                           # The draft's wording, to see what a rejected draft actually said.
+                           "draft": [c.text for c in parsed.claims] + [x.text for x in parsed.summaries]
+                           if parsed is not None and hasattr(parsed, "claims") else None})
         return response
 
 
@@ -105,10 +109,12 @@ def cost(model: str, calls: list[dict]) -> float | None:
                + c.get("cache_write", 0) * w for c in calls) / 1e6
 
 
-def pick_questions(limit: int | None, seed_value: int) -> list[dict]:
+def pick_questions(limit: int | None, seed_value: int, match: str | None = None) -> list[dict]:
     items = [q for q in json.loads(QUESTIONS.read_text(encoding="utf-8"))["questions"]
              if q["set"] in ("canonical", "paraphrase", "taglish")]
     random.Random(seed_value).shuffle(items)
+    if match:
+        items = [q for q in items if match.lower() in q["q"].lower()]
     return items[:limit] if limit else items
 
 
@@ -178,6 +184,7 @@ def main() -> int:
     parser.add_argument("--persona", choices=sorted(PERSONAS), default="ben")
     parser.add_argument("--effort", default=None, help="effort for Claude writers (default: LLM_EFFORT, else high)")
     parser.add_argument("--seed", type=int, default=7)
+    parser.add_argument("--match", help="only questions containing this text")
     parser.add_argument("--json", type=Path, help="write every brief and metric here")
     parser.add_argument("--blind", type=Path, help="write an A/B blind-read file for the first two writers")
     args = parser.parse_args()
@@ -185,7 +192,7 @@ def main() -> int:
     settings = get_settings()
     effort = args.effort or settings.llm_effort
     writers = [(spec, *build_writer(spec, effort, settings.aws_region)) for spec in args.writer]
-    questions = pick_questions(args.limit, args.seed)
+    questions = pick_questions(args.limit, args.seed, args.match)
     embedder = build_embedder("fastembed", DEFAULT_FASTEMBED_MODEL)
 
     server = pgserver.get_server(tempfile.mkdtemp(prefix="si-briefs-"), cleanup_mode="delete")

@@ -107,9 +107,9 @@ def score_card(gold: dict, card: StudyCardExtraction, pages: list[str], report: 
     return s
 
 
-def run(extractors: list[LLM]) -> list[Score]:
+def run(extractors: list[LLM], only: str | None = None) -> list[Score]:
     scores: list[Score] = []
-    for report in public_sources.load_reports():
+    for report in public_sources.load_reports() if only != "synthetic" else []:
         if not report.card:
             continue
         if not report.available:
@@ -121,6 +121,8 @@ def run(extractors: list[LLM]) -> list[Score]:
             card = llm.extract_study_card(text, [])
             scores.append(score_card(report.card, card, extracted.pages, report.slug, "public", llm.name))
 
+    if only == "public":
+        return scores
     corpus = json.loads((SYNTHETIC_DATA_DIR / "corpus.json").read_text(encoding="utf-8"))["studies"]
     specs = [json.loads(p.read_text(encoding="utf-8")) for p in sorted((SYNTHETIC_DATA_DIR / "report_pdfs").glob("*.json"))]
     for study in corpus + specs:
@@ -159,6 +161,8 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--claude", action="store_true", help="also run the Claude extractor (needs credentials)")
     parser.add_argument("--json", action="store_true")
+    parser.add_argument("--only", choices=["public", "synthetic"],
+                        help="score only these reports (a model run is billed per report)")
     args = parser.parse_args()
 
     extractors: list[LLM] = [OfflineLLM()]
@@ -170,7 +174,7 @@ def main() -> int:
             extractors.append(build_llm(settings))
         else:
             print("No Claude credentials or Bedrock configured; running the offline extractor only.\n")
-    scores = run(extractors)
+    scores = run(extractors, args.only)
     summary = summarise(scores)
     if args.json:
         print(json.dumps({"scores": [asdict(s) for s in scores], "summary": summary}, indent=2))

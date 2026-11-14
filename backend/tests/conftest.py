@@ -101,8 +101,9 @@ TEST_SETTINGS = Settings(
 
 @pytest.fixture
 def make_client(db):
-    def _make(llm=None, adapter=None) -> TestClient:
-        app = create_app(TEST_SETTINGS, db=db, llm=llm or OfflineLLM(), today=lambda: TODAY, adapter=adapter)
+    def _make(llm=None, adapter=None, embedder=None) -> TestClient:
+        app = create_app(TEST_SETTINGS, db=db, llm=llm or OfflineLLM(), today=lambda: TODAY, adapter=adapter,
+                         embedder=embedder)
         return TestClient(app)
     return _make
 

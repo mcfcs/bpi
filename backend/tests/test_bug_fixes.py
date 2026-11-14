@@ -200,3 +200,136 @@ def test_12_exports_label_restricted_findings_and_submit_is_once(client, make_cl
     second = hooked.post(f"/api/commissioning/{check['id']}/submit", headers=auth(hooked, "ben")).json()
     assert len(received) == 1 and first["status"] == "sent"
     assert second["already_submitted"] is True and second["status"] == "sent"
+
+
+# QA 30 Oct: a headline honours a place the question names -----------------------------------------
+def test_headline_answers_for_the_place_the_question_names(client):
+    brief = ask(client, "ana", "Are long ATM queues a problem outside Metro Manila?")
+    headline = next(c for c in brief["claims"] if c["kind"] == "headline")
+    assert "Metro Manila, 57%" not in headline["text"]
+    assert "Luzon outside NCR, 24%" in headline["text"] and "Visayas, 19%" in headline["text"]
+
+
+def test_a_headline_for_another_place_is_sent_back():
+    sources = {"F1": src("F1", metric="atm:long_queues", value=57, subgroup={"region": "NCR"}),
+               "F2": src("F2", metric="atm:long_queues", value=19, subgroup={"region": "Visayas"})}
+    brief = EvidenceBrief(claims=[Claim(text="In Metro Manila, 57% said long lines were a problem.", kind="headline",
+                                        evidence=[Evidence(finding_id="F1", stance="supports")])],
+                          context_notes=[], unresolved_conflicts=[], chart_requests=[], gaps=[])
+    issues = validate_brief(brief, sources, [], question="Are ATM queues a problem in the provinces?")
+    assert [i.code for i in issues] == ["headline_ignores_place"] and issues[0].section == "brief"
+    assert not validate_brief(brief, sources, [], question="Are ATM queues a problem in Metro Manila?")
+
+
+# QA 30 Oct: disputed figures are marked wherever they appear ---------------------------------------
+def test_disputed_figures_never_appear_as_plain_claims_or_unmarked_bars(client):
+    brief = ask(client, "carla", CARDS_QUESTION)
+    disputed = {fid for n in brief["unresolved_conflicts"] for fid in n["finding_ids"]}
+    assert len(brief["unresolved_conflicts"]) == 2   # cashback and travel
+    for claim in brief["claims"]:
+        cited = {e["finding_id"] for e in claim["evidence"]}
+        for note in brief["unresolved_conflicts"]:
+            # A claim that uses one side of a dispute uses both, and says so.
+            if cited & set(note["finding_ids"]):
+                assert set(note["finding_ids"]) <= cited and "checking" in claim["text"]
+        assert bool(claim["disputed"]) == bool(cited & disputed)
+    bars = [b for chart in brief["charts"] for b in chart["bars"]]
+    assert bars and all(b["disputed"] == (b["finding_id"] in disputed) for b in bars)
+
+
+def test_a_breakdown_stating_one_side_of_a_dispute_is_sent_back():
+    a = src("A", study="S1", metric="reward_pref:travel", value=47)
+    b = src("B", study="S2", metric="reward_pref:travel", value=19, direction="low")
+    groups = analyze([a.ctx(), b.ctx()])
+    assert [g.kind for g in groups] == ["unresolved_conflict"]
+    brief = EvidenceBrief(claims=[Claim(text="Travel rewards were the first choice for 47%.", kind="breakdown",
+                                        evidence=[Evidence(finding_id="A", stance="supports")])],
+                          context_notes=[], unresolved_conflicts=[], chart_requests=[], gaps=[])
+    assert "breakdown_hides_conflict" in [i.code for i in validate_brief(brief, {"A": a, "B": b}, groups)]
+
+
+# QA 30 Oct: a follow-up is threaded under the first request on the analyst desk ----------------------
+def test_follow_ups_share_the_first_requests_thread(client):
+    first = ask(client, "ben", SME_QUESTION)
+    again = ask(client, "ben", SME_QUESTION.upper())   # asking again makes a new brief
+    other = ask(client, "ben", "What do SME owners think about relationship managers?")
+    headers = auth(client, "ben")
+    for brief, note in ((first, "Does this hold for Visayas?"), (again, "And for owners over 50?"),
+                        (other, "Is there newer data?")):
+        assert client.post("/api/escalations", headers=headers,
+                           json={"brief_id": brief["id"], "note": note}).status_code == 200
+    rows = client.get("/api/escalations", headers=auth(client, "ana")).json()
+    by_note = {r["note"]: r for r in rows}
+    root = by_note["Does this hold for Visayas?"]
+    assert root["thread_id"] == root["id"]
+    assert by_note["And for owners over 50?"]["thread_id"] == root["id"]
+    assert by_note["Is there newer data?"]["thread_id"] != root["id"]
+
+
+# Demo robustness: real progress while a brief is prepared, and a warning when the writer is down ------
+def test_a_brief_reports_each_step_and_the_page_can_poll_it(db, people, client):
+    from app.embeddings import HashingEmbedder
+    from app.llm import OfflineLLM
+    from app.synthesis import BriefService
+
+    steps: list[int] = []
+    service = BriefService(db, OfflineLLM(), HashingEmbedder(), fallback_llm=OfflineLLM())
+    service.ask(people["ben"], SME_QUESTION, report=lambda step, detail=None: steps.append(step))
+    assert steps[:4] == [0, 1, 2, 3]
+    # Nothing is running for this user, so the poll answers null rather than a stale step.
+    assert client.get("/api/briefs/progress", headers=auth(client, "ben")).json() is None
+
+
+def test_health_says_whether_the_brief_writer_can_be_reached(client):
+    body = client.get("/api/health").json()
+    assert body["llm_ready"] is True and body["llm_problem"] is None   # templates are always available
+
+
+# C6: confidence counts only conflicts that bear on the question ---------------------------------------
+def test_a_conflict_on_a_nearby_figure_caps_confidence_but_one_on_the_question_makes_it_low():
+    from app.confidence import compute_confidence
+    from app.schemas import ContextNote
+
+    answer = src("A", study="S0", metric="card_dropoff:fees", value=37)
+    t1 = src("T1", study="S1", metric="reward_pref:travel", value=47)
+    t2 = src("T2", study="S2", metric="reward_pref:travel", value=19, direction="low")
+    sources = {"A": answer, "T1": t1, "T2": t2}
+    brief = EvidenceBrief(
+        claims=[Claim(text="Fees were a reason 37% did not finish.", kind="headline",
+                      evidence=[Evidence(finding_id="A", stance="supports")]),
+                Claim(text="Travel rewards: S1 found 47%; S2 found 19%. An analyst is checking.", kind="breakdown",
+                      evidence=[Evidence(finding_id="T1", stance="supports"), Evidence(finding_id="T2", stance="supports")])],
+        context_notes=[], chart_requests=[], gaps=[],
+        unresolved_conflicts=[ContextNote(topic="reward_pref:travel", finding_ids=["T1", "T2"], differs_by=[],
+                                          explanation="S1 found 47%; S2 found 19%.")])
+    nearby = compute_confidence(brief, sources, question="Are annual fees a reason applicants give up?")
+    assert nearby["level"] == "medium" and any("related figure" in r for r in nearby["reasons"])
+    assert compute_confidence(brief, sources, question="Do applicants prefer travel rewards?")["level"] == "low"
+    assert compute_confidence(brief, sources)["level"] == "low"   # no question: every conflict counts
+
+
+# S10: usage summary for S&I from the audit log -----------------------------------------------------------
+def test_si_sees_what_teams_asked_and_what_no_study_answered(client):
+    ask(client, "ben", SME_QUESTION)
+    ask(client, "ben", SME_QUESTION)
+    ask(client, "carla", "What is the average home mortgage rate customers expect?")
+    assert client.get("/api/audit/summary", headers=auth(client, "ben")).status_code == 403
+    body = client.get("/api/audit/summary", headers=auth(client, "ana")).json()
+    assert body["briefs"]["total"] == 3
+    assert body["most_asked"][0] == {"question": SME_QUESTION, "count": 2}
+    assert [u["question"] for u in body["unanswered"]] == ["What is the average home mortgage rate customers expect?"]
+    assert {t["team"] for t in body["briefs"]["by_team"]} == {"SME Banking", "Cards & Payments"}
+
+
+def test_an_unreachable_hosted_search_model_gives_a_plain_503(make_client):
+    from app.embeddings import EmbeddingUnavailable, HashingEmbedder
+
+    class DownEmbedder(HashingEmbedder):
+        def embed_query(self, text):
+            raise EmbeddingUnavailable("Bedrock embed error: Token has expired and refresh failed")
+
+    client = make_client(embedder=DownEmbedder())
+    response = client.post("/api/briefs", headers=auth(client, "ben"), json={"question": SME_QUESTION})
+    assert response.status_code == 503 and "sign in to AWS" in response.json()["detail"]
+    health = client.get("/api/health").json()
+    assert health["search_ready"] is True   # a local embedder never needs AWS
