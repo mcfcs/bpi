@@ -354,7 +354,7 @@ def get_settings() -> Settings:
         llm_model=env.get("LLM_MODEL", "claude-opus-5-5"),
         llm_effort=env.get("LLM_EFFORT", "high"),
         aws_region=env.get("AWS_REGION", "ap-southeast-1"),
-        aws_bedrock_model=env.get("AWS_BEDROCK_MODEL", "anthropic.claude-sonnet-5-5"),
+        aws_bedrock_model=env.get("AWS_BEDROCK_MODEL", "global.anthropic.claude-opus-5-5"),
         commissioning_adapter=env.get("COMMISSIONING_ADAPTER", "noop"),
         commissioning_webhook_url=env.get("COMMISSIONING_WEBHOOK_URL") or None,
         commissioning_webhook_headers=json.loads(env.get("COMMISSIONING_WEBHOOK_HEADERS", "{}")),

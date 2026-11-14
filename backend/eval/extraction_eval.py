@@ -166,10 +166,10 @@ def main() -> int:
         from app.config import get_settings
         from app.llm import build_llm
         settings = get_settings()
-        if settings.llm_provider == "anthropic":
+        if settings.llm_provider in ("anthropic", "bedrock"):
             extractors.append(build_llm(settings))
         else:
-            print("No Claude credentials configured; running the offline extractor only.\n")
+            print("No Claude credentials or Bedrock configured; running the offline extractor only.\n")
     scores = run(extractors)
     summary = summarise(scores)
     if args.json:

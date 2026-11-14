@@ -197,9 +197,10 @@ DEFAULT_BEDROCK_EMBED_MODEL = "cohere.embed-multilingual-v3"
 class BedrockEmbedder:
     """Cohere Embed v3 (or any Bedrock embedding model) via the Bedrock Runtime InvokeModel API.
 
-    Cohere returns 1024 dimensions; we truncate to EMBEDDING_DIM (512) and renormalise — cosine
-    similarity is preserved because the first 512 dimensions are the most significant. Document
-    and query sides use Cohere's input_type to get the right representation.
+    Cohere Multilingual v3 returns 1024 dimensions; we keep the first EMBEDDING_DIM (512) and
+    renormalise to fit the vector(512) column. v3 was not trained for truncation (Embed v4 can return
+    512 natively), so this costs some accuracy: `python -m eval.retrieval_eval --provider bedrock`
+    measures it. Document and query sides use Cohere's input_type to get the right representation.
     """
 
     def __init__(self, model: str, region: str, client=None):

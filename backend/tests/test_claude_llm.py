@@ -55,6 +55,40 @@ def test_stop_reasons_become_llm_errors(stop_reason, message):
         ClaudeLLM("claude-opus-5-5", "high", client=client).write_brief(request())
 
 
+def test_bedrock_runs_the_same_request_without_server_side_fallback():
+    # Claude in Amazon Bedrock serves the same Messages API but not the `fallbacks` parameter.
+    client = FakeClient()
+    ClaudeLLM("global.anthropic.claude-opus-5-5", "high", client=client, platform="bedrock").write_brief(request())
+    call = client.calls[0]
+    assert call["model"] == "global.anthropic.claude-opus-5-5"
+    assert call["output_format"] is EvidenceBrief and call["output_config"] == {"effort": "high"}
+    assert call["messages"][0]["content"][0]["cache_control"] == {"type": "ephemeral"}
+    assert "fallbacks" not in call and "betas" not in call
+
+
+def test_build_llm_uses_the_bedrock_client_for_the_bedrock_provider(monkeypatch):
+    from dataclasses import replace
+
+    from app import llm as llm_module
+    from tests.conftest import TEST_SETTINGS
+
+    regions = []
+    monkeypatch.setattr(llm_module, "bedrock_client", lambda region: regions.append(region) or FakeClient())
+    built = llm_module.build_llm(replace(TEST_SETTINGS, llm_provider="bedrock", llm_effort="high",
+                                         aws_bedrock_model="global.anthropic.claude-sonnet-5-5"))
+    assert isinstance(built, ClaudeLLM) and built.platform == "bedrock"
+    assert built.name == "global.anthropic.claude-sonnet-5-5" and regions == ["ap-southeast-1"]
+
+
+def test_bedrock_errors_name_bedrock():
+    import anthropic
+    import httpx
+
+    error = anthropic.APITimeoutError(request=httpx.Request("POST", "https://bedrock-mantle.ap-southeast-1.api.aws"))
+    with pytest.raises(LLMError, match="Bedrock took too long"):
+        ClaudeLLM("global.anthropic.claude-opus-5-5", "high", client=FakeClient(error=error), platform="bedrock").write_brief(request())
+
+
 def test_api_errors_become_llm_errors():
     import anthropic
     import httpx

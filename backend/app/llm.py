@@ -1,6 +1,7 @@
 """LLM clients.
 
-ClaudeLLM calls Claude with structured output (Pydantic schemas from app/schemas.py). OfflineLLM is
+ClaudeLLM calls Claude with structured output (Pydantic schemas from app/schemas.py), through the
+Claude API or Claude in Amazon Bedrock (LLM_PROVIDER=bedrock). OfflineLLM is
 deterministic: it writes claims from the reviewed finding texts and the code-computed divergences,
 for tests and for demos without Claude credentials. Both go through the same validators.
 """
@@ -45,7 +46,11 @@ T = TypeVar("T", bound=BaseModel)
 
 
 class ClaudeLLM:
-    def __init__(self, model: str, effort: str, client=None):
+    """Claude through the Claude API or Claude in Amazon Bedrock. Both serve the same Messages API, so
+    one code path (structured output, effort, prompt caching) runs on either; only the client and
+    server-side fallback differ (platform="anthropic" or "bedrock")."""
+
+    def __init__(self, model: str, effort: str, client=None, platform: str = "anthropic"):
         import anthropic
 
         self._anthropic = anthropic
@@ -55,12 +60,18 @@ class ClaudeLLM:
         self.model = model
         self.effort = effort
         self.name = model
+        self.platform = platform
+        self._service = "Bedrock" if platform == "bedrock" else "The Claude API"
 
     def _parse(self, system: str, content: str | list[dict], schema: type[T]) -> T:
         anthropic = self._anthropic
+        # Server-side fallback re-runs a declined request on Anthropic's recommended fallback model
+        # inside the same call. Bedrock doesn't offer it: a refusal there becomes an LLMError and the
+        # brief is written from templates.
+        fallback = ({"betas": ["server-side-fallback-2026-07-01"], "fallbacks": "default"}
+                    if self.platform == "anthropic" else {})
+        service = self._service
         try:
-            # Server-side fallback re-runs a declined request on Anthropic's recommended fallback
-            # model inside the same call.
             response = self.client.beta.messages.parse(
                 model=self.model,
                 max_tokens=16000,
@@ -68,17 +79,16 @@ class ClaudeLLM:
                 messages=[{"role": "user", "content": content}],
                 output_format=schema,
                 output_config={"effort": self.effort},
-                betas=["server-side-fallback-2026-07-01"],
-                fallbacks="default",
+                **fallback,
             )
         except anthropic.RateLimitError as exc:
-            raise LLMError("The Claude API rate limit was reached; try again shortly.") from exc
+            raise LLMError(f"{service} rate limit was reached; try again shortly.") from exc
         except anthropic.APITimeoutError as exc:
-            raise LLMError("The Claude API took too long to answer.") from exc
+            raise LLMError(f"{service} took too long to answer.") from exc
         except anthropic.APIStatusError as exc:
-            raise LLMError(f"Claude API error {exc.status_code}: {exc.message}") from exc
+            raise LLMError(f"{service} error {exc.status_code}: {exc.message}") from exc
         except anthropic.APIConnectionError as exc:
-            raise LLMError("Could not reach the Claude API.") from exc
+            raise LLMError(f"Could not reach {'Bedrock' if self.platform == 'bedrock' else 'the Claude API'}.") from exc
         except ValidationError as exc:
             raise LLMError(f"The model's output did not match the schema: {exc.error_count()} errors.") from exc
         if response.stop_reason == "refusal":
@@ -334,80 +344,24 @@ class OfflineLLM:
         return " ".join(sentences)
 
 
-class BedrockLLM:
-    """LLM client backed by Amazon Bedrock's Converse API.
+def bedrock_client(region: str):
+    """Claude on Amazon Bedrock through the bedrock-runtime endpoint, signed with the AWS credential
+    chain (AWS_PROFILE or access keys). It takes the Messages API body, so structured output, effort
+    and prompt caching work as on the Claude API.
 
-    Structured output is achieved via tool use: each call defines a single tool whose input schema
-    matches the target Pydantic model, forces the model to call it (toolChoice={"tool": name}), then
-    parses the toolUse input block. This mirrors what ClaudeLLM does with client.beta.messages.parse.
-    """
+    Not the newer bedrock-mantle endpoint: in ap-southeast-1 (checked 14 Nov 2026) it answers "model
+    does not exist" for Opus 5.5 and Sonnet 5.5, which Singapore serves only through global
+    inference profiles (`global.anthropic.claude-opus-5-5`) on bedrock-runtime. A global profile can
+    route a request to any AWS region. Same timeout and retry budget as the Claude API client."""
+    from anthropic import AnthropicBedrock
 
-    def __init__(self, model: str, region: str, client=None):
-        import boto3
-
-        self.model = model
-        self.name = model
-        self.client = client or boto3.client("bedrock-runtime", region_name=region)
-
-    def _call(self, system: str, user: str, schema: type[T], tool_name: str) -> T:
-        import json as _json
-        from botocore.exceptions import ClientError
-
-        tool_spec = {
-            "name": tool_name,
-            "description": f"Return a {tool_name} object.",
-            "inputSchema": {"json": schema.model_json_schema()},
-        }
-        try:
-            response = self.client.converse(
-                modelId=self.model,
-                system=[{"text": system}],
-                messages=[{"role": "user", "content": [{"text": user}]}],
-                toolConfig={
-                    "tools": [{"toolSpec": tool_spec}],
-                    "toolChoice": {"tool": {"name": tool_name}},
-                },
-                inferenceConfig={"maxTokens": 16000},
-            )
-        except ClientError as exc:
-            code = exc.response["Error"]["Code"]
-            raise LLMError(f"Bedrock error {code}: {exc.response['Error']['Message']}") from exc
-
-        stop = response.get("stopReason", "")
-        if stop == "max_tokens":
-            raise LLMError("The model's answer was cut off.")
-
-        for block in response.get("output", {}).get("message", {}).get("content", []):
-            if block.get("toolUse", {}).get("name") == tool_name:
-                raw = block["toolUse"]["input"]
-                # Bedrock may return the input as a dict or a JSON string.
-                if isinstance(raw, str):
-                    raw = _json.loads(raw)
-                try:
-                    return schema.model_validate(raw)
-                except ValidationError as exc:
-                    raise LLMError(f"Model output did not match schema: {exc.error_count()} errors.") from exc
-
-        raise LLMError("Model did not call the expected tool.")
-
-    def write_brief(self, request: BriefRequest, feedback: list[str] | None = None) -> EvidenceBrief:
-        user = render_brief_prompt(request)
-        if feedback:
-            user += "\n\n" + render_feedback(feedback)
-        return self._call(BRIEF_SYSTEM, user, EvidenceBrief, "write_brief")
-
-    def extract_study_card(self, report_text: str, known_metric_keys: list[str]) -> StudyCardExtraction:
-        return self._call(EXTRACT_SYSTEM, render_extract_prompt(report_text, known_metric_keys),
-                          StudyCardExtraction, "extract_study_card")
-
-    def write_scope(self, title: str, objectives: list[dict]) -> str:
-        return self._call(SCOPE_SYSTEM, render_scope_prompt(title, objectives),
-                          ScopeDraft, "write_scope").recommended_new_scope
+    return AnthropicBedrock(aws_region=region, timeout=120.0, max_retries=1)
 
 
 def build_llm(settings: Settings) -> LLM:
     if settings.llm_provider == "anthropic":
         return ClaudeLLM(settings.llm_model, settings.llm_effort)
     if settings.llm_provider == "bedrock":
-        return BedrockLLM(settings.aws_bedrock_model, settings.aws_region)
+        return ClaudeLLM(settings.aws_bedrock_model, settings.llm_effort,
+                         client=bedrock_client(settings.aws_region), platform="bedrock")
     return OfflineLLM()
