@@ -3,7 +3,7 @@
 Current state of the project for whoever picks it up next (human or agent). Update this at the end
 of every working session: what changed, what is running, what is next.
 
-_Last updated: 30 Oct 2026._
+_Last updated: 14 Nov 2026._
 
 ## Where things stand
 
@@ -14,9 +14,14 @@ _Last updated: 30 Oct 2026._
   S&I inbox); RLS-enforced permissions on findings and documents; append-only audit log.
 - **Deadlines:** submission 13 Nov 2026 (pitch deck + prototype); top-5 pitch 27 Nov. Next
   consultation 4 Nov: bring the open questions below.
-- **Tests:** 178 backend tests pass (`cd backend && .venv/Scripts/python -m pytest`, ~50 s).
+- **Tests:** 181 backend tests pass (`cd backend && .venv/Scripts/python -m pytest`, ~50 s).
   Frontend typechecks and builds. CI: `.github/workflows/ci.yml` (first run not checked: private repo).
-- **Data:** 13 synthetic studies + 6 synthetic report PDFs in the review queue; 5 public reports
+- **LLM:** Claude on Amazon Bedrock works (`LLM_PROVIDER=bedrock`, Singapore, global inference
+  profiles). 12-question comparison below: Opus 5.5 and Sonnet 5.5 never fell back to templates.
+- **Data:** 33 synthetic studies (13 original + 20 added 14 Nov on scams, complaints, financial
+  literacy, typhoons, gig work, fisherfolk, green products, accessibility, data privacy, payday
+  budgeting, workplace wellness, corporate treasury; 3 of the 20 restricted) + 6 synthetic report
+  PDFs in the review queue; 5 public reports
   (BSP FIS 2021, BSP CES Q4 2025, World Bank Enterprise Survey 2023, two CGAP qualitative studies)
   seeded as "Public source" when their PDFs are downloaded (`dev_db.py --fetch-public`; ADB blocks
   scripted downloads). Real BPI data must never be loaded.
@@ -25,6 +30,31 @@ _Last updated: 30 Oct 2026._
   "BPI Evidence Assistant (Tailscale) 10012" is installed.
 
 ## Session log
+
+### 14 Nov 2026: 20 more studies, Claude on Bedrock, writer and Bedrock-search evals
+
+1. **20 synthetic studies** in `data/synthetic/corpus.json` (SI-2022-051 … SI-2026-065; 10 quant,
+   8 qual, 2 mixed). Each gets a report PDF like the others. Two carry within-study trends
+   (`literacy_trend:`, `privacy_trend:`) and one pair is a context difference (data sharing:
+   urban 21–34 vs provincial 45–70). Labels and stance phrases in `config.py`; 21 eval questions in
+   `eval/questions.json` (now 64). `report_pdf.py`: qual studies can set their own recruitment
+   sentence. `offline_extract.py`: "rose from 38% to 61%" now extracts the latest figure
+   (extraction eval 100% on all 37 synthetic reports; SI-2026-025 was 33% recall).
+   Committed in `009ddfa` together with the Bedrock work below.
+2. **Claude on Bedrock through `ClaudeLLM`** (`app/llm.py`): same structured output, effort and
+   prompt caching as the Claude API, minus server-side fallback (not offered on Bedrock: a refusal
+   becomes a template brief). Client: `AnthropicBedrock` (bedrock-runtime). The newer
+   bedrock-mantle endpoint answers "model does not exist" for Opus 5.5 / Sonnet 5.5 in
+   ap-southeast-1; Singapore serves them only through **global** inference profiles
+   (`global.anthropic.claude-opus-5-5`), which can route a request to any AWS region. The
+   earlier Converse-based `BedrockLLM` forced a tool choice, which these models reject. The hackathon
+   SSO role can't subscribe to `anthropic.claude-sonnet-5` (403), but the global 5.5 profiles work.
+3. **`eval/brief_eval.py`**: same questions and retrieval (fastembed), different writer; records
+   fall-backs, regenerations with the validator feedback, dropped claims, seconds, tokens and cost;
+   `--blind` writes an A/B file for people to judge wording. Results below.
+4. **`eval/retrieval_eval.py --provider bedrock`** for the Cohere embedder committed in `009ddfa`,
+   and each question is embedded once per run (sweeps no longer re-embed 300 times).
+   `extraction_eval.py --claude` also runs with `LLM_PROVIDER=bedrock`.
 
 ### 30 Oct 2026: consultation 2, documents, redesign, multi-agent pass
 
@@ -85,6 +115,47 @@ Coverage eval (`eval/coverage_eval.py`, 14 cases): fastembed 14/14, hashing 13/1
 name a covered product but ask what no study measures ("metal card design"); "How long do merchants
 wait…" pulls card/QR studies; the generic "abandon digital applications" has low recall.
 
+**After the 20 new studies (14 Nov, 64 questions, floors unchanged):**
+
+| | Para recall | Para hit@1 | Para precision | Taglish recall | MRR | Off-topic FP | Micro F1 |
+|---|---|---|---|---|---|---|---|
+| fastembed (demo) | 0.87 | 0.79 | 0.75 | 0.67 | 0.87 | 0.67 | 0.70 |
+| hashing (tests) | 0.75 | 0.69 | 0.46 | 0.81 | 0.82 | 0.50 | 0.63 |
+| Bedrock Cohere Multilingual v3, no floors of its own | 1.00 | 0.83 | 0.41 | 1.00 | 0.93 | 1.00 | 0.39 |
+
+On the original 43 questions the larger corpus cost micro F1 0.80 → 0.75 (fastembed) and
+0.76 → 0.68 (hashing). The loss is off-topic questions: 0/6 had hits before, now 4/6 (fastembed:
+mortgage rates → solar/literacy/typhoon studies at 0.52; retiree savings goals → household budgeting
+studies at 0.48). A floor can't remove a 0.52 hit without losing real answers. Coverage checks are
+unchanged (fastembed 13/13, hashing 12/13, public PDFs absent). "Ilan ang nakakatanggap ng pekeng
+text mula sa bangko?" finds nothing with either local embedder; fastembed also finds nothing for the
+Tagalog fisherfolk and compound-interest questions.
+Bedrock Cohere finds everything (recall 1.00, Taglish included) but has no `EMBEDDER_FLOORS` entry,
+so it runs on the hashing defaults (0.12) and every off-topic question gets hits. Its floor sweep
+was still running at the time of writing. Until it has floors, keep `EMBEDDING_PROVIDER=fastembed`
+for demos.
+
+## Brief writers (Bedrock, 14 Nov)
+
+`python -m eval.brief_eval --writer bedrock:global.anthropic.claude-opus-5-5 --writer
+bedrock:global.anthropic.claude-sonnet-5-5 --writer offline --limit 12` (12 answerable questions, as
+Ben Santos, SME Banking; retrieval fastembed; effort high):
+
+| Writer | Fell back | Regenerated | Dropped claims | Claims/brief | Median s | Max s | $/brief (est.) |
+|---|---|---|---|---|---|---|---|
+| Opus 5.5 | 0/12 | 3 | 0 | 3.2 | 32 | 90 | 0.081 |
+| Sonnet 5.5 | 0/12 | 2 | 1 | 3.1 | 20 | 76 | 0.042 |
+| Templates | 0/12 | 0 | 0 | 4.2 | 0.2 | 0.3 | – |
+
+Confidence came out the same for all three (7 High / 3 Medium / 2 Low): it is computed in code.
+Cost is at Anthropic list prices (Bedrock bills its own; global profiles carry no regional
+premium); output tokens (~2,300 per call, thinking included) are most of it. A rewrite roughly
+doubles the time. All five rewrites were the qualitative wording rules: a qual-only claim said
+"all", or a plain-language summary citing only focus groups lacked a hedge. Stating both rules in
+`BRIEF_SYSTEM` should cut rewrites (untested). Read side by side, both models scope the answer to
+what the studies measured and say what they don't cover; the templates add off-topic card figures
+to a merchant question. Twelve questions is indicative only; judge wording with the `--blind` file.
+
 Extraction (offline, `eval/extraction_eval.py`): synthetic PDFs 100% on every field; public PDFs
 find only 7% of findings, so real reports need Claude extraction.
 
@@ -94,7 +165,9 @@ find only 7% of findings, so real reports need Claude extraction.
 |---|---|---|---|
 | `EMBEDDING_PROVIDER` | `backend/.env.local` | `hashing` | `fastembed` for semantic search; needs `pip install -r requirements-semantic.txt`; `dev_db.py` re-embeds on start |
 | `EMBEDDING_MODEL` | `backend/.env.local` | see `app/embeddings.py` | Any fastembed model ≤512 dims; add floors in `EMBEDDER_FLOORS` after running the eval |
-| `ANTHROPIC_API_KEY` | `backend/.env.local` | unset | Without it, briefs use the deterministic template writer |
+| `ANTHROPIC_API_KEY` | `backend/.env.local` | unset | Without it (and without `LLM_PROVIDER=bedrock`), briefs use the deterministic template writer |
+| `LLM_PROVIDER` | `backend/.env.local` | `anthropic` with a key, else `offline` | `bedrock` = Claude on Amazon Bedrock with the AWS credential chain (`AWS_PROFILE`) |
+| `AWS_REGION` / `AWS_BEDROCK_MODEL` | `backend/.env.local` | `ap-southeast-1` / `global.anthropic.claude-opus-5-5` | In Singapore use the `global.` IDs; `anthropic.claude-sonnet-5-5` without the prefix is refused there |
 | `LLM_MODEL` / `LLM_EFFORT` | `backend/.env.local` | `claude-opus-5-5` / `high` | Keep effort explicit (Opus 5.5's API default is `medium`) |
 | `BACKEND_URL` | `frontend/.env.local` | `http://127.0.0.1:8000` | Where Next proxies `/api` |
 | Thresholds | `backend/app/config.py` | proposed | `TIER_CONFIG`, `QUAL_TIER_CONFIG`, `COVERAGE_STATE_CONFIG`, `TOPICALITY_CONFIG`, `DOCUMENT_CONFIG`, facet weights |
@@ -119,8 +192,11 @@ Models download to `%LOCALAPPDATA%\si-evidence-assistant\models`; the dev databa
 
 ## Next steps, in order
 
-1. Run one session with a real `ANTHROPIC_API_KEY`: record validator/regeneration/cost numbers (A7)
-   and run `eval/extraction_eval.py` with Claude on the public PDFs.
+1. Pick the Bedrock model after reading the blind A/B file (`eval/brief_eval.py --blind`); then
+   state the two qualitative wording rules in `BRIEF_SYSTEM` and rerun the brief eval to see whether
+   rewrites drop. Run `eval/extraction_eval.py --claude` with Bedrock on the public PDFs.
+   Bedrock search: add `EMBEDDER_FLOORS` from the sweep (and a coverage-eval run) before using
+   `EMBEDDING_PROVIDER=bedrock` in a demo.
 2. Check the CI run in the GitHub Actions tab.
 3. Pitch deck: the consultation example before/after, the retrieval table, the four checkpoints,
    documents with page citations, and the AWS slide from `docs/AWS_PLAN.md`.
