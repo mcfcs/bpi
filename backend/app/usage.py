@@ -12,6 +12,8 @@ from datetime import datetime, timedelta, timezone
 
 import psycopg
 
+from .config import VALUE_CONFIG
+
 
 def summary(conn: psycopg.Connection, days: int = 30) -> dict:
     since = datetime.now(timezone.utc) - timedelta(days=days)
@@ -49,6 +51,7 @@ def summary(conn: psycopg.Connection, days: int = 30) -> dict:
 
     return {
         "days": days,
+        "value": value(conn, since),
         "briefs": {
             "total": len(briefs),
             "confidence": {lvl: confidence.get(lvl, 0) for lvl in ("high", "medium", "low")},
@@ -71,4 +74,61 @@ def summary(conn: psycopg.Connection, days: int = 30) -> dict:
         },
         "access_requests": {s: next((a["n"] for a in access if a["status"] == s), 0) for s in ("pending", "approved", "denied")},
         "coverage_checks": {"run": checks["run"], "sent_to_si": checks["submitted"]},
+    }
+
+
+def value(conn: psycopg.Connection, since: datetime) -> dict:
+    """What the briefs delivered, for the value counter on the audit page.
+
+    - answered: briefs that cited at least one finding; answered_without_analyst: of those, briefs
+      nobody sent to an analyst (an automatic conflict check does not count against it);
+    - cross_team: answered briefs that cited a study owned by another team (research reused across
+      the silos), and how many distinct studies that reused;
+    - already_covered: commissioning objectives the check found covered, i.e. research not
+      commissioned twice if the team acts on it;
+    - alerts: earlier questions a newly approved or newly granted study answered;
+    - hours_saved: answered_without_analyst times VALUE_CONFIG's minutes per question, an estimate.
+    """
+    rows = conn.execute(
+        """
+        select b.id, t.name as team, b.payload -> 'sources' as sources,
+               coalesce(cardinality(b.retrieved_finding_ids), 0) as retrieved,
+               exists (select 1 from public.escalations e
+                       where e.brief_id = b.id and e.reason <> 'unresolved_conflict') as escalated
+        from public.briefs b
+        join public.profiles p on p.id = b.user_id
+        join public.teams t on t.id = p.team_id
+        where b.created_at >= %s
+        """, [since]).fetchall()
+    answered = [r for r in rows if r["sources"]]
+    without_analyst = [r for r in answered if not r["escalated"]]
+    reused_studies: set[str] = set()
+    cross_team = 0
+    for r in answered:
+        other = {s.get("study_id") for s in r["sources"].values() if s.get("owner_team") and s["owner_team"] != r["team"]}
+        if other:
+            cross_team += 1
+            reused_studies |= other
+    covered = conn.execute(
+        """
+        select count(*)::int as n from public.commissioning_checks c,
+               jsonb_array_elements(c.result -> 'objectives') o
+        where c.created_at >= %s and o ->> 'coverage' = 'covered'
+        """, [since]).fetchone()["n"]
+    alerts = conn.execute(
+        "select count(*)::int as sent, count(read_at)::int as opened from public.answer_alerts where created_at >= %s",
+        [since]).fetchone()
+    minutes = VALUE_CONFIG["analyst_minutes_per_question"]
+    return {
+        "briefs": len(rows),
+        "answered": len(answered),
+        "answered_without_analyst": len(without_analyst),
+        "share_without_analyst": round(len(without_analyst) / len(rows), 2) if rows else None,
+        "cross_team": cross_team,
+        "studies_reused": len(reused_studies),
+        "already_covered": covered,
+        "alerts_sent": alerts["sent"],
+        "alerts_opened": alerts["opened"],
+        "hours_saved": round(len(without_analyst) * minutes / 60, 1),
+        "minutes_per_question": minutes,
     }

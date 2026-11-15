@@ -25,3 +25,4 @@ applying for credit through the mobile app.
 
 > "I finished the personal account in ten minutes, but the business one asked for papers I don't keep on my phone." — Print shop owner, 33, Cebu City
 > "Show me the fees at the start and I'm fine. Just don't surprise me at the end." — Food stall owner, 44, Mandaue
+> "If the branch had just called me back on 0917 555 0198, I would have finished it." — Hardware store owner, 51, Lapu-Lapu

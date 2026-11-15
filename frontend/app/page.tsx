@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { AnswerAlerts } from "@/components/AnswerAlerts";
+import { Desk } from "@/components/Desk";
 import { Meter, type ConfidenceLevel } from "@/components/Citation";
 import { SignedIn } from "@/components/SiteHeader";
 import { useSession } from "@/components/Session";
@@ -18,6 +20,14 @@ const STEPS = [
   "Compare who each study asked, and when",
   "Write the brief from those findings only",
   "Check every claim against its sources",
+];
+
+// The same pipeline, described for the reader on the ask page.
+const HOW: [string, string][] = [
+  ["Search", "Only approved studies your team may read, by meaning, not keywords"],
+  ["Compare", "Who each study asked, where and when, worked out in code"],
+  ["Write", "The AI writes the answer from those findings only, citing each one"],
+  ["Check", "Every claim checked against its source; numbers come from the studies"],
 ];
 
 const MAX_LENGTH = 500;
@@ -158,102 +168,102 @@ function Ask() {
   return (
     <>
       <title>Ask a question · Evidence brief</title>
-      <div className="ask-layout">
-        <section className="ask-intro" aria-labelledby="ask-title">
+      <section className="hero" aria-labelledby="ask-title">
+        <AnswerAlerts profileId={profile?.id} busy={busy} onAsk={(q) => { setQuestion(q); ask(q); }} />
+        <div className="hero-copy">
           <h1 id="ask-title">What does our research already say?</h1>
           <p>
-            Ask a business question in plain English or Filipino. The brief draws only on approved S&amp;I studies that{" "}
+            Ask a business question in plain English or Filipino. The brief draws only on approved studies that{" "}
             {profile?.team_name ?? "your team"} can read, puts survey evidence first, and cites every claim.
           </p>
+        </div>
 
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              if (ready) ask(question.trim());
-            }}
-          >
-            <div className="composer">
-              <label htmlFor="question" className="visually-hidden">Your question</label>
-              <textarea
-                id="question"
-                value={question}
-                onChange={(e) => setQuestion(e.target.value)}
-                onKeyDown={(e) => {
-                  // Enter asks; Shift+Enter adds a line, as in a chat box.
-                  if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) {
-                    e.preventDefault();
-                    if (ready && !busy) ask(question.trim());
-                  }
-                }}
-                placeholder="For example: what stops small business owners finishing a loan application?"
-                maxLength={MAX_LENGTH}
-                aria-describedby="question-hint"
-              />
-              <div className="composer-foot">
-                <p className="hint nums" id="question-hint">
-                  {question.length > 0 ? `${question.length} of ${MAX_LENGTH} characters` : "Press Enter to ask"}
-                </p>
-                <button className="btn btn-primary" disabled={busy || !ready}>
-                  {busy ? "Preparing…" : "Ask"}
-                </button>
-              </div>
+        <form
+          className="hero-form"
+          onSubmit={(e) => {
+            e.preventDefault();
+            if (ready) ask(question.trim());
+          }}
+        >
+          <div className="composer">
+            <label htmlFor="question" className="visually-hidden">Your question</label>
+            <textarea
+              id="question"
+              value={question}
+              onChange={(e) => setQuestion(e.target.value)}
+              onKeyDown={(e) => {
+                // Enter asks; Shift+Enter adds a line, as in a chat box.
+                if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) {
+                  e.preventDefault();
+                  if (ready && !busy) ask(question.trim());
+                }
+              }}
+              placeholder="For example: what stops small business owners finishing a loan application?"
+              maxLength={MAX_LENGTH}
+              aria-describedby="question-hint"
+            />
+            <div className="composer-foot">
+              <p className="hint nums" id="question-hint">
+                {question.length > 0 ? `${question.length} of ${MAX_LENGTH} characters` : "Press Enter to ask"}
+              </p>
+              <button className="btn btn-primary" disabled={busy || !ready}>
+                {busy ? "Preparing…" : "Ask"}
+              </button>
             </div>
-            {health?.search_ready === false ? (
-              <p className="disclaimer writer-down" role="status">
-                <span>
-                  Search can&rsquo;t reach its hosted model right now, so questions can&rsquo;t be answered until it is back.
-                  {health.search_problem && <span className="muted small"> {health.search_problem}</span>}
-                </span>
-              </p>
-            ) : health?.llm_ready === false ? (
-              <p className="disclaimer writer-down" role="status">
-                <span>
-                  The AI writer can&rsquo;t be reached right now, so briefs will be written from templates and will say
-                  so. Every claim is still checked against its sources.
-                  {health.llm_problem && <span className="muted small"> {health.llm_problem}</span>}
-                </span>
-              </p>
-            ) : null}
-            {busy && <Preparing />}
-            {error && <p className="error" role="alert" style={{ marginTop: 12 }}>{error}</p>}
-          </form>
-
-          <div className="examples">
-            <h2 id="examples-title">Or try one of these</h2>
-            <ul aria-labelledby="examples-title">
-              {EXAMPLES.map((q) => (
-                <li key={q}>
-                  <button type="button" className="example" disabled={busy} onClick={() => { setQuestion(q); ask(q); }}>
-                    {q}
-                  </button>
-                </li>
-              ))}
-            </ul>
           </div>
-        </section>
-
-        <aside aria-label="About the brief">
-          <div className="side-panel">
-            <h2>How a brief is made</h2>
-            <ol className="steps">
-              {STEPS.map((s) => (
-                <li key={s}>{s}</li>
-              ))}
-            </ol>
-          </div>
-          <div className="side-panel">
-            <h2>Reading the tier badges</h2>
-            <ul className="tier-key">
-              <li><span className="tier tier-A"><b>A</b></span><span>Carries the most weight in a brief.</span></li>
-              <li><span className="tier tier-B"><b>B</b></span><span>Good evidence with a limit on method, sample size or age.</span></li>
-              <li><span className="tier tier-C"><b>C</b></span><span>Indicative. A headline never rests on it alone.</span></li>
-            </ul>
-            <p style={{ margin: "14px 0 0" }}>
-              Scored in code from method, sample size and how recent the fieldwork is, never by the model.
+          {health?.search_ready === false ? (
+            <p className="disclaimer writer-down" role="status">
+              <span>
+                Search can&rsquo;t reach its hosted model right now, so questions can&rsquo;t be answered until it is back.
+                {health.search_problem && <span className="muted small"> {health.search_problem}</span>}
+              </span>
             </p>
-          </div>
-        </aside>
-      </div>
+          ) : health?.llm_ready === false ? (
+            <p className="disclaimer writer-down" role="status">
+              <span>
+                The AI writer can&rsquo;t be reached right now, so briefs will be written from templates and will say
+                so. Every claim is still checked against its sources.
+                {health.llm_problem && <span className="muted small"> {health.llm_problem}</span>}
+              </span>
+            </p>
+          ) : null}
+          {busy && <Preparing />}
+          {error && <p className="error" role="alert" style={{ marginTop: 12 }}>{error}</p>}
+        </form>
+
+        <div className="examples">
+          <h2 id="examples-title">Try one of these</h2>
+          <ul aria-labelledby="examples-title">
+            {EXAMPLES.map((q) => (
+              <li key={q}>
+                <button type="button" className="example" disabled={busy} onClick={() => { setQuestion(q); ask(q); }}>
+                  {q}
+                </button>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </section>
+
+      {profile && <Desk profile={profile} />}
+
+      <section className="how" aria-labelledby="how-title">
+        <h2 id="how-title">How a brief is made</h2>
+        <ol className="how-steps">
+          {HOW.map(([title, body]) => (
+            <li key={title}>
+              <strong>{title}</strong>
+              <span>{body}</span>
+            </li>
+          ))}
+        </ol>
+        <p className="tier-inline">
+          <span><span className="tier tier-A"><b>A</b></span> carries the most weight</span>
+          <span><span className="tier tier-B"><b>B</b></span> good, with a limit on method, sample or age</span>
+          <span><span className="tier tier-C"><b>C</b></span> indicative only</span>
+          <span>Tiers are scored in code, never by the model.</span>
+        </p>
+      </section>
 
       {recent.length > 0 && <RecentBriefs briefs={recent} />}
     </>

@@ -1,217 +1,172 @@
-# Pitch script: Evidence Brief (BPI DataWave 2026)
+# Pitch script: Evidence Brief
 
-Recording target: **about 13–14 minutes** (the limit is 10–15). Slide numbers match
-`Evidence-Brief-Pitch-Deck.pdf`. The clock on each heading is the running total at the end of that
-slide. Spoken pace is about 140 words a minute; if you run long, cut slide 13 (~30 s) first,
-then shorten the demo.
+BPI DataWave 2026 · Strategy & Insights challenge · recorded presentation, 10–15 minutes
 
-Before recording:
-- Start the app (`./scripts/tailnet.ps1`) and sign in to AWS, then open `http://localhost:10012/api/health`
-  and check that it says `"llm_ready":true`.
-- Ask the demo question once beforehand, so the brief is already in "Your recent briefs" if the live
-  call is slow.
-- Close other tabs, set the browser zoom to 110%, and use light mode.
+**Target: about 13½ minutes.** Slide numbers match `Evidence-Brief-Pitch-Deck.pdf` (18 slides). The time
+on each heading is the running total at the end of that slide, at about 140 words a minute. If a
+rehearsal runs long, cut slide 14 first (25 s), then demo step 2.
 
-If several people present, a natural split is: Speaker 1 slides 1–6 (problem, solution, demo),
-Speaker 2 slides 7–10 (AI and trust), Speaker 3 slides 11–17 (benefits, feasibility, scale, close).
+## Before you record
+
+- Start the app (`./scripts/tailnet.ps1 -Dev`), sign in to AWS, and check `http://localhost:10012/api/health`
+  shows `"llm_ready":true` and `"search_ready":true`.
+- Reset the demo data so the Mindanao report is waiting in the review queue:
+  `./scripts/tailnet.ps1 -Stop`, then `backend/.venv/Scripts/python backend/scripts/dev_db.py --reset`, then start again.
+- Browser at 110% zoom, light theme, other tabs closed. Have two windows ready: one signed in as
+  **Ben** (SME Banking), one as **Ana** (S&I), using the persona menu at the top right.
+- Suggested split: Speaker 1 slides 1–7, Speaker 2 slides 8–11, Speaker 3 slides 12–18.
 
 ---
 
-## Slide 1 · Evidence Brief (0:30)
+## Slide 1 · Evidence Brief (0:25)
 
-> Good day. We're [team name], and this is Evidence Brief.
+> Good day. We're Oreo Bread, and this is Evidence Brief. Anyone in a business unit can ask a
+> question in plain words and, in about eleven seconds, get an answer from BPI's approved research,
+> with every claim cited to the page it came from.
+
+## Slide 2 · The problem (1:20)
+
+> In our consultations, S&I described one problem three ways.
 >
-> BPI's Strategy and Insights team has years of approved customer research. Our tool lets anyone in
-> a business unit ask a question in plain words and get an answer from that research in about
-> eleven seconds, with every claim cited to the page of the report it came from.
-
-## Slide 2 · The problem (1:30)
-
-> In our consultations, S&I described the same problem three ways.
+> Studies live in silos: a study belongs to the unit that paid for it, so another unit that could use
+> it often doesn't know it exists. Search needs the exact words: SharePoint matches keywords, so a
+> question asked differently misses the right study. And so business units ask S&I directly, and
+> analysts spend their time on questions existing studies already answer. Sometimes two units even
+> commission research that reaches the same answer.
 >
-> First, studies live in silos. A study belongs to the unit that paid for it, so another unit that
-> could use it often doesn't know it exists.
->
-> Second, search needs the exact words. SharePoint matches keywords, so a question asked
-> differently misses the right study, and a keyword can match a report that's about something else.
->
-> Third, because of both, business units ask S&I directly, and analysts spend their time answering
-> questions that existing studies already cover. Sometimes two units even commission research that
-> reaches the same answer.
->
-> And business units are competing with fintechs on speed. A decision made without the research BPI
-> already owns is slower, more expensive, or both.
+> Business units compete with fintechs on speed. A decision made without research BPI already owns is
+> slower, more expensive, or both.
 
-## Slide 3 · The slow loop (2:30)
+## Slide 3 · The slow loop (2:10)
 
-> Here is that loop. Say SME Banking wants to know why owners abandon the online loan application.
+> Say SME Banking wants to know why owners abandon the online loan application. "Loan" returns dozens
+> of files. "Drop-off" misses the study that says "abandon". The best study belongs to another unit,
+> so they ask for access file by file. Then they ask S&I and wait, or decide anyway, or commission
+> research that repeats what BPI already knows.
 >
-> They search "loan" and get dozens of files. They search "drop-off" and miss the study that says
-> "abandon". The best study belongs to another unit, so they have to ask for access, file by file.
-> So they ask S&I, and wait in the queue with every other request. Or they decide anyway, or
-> commission research that repeats what BPI already knows.
->
-> When we asked S&I how long this takes, they told us it can't be quantified. That is the real
-> problem: nobody can see how many questions the existing research could already answer.
+> S&I told us the time this takes can't be quantified. That is the real problem: nobody can see how
+> many questions existing research could already answer.
 
-## Slide 4 · The solution (3:15)
+## Slide 4 · The solution (2:50)
 
-> Evidence Brief replaces that loop with one step.
->
-> You ask in English, Filipino or Taglish. The system searches by meaning, not keywords, across every
-> approved study your team is allowed to read. It writes the answer first, then shows the figures,
-> who was asked, and what the evidence doesn't cover. Every claim cites the study and the page. And
-> if it isn't enough, one click sends the question to an S&I analyst.
+> Evidence Brief replaces that loop with one step. Ask in English, Filipino or Taglish. It searches by
+> meaning across every approved study your team may read, answers first, shows the figures, who was
+> asked and what's missing, and cites every claim. You can ask a follow-up, or send it to an analyst in
+> one click.
 
-## Slide 5 · The brief on one screen (4:00)
+## Slide 5 · The brief on one screen (3:25)
 
-> This is what comes back. At the top, the answer, written for an executive, an analyst, or in
-> plain language: same evidence, different wording.
->
-> Below it, the key figures. These numbers come straight from the studies in the database; the AI
-> doesn't write any of them. Then the confidence, worked out from how strong the studies are. And
-> under that, the evidence: charts, quotes, gaps, all one click away. It prints as a one-page memo
-> you can forward.
+> The answer comes in three wordings: executive, analyst or plain language, all from the same evidence.
+> The key figures come straight from the studies; the AI writes none of them. Confidence is worked out
+> from study strength. And everything else, the charts, quotes and gaps, is one click away.
 
-## Slide 6 · Demo (6:15)
+## Slide 6 · Demo (5:55)
 
 > Let me show you.
 
-**[Switch to the browser. About 2¼ minutes. Say what you do as you do it.]**
+**[Switch to the browser. About 2½ minutes. Say what you do as you do it.]**
 
-1. **As Ben, SME Banking** (persona menu, top right). Click the example question *"Why do SME owners
-   drop off during online loan applications?"*
-   > While it works, you can see each step: searching, comparing, writing, checking.
-2. When the brief appears:
-   > The answer: documentation requirements first, unclear approval time second. These ranges come
-   > from three studies. High confidence, because one of them is a large, recent survey.
-3. Open **"It depends on who was asked"**.
-   > The studies don't disagree. They asked different people: different ages, Metro Manila versus
-   > nationwide, different years. The system works that out in code and says so, instead of calling
-   > it a conflict.
-4. Click a citation chip such as **SI-2026-014 · p.3**.
-   > Every citation opens the report at the page it came from.
-5. **Switch to Carla, Cards & Payments**, and ask the same question.
-   > Carla's team isn't allowed to read the SME survey. She sees its title under "Restricted
-   > matches", nothing from inside it, and she can ask the owning team for access. They decide.
-6. **Switch to Ana, S&I**, and open **Review queue**.
-   > New reports land here. The AI drafts the study card and findings, but nothing is searchable
-   > until an analyst approves it.
+1. **As Ben, SME Banking.** Click the example *"Why do SME owners drop off during online loan applications?"*
+   > You can see each step as it works: searching, comparing, writing, checking. Documentation first,
+   > approval time second, with ranges from three studies and high confidence.
+2. In **Ask a follow-up**, type *"What about owners in Mindanao?"*
+   > The follow-up keeps the subject. And it's honest: no approved study covers Mindanao owners yet.
+3. **Ask a question**, then type *"How do sari-sari store owners use supplier credit?"*
+   > No approved study answers this. Ben's question is remembered.
+4. **Switch to Ana, S&I**, open **Review queue**, then *Cebu SME Digital Onboarding Focus Groups 2026*.
+   > Before a study goes live, two checks run. A quote contains a phone number, so approval waits
+   > until the analyst edits it or confirms it identifies no one. And it overlaps three approved studies,
+   > so S&I can see whether this is new research or a repeat.
+5. Back to **Review queue**, open *Mindanao Sari-sari Store Credit Focus Groups 2026*, click **Approve**.
+   > It answers one earlier question nobody could answer before, and that person has been told.
+6. **Switch to Ben.** Point to the badge and the green notice; click **See the answer**.
+   > Ben asked before the research existed. Now it's here, and he's told, without anyone remembering
+   > to ask again.
 
 **[Back to the slides.]**
 
-## Slide 7 · Role of AI (7:15)
+## Slide 7 · The loop (6:35)
 
-> So where is the AI? In two places only.
->
-> Step two: finding the right findings by meaning. Step four: Claude writing the plain-language
-> answer from those findings, citing each one.
->
-> Everything else is code and the database. Permissions are enforced by the database before the AI
-> sees anything. Code compares the studies and scores their strength. Code checks every claim the
-> AI writes and drops any that fail. And the charts and confidence come from stored values.
->
-> The AI never supplies a number, never decides that studies disagree, never sees a restricted
-> study, and never approves anything.
+> That's the loop we close. A new study is checked: personal data flagged, overlap shown, the analyst
+> decides. Whoever asked a question it now answers is told, searched as them, under their own access.
+> And S&I sees it all on a gap map: what teams ask, what's covered, and where new research would be
+> used first. None of this adds an AI call: it's pattern rules, stored search data and code.
 
-## Slide 8 · Why AI here (8:00)
+## Slide 8 · Role of AI (7:25)
 
-> We only used AI where it measurably beats a simpler tool.
+> So where is the AI? In two places. Finding the right findings by meaning, and Claude writing the
+> plain-language answer from those findings, citing each one.
 >
-> For finding studies, plain word matching found three in four reworded questions; meaning search
-> finds ninety-four percent. For writing, templates are fast but pad the answer with unrelated
-> figures; Claude keeps to what the studies measured. For reading real reports, rules found almost
-> nothing in two public BSP reports; Claude found up to eighty-three percent of the findings, each
-> with its page.
->
-> For numbers, access and confidence we kept plain code, because those have to be exact and
-> explainable.
+> Everything else is code and the database. Permissions are enforced before the AI sees anything.
+> Code compares the studies, checks every claim the AI writes, and builds the charts and confidence
+> from stored values. The AI never supplies a number, never decides that studies disagree, never sees
+> a restricted study, and never approves anything.
 
-## Slide 9 · Risks and safeguards (9:00)
+## Slide 9 · Why AI here (8:05)
 
-> We looked at what could go wrong, and built a check for each.
->
-> An invented figure: numbers come from the database, and every citation is checked. Focus-group
-> opinions dressed up as statistics: qualitative claims must be hedged and can never say how common
-> a view is. A restricted study leaking: the database filters before the AI sees anything, and we
-> run red-team tests on every change. Instructions hidden in an uploaded report: new reports wait
-> for an analyst's review. People over-trusting the brief: confidence and gaps come first, an
-> analyst is one click away, and every action goes into an audit log nobody can edit. And data
-> residency: prompts stay inside AWS, and the model is a setting we can swap.
+> We used AI only where it measurably beats a simpler tool. Word matching finds three in four reworded
+> questions; meaning search finds ninety-four percent. Templates pad answers with unrelated figures;
+> Claude keeps to what the studies measured. On real BSP reports, rules found almost nothing; Claude
+> found up to eighty-three percent of findings, each with its page. For numbers, access, confidence and
+> personal data, we kept plain code, because those have to be exact.
 
-## Slide 10 · People decide (9:45)
+## Slide 10 · Risks and safeguards (9:00)
 
-> BPI told us: guardrails from day one, and humans make the final decision. So there are four
-> checkpoints.
->
-> An analyst approves every study before it's searchable. The owning team decides every access
-> request. Any brief can go to an analyst in one click, with the question already drafted. And
-> before new research is commissioned, the tool checks what's already covered, but nothing is sent
+> For each risk, a check. Invented figures: numbers come from the database and every citation is
+> checked. Focus-group opinions dressed as statistics: qualitative claims must be hedged. A restricted
+> study leaking: the database filters before the AI sees anything, tested on every change. Personal
+> data in a report: flagged, and approval waits. Hidden instructions in an upload: an analyst reviews
+> every report first. Over-trust: confidence and gaps come first, and every action goes into an audit log
+> nobody can edit. And prompts stay inside AWS.
+
+## Slide 11 · People decide (9:35)
+
+> BPI asked for guardrails from day one, and people making the final call. So there are four
+> checkpoints: an analyst approves every study, after the privacy and overlap checks; the owning team
+> decides every access request; any brief goes to an analyst in one click; and nothing is commissioned
 > until a person sends it.
 
-## Slide 11 · Benefits (10:30)
+## Slide 12 · Benefits (10:10)
 
-> What does this change?
->
-> Business units get an answer in seconds, in their own words, including studies from other units
-> they didn't know about. S&I gets fewer repeat questions and more time for new research, plus data
-> on which questions no study answers yet. And the bank gets more value from research it has
-> already paid for, fewer duplicate studies, and one governed, auditable way to reach evidence.
+> Business units get answers in seconds, find studies from other units, and are told when new research
+> answers an old question. S&I gets fewer repeat questions, duplicates caught at review, and a gap map of
+> where to research next. And the bank gets more from research it already paid for.
 
-## Slide 12 · What we measured (11:15)
+## Slide 13 · What we measured (10:50)
 
-> Here is what we've measured on the prototype. Ninety-four percent of reworded questions find the
-> right study, and ninety-three percent get it as the top result. A full cited brief takes a median
-> of eleven seconds. In eighteen runs on Amazon Bedrock, none fell back to templates. Claude pulled
-> ninety-nine percent of findings from thirty-seven reports with the right page, and an adversarial
-> test of about thirty briefs leaked nothing restricted.
->
-> To be clear, this is on synthetic data. It shows the mechanism works. Real value has to be
-> measured with real users.
+> On the prototype: ninety-four percent of reworded questions find the right study, ninety-three percent
+> as the top result. A full brief takes a median of eleven seconds, and in eighteen runs on Amazon
+> Bedrock none fell back to templates. An adversarial test leaked nothing restricted. This is synthetic
+> data: it shows the mechanism works. Value has to be measured with real users.
 
-## Slide 13 · Proving the impact (11:45)
+## Slide 14 · Proving the impact (11:15)
 
-> So we propose an eight-week pilot with S&I and one business unit, on real anonymised questions.
-> We'd track the share of questions answered without an analyst, aiming for half; accuracy and
-> citations above ninety-five percent as rated by S&I, blind; zero restricted leaks; and time to a
-> first answer against today.
+> So we propose an eight-week pilot with S&I and one unit: half of questions answered without an
+> analyst, ninety-five percent accuracy rated blind by S&I, zero leaks, and time to answer against today.
 
-## Slide 14 · Feasible today (12:30)
+## Slide 15 · Feasible today (11:55)
 
-> This is feasible today, not someday. It's already built and working end to end on real Bedrock
-> models, with two hundred and five automated tests. It needs no data migration: it uses the PDF
-> reports S&I already has. It needs no model training: the models are off the shelf, on Amazon
-> Bedrock, so prompts stay in AWS. And it's built from standard parts bank IT already runs.
->
-> We measured the cost: one AI call per brief, about four and a half thousand tokens in and eleven
-> hundred out, roughly two US cents.
+> It's feasible today, not someday. It's already built and working on real Bedrock models, with two
+> hundred and fifteen automated tests. No data migration: it uses the reports S&I already has. No model
+> training. Standard parts bank IT already runs. One AI call per brief, about two US cents.
 
-## Slide 15 · Built to scale (13:15)
+## Slide 16 · Built to scale (12:35)
 
-> And it scales well, by design. Cost follows questions, not studies: a report is processed once,
-> and every brief costs about two cents however big the library gets. Search stays fast because the
-> indexes live in the database. Adding a business unit is a data change, not a code change, since
-> teams and access rules are just rows. It grows on standard AWS services. It doesn't depend on one
-> AI model: we can swap it with a setting, and if the AI is down, briefs still come from templates.
->
-> From five hundred to fifty thousand briefs a month, the core design stays the same. Only the
-> database and the AI bill grow: from about twelve dollars to about eleven hundred a month.
+> And it scales by design. Cost follows questions, not studies, because each report is processed once.
+> Search stays fast as the library grows. A new business unit is a data change, not a code change. The
+> model is one setting to swap, with templates if it's down. From five hundred to fifty thousand briefs a
+> month, the design stays the same: only the database and an AI bill of twelve to eleven hundred dollars.
 
-## Slide 16 · From one unit to the bank (13:50)
+## Slide 17 · From one unit to the bank (13:00)
 
-> The roll-out: two weeks to set up a BPI sandbox, sign-in and the reports. An eight-week pilot with
-> S&I and one unit. Then a department of five units, then the bank.
+> Two weeks to set up a BPI sandbox. Eight weeks of pilot. Then a department, then the bank.
 
-## Slide 17 · Close (14:15)
+## Slide 18 · Close (13:25)
 
-> So our ask: let business units ask the research.
->
-> From S&I, real anonymised questions and sign-off on our rules. From IT and Risk, an AWS sandbox
-> and a decision on data residency. From us, the working prototype and weekly pilot numbers.
->
-> Thank you.
+> So our ask: let business units ask the research. From S&I, real anonymised questions and sign-off on
+> our rules. From IT and Risk, a sandbox and a decision on data residency. Thank you.
 
 ---
 
-Timing check: the sections add up to about 14¼ minutes at a relaxed pace, and about 13 when
-delivered briskly. If a rehearsal runs past 14½ minutes, drop slide 13 and shorten demo steps 4 and 6.
+**Timing check:** about 13½ minutes at a relaxed pace, about 12½ briskly. The demo is the part most
+likely to run over; if the AI is slow, open the brief from "Your recent briefs" instead of asking live.

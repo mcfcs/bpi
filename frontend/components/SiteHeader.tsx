@@ -8,6 +8,9 @@ import { useSession } from "./Session";
 import { ROLE_LABELS } from "@/lib/format";
 import type { Profile } from "@/lib/types";
 import { ThemeToggle } from "./ThemeToggle";
+import { ALERTS_CHANGED } from "./AnswerAlerts";
+import { api } from "@/lib/api";
+import type { AnswerAlert } from "@/lib/types";
 
 function initials(name: string): string {
   return name
@@ -107,10 +110,12 @@ export function SiteHeader() {
   const links = [
     { href: "/", label: "Ask a question", show: true },
     { href: "/studies", label: "Studies", show: true },
-    { href: "/commission", label: "Before you commission", show: true },
+    // Analysts have eight links; two shorter labels keep them on one row beside the tools.
+    { href: "/commission", label: isSi ? "Commissioning" : "Before you commission", show: true },
     { href: "/access", label: "Access", show: true },
     { href: "/analyst", label: isSi ? "Analyst desk" : "Ask an analyst", show: true },
     { href: "/review", label: "Review queue", show: isSi },
+    { href: "/gaps", label: "Gap map", show: isSi },
     { href: "/audit", label: "Audit log", show: isSi },
   ].filter((l) => l.show);
   const current = (href: string) => (href === "/" ? pathname === "/" || pathname.startsWith("/briefs") : pathname.startsWith(href));
@@ -118,9 +123,30 @@ export function SiteHeader() {
   // A new page closes the small-screen menu.
   useEffect(() => setMenuOpen(false), [pathname]);
 
+  // Unread "a new study answers your question" alerts, shown as a count on "Ask a question".
+  const [unread, setUnread] = useState(0);
+  useEffect(() => {
+    if (!profile) {
+      setUnread(0);
+      return;
+    }
+    const load = () =>
+      api<AnswerAlert[]>("/api/alerts")
+        .then((rows) => setUnread(rows.filter((a) => !a.read_at).length))
+        .catch(() => setUnread(0));
+    load();
+    window.addEventListener(ALERTS_CHANGED, load);
+    return () => window.removeEventListener(ALERTS_CHANGED, load);
+  }, [profile, pathname]);
+
   const linkList = links.map((l) => (
     <Link key={l.href} href={l.href} aria-current={current(l.href) ? "page" : undefined}>
       {l.label}
+      {l.href === "/" && unread > 0 && (
+        <span className="nav-badge" aria-label={`${unread} new ${unread === 1 ? "answer" : "answers"} to earlier questions`}>
+          {unread}
+        </span>
+      )}
     </Link>
   ));
 

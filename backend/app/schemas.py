@@ -177,6 +177,8 @@ class FindingPatch(BaseModel):
 class ReviewDecision(BaseModel):
     approve: bool
     note: str | None = None
+    # The analyst checked findings the personal-data check flagged (privacy.py) and they identify no one.
+    privacy_checked: bool = False
 
 
 class IngestBody(BaseModel):

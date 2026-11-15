@@ -31,6 +31,65 @@ _Last updated: 14 Nov 2026._
 
 ## Session log
 
+### 16 Nov 2026 (later): review checks, follow-ups, unanswered demand, home redesign, deck v3 (uncommitted)
+
+1. **Personal-data check at review** (`app/privacy.py`, `PRIVACY_PATTERNS` in config, proposed):
+   pattern rules (PH phone, email, account/card number, TIN, street address, names) over a pending
+   study's findings. Approval refuses with 422 until the finding is edited or the decision carries
+   `privacy_checked: true`; the approval audit records the flag count. Source text is counted only.
+   The Cebu synthetic report now has a quote with a synthetic 0917 555 number so the demo shows it.
+2. **Overlap check at review** (`app/overlap.py`, `OVERLAP_CONFIG`): nearest approved findings per
+   finding by stored embedding (under the analyst's RLS) or same metric family; populations compared
+   in code (age, segment, place, period: repeat / newer wave / same topic) and shared figures put side
+   by side from the database. No model call. Shown with the privacy result on `GET /api/studies/{id}`
+   for S&I on pending studies (`privacy`, `overlaps`) and in a "Checks before you approve" panel.
+3. **Follow-up questions** (`POST /api/briefs/{id}/follow-up`, own briefs only): searched and written
+   as "<earlier question> Follow-up: <new>", shown as the reader's words with a link back
+   (`payload.follow_up_of`, `briefs.follow_up_of`). UI box under the brief summary.
+4. **Unanswered questions on the gap map**: briefs now store `question_embedding` (migration
+   `20261116120000_question_embeddings.sql`, no extra call); the gap map places each unanswered
+   question on the family most common among its 5 nearest approved findings ("closest topic") and adds
+   an Unanswered column; older briefs are embedded once when the map loads.
+5. **Site redesign to fit the product**: the ask page is a hero band (alerts, composer, example chips),
+   a "Your desk" row of live cards (S&I: review queue, analyst desk, unanswered, access; business units:
+   analyst replies, access, studies, commissioning) and a four-step "How a brief is made" strip; every
+   page head sits on the same quiet band.
+6. **Deck v3** (18 slides; new slide 7 "New study in. Askers told."; demo, AI table, risks,
+   checkpoints and benefits updated) and **script PDF** (`deck/Evidence-Brief-Pitch-Script.pdf`,
+   about 13½ minutes).
+7. Tests: `tests/test_review_aids_and_follow_ups.py` (6); 215 pass. Checked live with Bedrock and in
+   the browser at 1440 and 390 px, light and dark. Demo data reset afterwards.
+
+### 16 Nov 2026: answer alerts, research-gap map, value counter (uncommitted at time of writing)
+
+1. **"A new study answers your question"** (`app/alerts.py`, migration `20261116100000_answer_alerts.sql`):
+   when S&I approves a study, or an owner grants access to one, briefs from the last 180 days that
+   retrieved nothing are searched again **as their askers** (RLS) with the brief's own gates
+   (`synthesis.answering_sources`, shared with `ask`). A hit writes one `answer_alerts` row per brief
+   and an `answer_alert.created` audit entry under the decider. No brief and no model call is made
+   for the asker. `GET /api/alerts`, `POST /api/alerts/{id}/read`; the approval and access-decision
+   responses carry `answer_alerts`. UI: a green notice on the ask page ("See the answer" asks again),
+   a gold count on "Ask a question", and the review page says how many people were told.
+   `ALERT_CONFIG` in `config.py` (proposed).
+2. **Research-gap map** (`app/gaps.py`, `GET /api/gaps`, page `/gaps`, S&I only): topic families
+   (metric family, `_trend` merged; `FAMILY_LABELS`) by place (`GAP_AREAS` from
+   `geography.area_type`: Metro Manila, Provincial, Rural, Nationwide), each cell the commissioning
+   rule's coverage state; demand = briefs citing the family in 90 days and their teams; "where new
+   research would be used first" lists asked-about families still weak somewhere; plus questions no
+   readable study answered.
+3. **Value counter** (`usage.value`, top of the audit page): answered without an analyst (and the
+   share), briefs reusing another team's research and how many studies, earlier questions answered
+   by alerts (opened), commissioning objectives already covered, and analyst hours saved as a
+   labelled estimate (`VALUE_CONFIG`, 30 minutes per answer, proposed).
+4. Header: analysts see eight links, so "Commissioning" and "Gap map" are shorter labels for them;
+   menu breakpoints now measured (eight links fit from 1250px, five from 1040px; the five-link header
+   overflowed at 1000px before).
+5. Tests: `tests/test_alerts_and_gaps.py` (4 tests, incl. no alert for a restricted study until access
+   is granted); 209 pass. Checked live with Bedrock: approving SI-2026-104 (Mindanao sari-sari)
+   alerted Ben for two earlier questions. The demo database was then reset (`dev_db.py --reset`).
+   **Demo:** as Ben ask "How do sari-sari store owners use supplier credit?" (no answer), as Ana
+   approve the Mindanao study in the review queue, back as Ben: the alert and badge.
+
 ### 15 Nov 2026: header that never wraps, a brief you can scan (uncommitted at time of writing)
 
 1. **Header** (`components/SiteHeader.tsx`): one row at every width. The persona `<select>` (its
@@ -63,7 +122,7 @@ _Last updated: 14 Nov 2026._
    on slide 6); the earlier score-sheet deck is in `deck/previous/`. New measurement for it: 6 Bedrock briefs (Sonnet 5.5,
    effort medium, Bedrock search): 1 call per brief, ≈4,500 prompt tokens (max 7,200), ≈1,100 output
    (max 1,600), median 11.2 s, 0 fall-backs, 0 rewrites, $0.023 per brief at list prices.
-   Placeholders to fill: team name, members, contact.
+   Team name is Oreo Bread (slides 1 and 18, script). The cover is title only; the close asks S&I and IT/Risk.
 5. **This PC** (not in the repo): `backend/.venv` is Python 3.12 (pgserver has no 3.13 wheels) and its
    `sitecustomize.py` works around Smart App Control blocking psycopg's DLL and a network whose
    NAT64 IPv6 addresses time out (IPv4 first). Bedrock runs through the SSO profile

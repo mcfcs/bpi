@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { CiteChip, TierBadge } from "@/components/Citation";
 import { CiteLink, OpenReportButton } from "@/components/ReportLink";
 import { SignedIn } from "@/components/SiteHeader";
@@ -307,24 +307,113 @@ function FindingEditor({ finding, studyId, hasDocument }: { finding: FindingRow;
   );
 }
 
+/** The flagged part of a finding, marked so the analyst sees exactly what matched. */
+function Marked({ text, matches }: { text: string; matches: { start: number; end: number; label: string }[] }) {
+  const parts: React.ReactNode[] = [];
+  let at = 0;
+  for (const m of matches) {
+    if (m.start < at) continue;
+    parts.push(text.slice(at, m.start));
+    parts.push(<mark key={m.start} title={m.label}>{text.slice(m.start, m.end)}</mark>);
+    at = m.end;
+  }
+  parts.push(text.slice(at));
+  return <>{parts}</>;
+}
+
+/**
+ * Checkpoint 1 aids: personal data in findings (pattern rules) and approved studies this one
+ * overlaps (meaning plus code). Both inform the analyst; neither decides.
+ */
+function ReviewChecks({ study, onRecheck }: { study: StudyDetail; onRecheck: () => void }) {
+  const flags = study.privacy?.findings ?? [];
+  const overlaps = study.overlaps ?? [];
+  if (!study.privacy && !study.overlaps) return null;
+  return (
+    <section className="checks-before" aria-labelledby="checks-title">
+      <h2 id="checks-title">Checks before you approve</h2>
+      <div className="check-grid">
+        <div className={`check-card${flags.length ? " warn" : " ok"}`}>
+          <h3>{flags.length ? `Personal data: ${flags.length} ${flags.length === 1 ? "finding" : "findings"} to check` : "Personal data: none found"}</h3>
+          {flags.length ? (
+            <>
+              <p className="hint">Readers would see these. Edit the finding below, or confirm they identify no one when you approve.</p>
+              <ul>
+                {flags.map((f) => (
+                  <li key={f.finding_id}>
+                    <span className="flag-kinds">{[...new Set(f.matches.map((m) => m.label))].join(", ")}</span>
+                    <q><Marked text={f.text} matches={f.matches} /></q>
+                  </li>
+                ))}
+              </ul>
+              <button type="button" className="btn btn-quiet" onClick={onRecheck}>Check again after editing</button>
+            </>
+          ) : (
+            <p className="hint">No phone numbers, emails, account numbers, tax IDs, addresses or names matched in the findings.</p>
+          )}
+          {study.privacy && study.privacy.source_matches > 0 && (
+            <p className="hint">The original report text has {study.privacy.source_matches} more {study.privacy.source_matches === 1 ? "match" : "matches"}; only S&amp;I sees that text.</p>
+          )}
+        </div>
+        <div className="check-card">
+          <h3>{overlaps.length ? `Overlaps ${overlaps.length} approved ${overlaps.length === 1 ? "study" : "studies"}` : "No overlap with approved studies"}</h3>
+          {overlaps.length ? (
+            <ul className="overlaps">
+              {overlaps.map((o) => (
+                <li key={o.study_id}>
+                  <p className={`overlap-verdict v-${o.verdict}`}>{o.verdict_text}</p>
+                  <p>
+                    <CiteChip code={o.code} /> <Link href={`/studies/${o.study_id}`}>{o.title}</Link>
+                  </p>
+                  <p className="hint">
+                    {[o.owner_team, o.place, o.fieldwork_end ? `fieldwork ${monthYear(o.fieldwork_end)}` : "", o.topics.join(", ")]
+                      .filter(Boolean).join(" · ")}
+                    {o.differs_by.length > 0 && <> · differs by {o.differs_by.join(", ")}</>}
+                  </p>
+                  {o.figures.length > 0 && (
+                    <ul className="overlap-figures">
+                      {o.figures.map((f) => (
+                        <li key={f.metric}>{f.metric}: <strong className="nums">{f.new}</strong> here, <strong className="nums">{f.old}</strong> in {o.code}</li>
+                      ))}
+                    </ul>
+                  )}
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="hint">Nothing approved covers the same topics closely. This may be new research.</p>
+          )}
+        </div>
+      </div>
+    </section>
+  );
+}
+
 function Review({ id }: { id: string }) {
   const [study, setStudy] = useState<StudyDetail | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [note, setNote] = useState("");
   const [decision, setDecision] = useState<Status>(null);
   const [deciding, setDeciding] = useState(false);
+  const [privacyChecked, setPrivacyChecked] = useState(false);
 
-  useEffect(() => {
+  const load = useCallback(() => {
     api<StudyDetail>(`/api/studies/${id}`).then(setStudy).catch((e) => setError(errorText(e, "Could not load the study.")));
   }, [id]);
+  useEffect(load, [load]);
 
   async function decide(approve: boolean) {
     setDecision(null);
     setDeciding(true);
     try {
-      const updated = await api<StudyDetail>(`/api/review/studies/${id}/decision`, { method: "POST", json: { approve, note: note || null } });
+      const updated = await api<StudyDetail & { answer_alerts?: number }>(`/api/review/studies/${id}/decision`, { method: "POST", json: { approve, note: note || null, privacy_checked: privacyChecked } });
       setStudy(updated);
-      setDecision({ kind: "ok", text: approve ? "Approved. The study is now searchable for teams that may read it." : "Rejected." });
+      // Earlier questions this study now answers were searched again as their askers.
+      const alerted = updated.answer_alerts ?? 0;
+      const alertText = alerted
+        ? ` It answers ${alerted} earlier ${alerted === 1 ? "question" : "questions"} nobody could answer before; ${alerted === 1 ? "that person has" : "those people have"} been told.`
+        : "";
+      setDecision({ kind: "ok", text: approve ? `Approved. The study is now searchable for teams that may read it.${alertText}` : "Rejected." });
     } catch (e) {
       setDecision({ kind: "error", text: errorText(e, "Could not record the decision.") });
     } finally {
@@ -361,6 +450,8 @@ function Review({ id }: { id: string }) {
         )}
       </section>
 
+      <ReviewChecks study={study} onRecheck={load} />
+
       <div className="two-col">
         <StudyCard key={`card-${study.id}`} study={study} onSaved={setStudy} />
         <div>
@@ -371,6 +462,12 @@ function Review({ id }: { id: string }) {
               <label htmlFor="note">Note (optional)</label>
               <textarea id="note" rows={2} value={note} onChange={(e) => setNote(e.target.value)} />
             </div>
+            {(study.privacy?.findings.length ?? 0) > 0 && study.review_status === "pending_review" && (
+              <div className="confirm-check">
+                <input id="privacy-checked" type="checkbox" checked={privacyChecked} onChange={(e) => setPrivacyChecked(e.target.checked)} />
+                <label htmlFor="privacy-checked">I checked the flagged findings and they identify no one</label>
+              </div>
+            )}
             {decision && <p role={decision.kind === "error" ? "alert" : "status"} className={decision.kind === "error" ? "error" : "muted"}>{decision.text}</p>}
             <div className="actions">
               <button className="btn btn-primary" onClick={() => decide(true)} disabled={deciding || study.review_status === "approved"}>

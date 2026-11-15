@@ -13,13 +13,13 @@ from fastapi import Depends, FastAPI, Header, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, Response
 
-from . import audit, commissioning, governance, ingestion, progress, review, usage
+from . import alerts, audit, commissioning, gaps, governance, ingestion, overlap, privacy, progress, review, usage
 from .auth import CurrentUser, decode_token, issue_token
 from .commissioning import CommissioningAdapter, build_adapter
 from .config import Settings, get_settings
 from .db import Database
 from .describe import source_view
-from .embeddings import Embedder, EmbeddingUnavailable, build_embedder, search_ready
+from .embeddings import Embedder, EmbeddingUnavailable, build_embedder, search_ready, to_pgvector
 from .jobs.recompute_tiers import recompute_all
 from .llm import OfflineLLM, build_llm, writer_ready
 from .llm_types import LLM, LLMError
@@ -192,6 +192,24 @@ def create_app(settings: Settings | None = None, *, db: Database | None = None, 
             documents.attach_citations(conn, brief.get("sources") or {})
         return brief
 
+    @app.post("/api/briefs/{brief_id}/follow-up")
+    def follow_up(brief_id: str, body: AskBody, user: CurrentUser = Depends(current_user)):
+        """A new brief that continues an earlier one of the caller's ("What about Mindanao?")."""
+        with as_user(user) as conn:
+            parent = conn.execute(
+                "select id::text as id, question from public.briefs where id = %s and user_id = auth.uid()",
+                [brief_id]).fetchone()
+        if parent is None:
+            raise HTTPException(404, "Brief not found.")
+        try:
+            brief = briefs.ask(user, body.question, body.reader_role, report=progress.reporter(user.id),
+                               follow_up_of=parent)
+        finally:
+            progress.clear(user.id)
+        with as_user(user) as conn:
+            documents.attach_citations(conn, brief.get("sources") or {})
+        return brief
+
     @app.get("/api/briefs/progress")
     def brief_progress(user: CurrentUser = Depends(current_user)):
         """The step the caller's brief is on (polled by the ask page), or null when none is running."""
@@ -201,7 +219,8 @@ def create_app(settings: Settings | None = None, *, db: Database | None = None, 
     def my_briefs(user: CurrentUser = Depends(current_user)):
         with as_user(user) as conn:
             return conn.execute(
-                "select id::text as id, question, confidence, created_at from public.briefs "
+                "select id::text as id, coalesce(payload ->> 'question', question) as question, confidence, created_at "
+                "from public.briefs "
                 "where user_id = auth.uid() order by created_at desc limit 20").fetchall()
 
     @app.get("/api/briefs/{brief_id}")
@@ -237,6 +256,10 @@ def create_app(settings: Settings | None = None, *, db: Database | None = None, 
             detail = review.study_detail(conn, study_id, today())
             if detail is not None:   # provenance, the report document and each finding's page
                 documents.augment_study_detail(conn, detail)
+            if detail is not None and user.is_si and detail.get("review_status") == "pending_review":
+                # Checkpoint 1 aids: personal data in findings, and approved studies this one overlaps.
+                detail["privacy"] = privacy.study_flags(conn, study_id)
+                detail["overlaps"] = overlap.find_overlaps(conn, study_id, embedder.name)
         if detail is None:
             raise HTTPException(404, "Study not found, or you do not have access to it.")
         if not user.is_si:
@@ -264,11 +287,13 @@ def create_app(settings: Settings | None = None, *, db: Database | None = None, 
     @app.post("/api/review/studies/{study_id}/decision")
     def decide_study(study_id: str, body: ReviewDecision, user: CurrentUser = Depends(require_si)):
         with as_user(user) as conn:
-            review.decide_study(conn, study_id, body.approve, body.note, user.id)
+            review.decide_study(conn, study_id, body.approve, body.note, user.id, body.privacy_checked)
             detail = review.study_detail(conn, study_id, today())
             if detail is not None:
                 documents.augment_study_detail(conn, detail)
-            return detail
+        # After the approval commits: earlier questions this study now answers, each searched as its asker.
+        raised = alerts.notify_new_answers(db, embedder, study_id, user) if body.approve and detail else []
+        return {**detail, "answer_alerts": len(raised)} if detail is not None else detail
 
     @app.post("/api/ingest")
     def ingest(body: IngestBody, user: CurrentUser = Depends(require_si)):
@@ -301,7 +326,48 @@ def create_app(settings: Settings | None = None, *, db: Database | None = None, 
     @app.post("/api/access-requests/{request_id}/decision")
     def decide_access(request_id: str, body: AccessDecisionBody, user: CurrentUser = Depends(current_user)):
         with as_user(user) as conn:
-            return governance.decide_access(conn, request_id, body.approve, body.note, body.expires_at)
+            decision = governance.decide_access(conn, request_id, body.approve, body.note, body.expires_at)
+        if body.approve and decision.get("status") == "approved":
+            # The requester can now read the study: their earlier unanswered questions may be answered.
+            with db.as_service() as conn:
+                req = conn.execute("select requester_id::text as requester_id, study_id::text as study_id "
+                                   "from public.access_requests where id = %s", [request_id]).fetchone()
+            if req:
+                raised = alerts.notify_new_answers(db, embedder, req["study_id"], user, only_user=req["requester_id"])
+                decision = {**decision, "answer_alerts": len(raised)}
+        return decision
+
+    # ------------------------------------------------------------------ answer alerts
+    @app.get("/api/alerts")
+    def my_alerts(user: CurrentUser = Depends(current_user)):
+        """Earlier questions of the caller's that a newly readable study now answers."""
+        with as_user(user) as conn:
+            return alerts.list_alerts(conn)
+
+    @app.post("/api/alerts/{alert_id}/read")
+    def read_alert(alert_id: str, user: CurrentUser = Depends(current_user)):
+        with as_user(user) as conn:
+            row = alerts.mark_read(conn, alert_id)
+        if row is None:
+            raise HTTPException(404, "Alert not found.")
+        return row
+
+    # ------------------------------------------------------------------ research-gap map (S&I)
+    @app.get("/api/gaps")
+    def gap_map(days: int = 90, user: CurrentUser = Depends(require_si)):
+        # Unanswered questions asked before embeddings were stored get one, once (one call each).
+        with db.as_service() as conn:
+            missing = conn.execute(
+                "select id::text as id, question from public.briefs where question_embedding is null "
+                "and coalesce(cardinality(retrieved_finding_ids), 0) = 0 limit 50").fetchall()
+        if missing:
+            vectors = [(to_pgvector(embedder.embed_query(m["question"])), m["id"]) for m in missing]
+            with db.as_service() as conn:
+                for vector, brief_id in vectors:
+                    conn.execute("update public.briefs set question_embedding = %s::extensions.vector where id = %s",
+                                 [vector, brief_id])
+        with as_user(user) as conn:
+            return gaps.gap_map(conn, today(), min(max(days, 1), 365))
 
     # ------------------------------------------------------------------ escalation (checkpoint 3)
     @app.get("/api/escalations")
