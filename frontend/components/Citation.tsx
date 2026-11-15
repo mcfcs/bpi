@@ -101,6 +101,33 @@ export function Citation({ source, stance }: CitationItem) {
   );
 }
 
+/**
+ * A compact reference beside a claim: the chip and tier, the study's title on one line, then method,
+ * date and who the figure is about. The full study card appears once, under "Studies behind this
+ * brief", so a study cited six times no longer repeats its whole card six times.
+ */
+export function SourceRef({ source, stance }: CitationItem) {
+  const method = source.method_detail ?? `${source.method_label} · ${sampleLabel(source)}`;
+  const when = source.fieldwork_label ?? monthYear(source.fieldwork_end);
+  const about = [
+    source.provenance === "public" ? provenanceLabel(source) : "",
+    source.region_label,
+    source.subgroup_label && source.finding_type !== "verbatim" ? source.subgroup_label : "",
+    source.tier_overridden ? "tier set by S&I" : "",
+  ].filter(Boolean);
+  return (
+    <div className="ref">
+      <div className="ref-top">
+        <SourceChip source={source} />
+        <TierBadge tier={source.tier} basis={source.tier_basis} />
+        {stance && stance !== "supports" && <span className="ref-stance">{stance}</span>}
+      </div>
+      <Link className="ref-title" href={`/studies/${source.study_id}`} title={source.study_title}>{source.study_title}</Link>
+      <div className="ref-meta">{[method, when, ...about].join(" · ")}</div>
+    </div>
+  );
+}
+
 export function SourceList({ items, label = "Sources", showLabel = true }: { items: CitationItem[]; label?: string; showLabel?: boolean }) {
   if (!items.length) return <div />;
   return (
@@ -109,7 +136,7 @@ export function SourceList({ items, label = "Sources", showLabel = true }: { ite
         {showLabel && <li className="label">{label}</li>}
         {items.map(({ source, stance }) => (
           <li key={source.finding_id}>
-            <Citation source={source} stance={stance} />
+            <SourceRef source={source} stance={stance} />
           </li>
         ))}
       </ul>

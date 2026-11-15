@@ -47,7 +47,7 @@ export function AudienceAnswer({ brief }: { brief: Brief }) {
   }
 
   return (
-    <section className="section answer" aria-labelledby="answer-title">
+    <section className="section answer" id="answer" aria-labelledby="answer-title">
       <div className="answer-head">
         <h2 id="answer-title">Answer</h2>
         <div className="segmented no-print" role="group" aria-label="Write the answer for">

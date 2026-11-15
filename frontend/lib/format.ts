@@ -112,3 +112,14 @@ export const ROLE_LABELS = {
   bu_approver: "Approver",
   bu_user: "Business unit",
 } as const;
+
+/**
+ * "Claude Sonnet 5.5" from a provider model id such as "global.anthropic.claude-sonnet-5-5" or
+ * "claude-opus-5-5". Anything else (the offline template writer, older ids) is shown as stored.
+ */
+export function modelLabel(id: string): string {
+  const m = /claude-([a-z]+)-(\d+)(?:-(\d+))?/i.exec(id);
+  if (!m) return id;
+  const family = m[1][0].toUpperCase() + m[1].slice(1).toLowerCase();
+  return `Claude ${family} ${m[3] ? `${m[2]}.${m[3]}` : m[2]}`;
+}

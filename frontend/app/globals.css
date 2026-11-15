@@ -109,29 +109,30 @@ a:hover { text-decoration-thickness: 2px; }
 .shell { max-width: 1280px; margin: 0 auto; padding: 0 32px; }
 @media (max-width: 640px) { .shell { padding: 0 16px; } }
 
-/* BPI red band with a gold rule beneath, as on the crest. */
-.site-header { background: var(--band); color: var(--band-ink); border-bottom: 3px solid var(--bpi-gold); }
+/* BPI red band with a gold rule beneath, as on the crest. One row that never wraps: wordmark, links,
+   tools. When the links would not fit they fold into the Menu button and a panel under the band. */
+.site-header { background: var(--band); color: var(--band-ink); border-bottom: 3px solid var(--bpi-gold); position: relative; z-index: 20; }
 .site-header :focus-visible { outline-color: var(--bpi-gold); }
-.site-header .shell {
-  display: flex; flex-wrap: wrap; align-items: center; gap: 10px 20px;
-  min-height: 60px; padding-top: 8px; padding-bottom: 8px;
-}
-.wordmark { display: flex; align-items: center; gap: 10px; text-decoration: none; color: var(--band-ink); line-height: 1.15; }
+.header-bar { display: flex; align-items: center; gap: 24px; min-height: 64px; }
+.wordmark { display: flex; align-items: center; gap: 10px; flex: none; text-decoration: none; color: var(--band-ink); line-height: 1.15; }
 .wordmark svg { flex: none; }
-.wordmark strong { display: block; font-weight: 650; font-stretch: 92%; font-size: 1.05rem; letter-spacing: -0.01em; }
-.wordmark small { display: block; font-size: 0.78rem; color: color-mix(in srgb, var(--band-ink) 82%, transparent); }
+.wordmark strong { display: block; font-weight: 650; font-stretch: 92%; font-size: 1.05rem; letter-spacing: -0.01em; white-space: nowrap; }
+.wordmark small { display: block; font-size: 0.78rem; color: color-mix(in srgb, var(--band-ink) 82%, transparent); white-space: nowrap; }
 
-/* Seven links for S&I analysts still fit on one line at 1280px beside the persona switch. */
-.nav { display: flex; flex-wrap: wrap; gap: 2px; flex: 1; }
+.nav { display: flex; align-items: stretch; align-self: stretch; gap: 2px; flex: 1; min-width: 0; }
 .nav a {
+  display: flex; align-items: center; white-space: nowrap; position: relative;
   color: color-mix(in srgb, var(--band-ink) 86%, transparent); text-decoration: none; font-size: 0.92rem;
-  padding: 7px 7px; border-radius: var(--r-control); position: relative;
+  padding: 0 9px;
 }
-.nav a:hover { color: var(--band-ink); background: rgb(0 0 0 / 0.14); }
+.nav a:hover { color: var(--band-ink); background: rgb(0 0 0 / 0.12); }
 .nav a[aria-current="page"] { color: var(--band-ink); font-weight: 600; }
+/* The current page sits on the gold rule, flush with the band's bottom edge. */
 .nav a[aria-current="page"]::after {
-  content: ""; position: absolute; left: 7px; right: 7px; bottom: -11px; height: 3px; background: var(--bpi-gold);
+  content: ""; position: absolute; left: 9px; right: 9px; bottom: -3px; height: 3px; background: var(--band-ink);
 }
+
+.header-tools { display: flex; align-items: center; gap: 10px; flex: none; margin-left: auto; }
 
 /* Theme switch on the red band: Light and Dark, the current one sunk into the band. */
 .theme-toggle {
@@ -139,35 +140,90 @@ a:hover { text-decoration-thickness: 2px; }
   background: rgb(0 0 0 / 0.16);
 }
 .theme-toggle button {
-  display: inline-grid; place-items: center; width: 34px; height: 30px; padding: 0; border: 0;
+  display: inline-grid; place-items: center; width: 32px; height: 30px; padding: 0; border: 0;
   border-radius: 4px; background: transparent; cursor: pointer;
   color: color-mix(in srgb, var(--band-ink) 78%, transparent);
 }
 .theme-toggle button:hover { color: var(--band-ink); }
 .theme-toggle button[aria-pressed="true"] { color: var(--band); background: var(--band-ink); }
 
-.persona { display: flex; align-items: center; gap: 8px; }
-.persona select {
-  width: auto; max-width: 340px; field-sizing: content; height: 36px; padding: 0 30px 0 12px; font-size: 0.86rem;
-  background-color: rgb(255 255 255 / 0.12); color: var(--band-ink); border-color: rgb(255 255 255 / 0.28);
+/* Persona: initials, name over team, and a menu of the other personas. */
+.persona { position: relative; }
+.persona-button {
+  display: flex; align-items: center; gap: 9px; font: inherit; color: var(--band-ink); cursor: pointer;
+  background: rgb(255 255 255 / 0.1); border: 1px solid rgb(255 255 255 / 0.24); border-radius: var(--r-control);
+  padding: 4px 10px 4px 5px; min-height: 40px; text-align: left; line-height: 1.15;
 }
-.persona select option { color: #18191B; background: #FFFFFF; }
-@media (max-width: 860px) {
-  .site-header .shell { gap: 6px 12px; padding-bottom: 0; }
-  /* Wrap rather than scroll sideways: a hidden scroll strip hid the current page and the S&I links. */
-  .nav { order: 3; flex: 1 0 100%; margin: 0 -10px; }
-  .nav a { white-space: nowrap; padding: 10px; }
-  .nav a[aria-current="page"]::after { bottom: 0; }
-  .persona { flex: 1; justify-content: flex-end; }
-  .persona select { max-width: 100%; }
+.persona-button:hover { background: rgb(255 255 255 / 0.17); }
+.persona-text { display: grid; min-width: 0; }
+.persona-text strong { font-size: 0.86rem; font-weight: 600; white-space: nowrap; }
+.persona-text small { font-size: 0.74rem; color: color-mix(in srgb, var(--band-ink) 82%, transparent); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 160px; }
+.persona-button .chev { flex: none; opacity: 0.85; }
+.persona-button[aria-expanded="true"] .chev { transform: rotate(180deg); }
+.avatar {
+  display: inline-grid; place-items: center; flex: none; width: 30px; height: 30px; border-radius: 50%;
+  background: var(--bpi-gold); color: #3B2A00; font-size: 0.74rem; font-weight: 700; letter-spacing: 0.02em;
 }
-@media (max-width: 440px) {
-  /* Name and team need the full width at 16px (no iOS zoom). */
-  .persona { order: 2; flex: 1 0 100%; }
-  .persona select { height: 44px; width: 100%; }
-  .theme-toggle { margin-left: auto; }
-  .theme-toggle button { width: 44px; height: 40px; }
+.persona-menu {
+  position: absolute; right: 0; top: calc(100% + 8px); width: min(320px, calc(100vw - 32px)); z-index: 30;
+  background: var(--surface); color: var(--ink); border: 1px solid var(--rule); border-radius: var(--r-panel);
+  box-shadow: 0 12px 32px rgb(0 0 0 / 0.16); padding: 6px;
 }
+.persona-menu-head { font-size: 0.8rem; color: var(--muted); padding: 8px 10px 6px; margin: 0; line-height: 1.4; }
+.persona-menu ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; }
+.persona-menu button {
+  display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 10px; width: 100%;
+  font: inherit; text-align: left; color: var(--ink); background: transparent; border: 0; border-radius: 6px;
+  padding: 8px 10px; cursor: pointer; line-height: 1.25;
+}
+.persona-menu button:hover { background: var(--wash); }
+.persona-menu button[aria-current="true"] { background: var(--wash); }
+.persona-menu button > span:nth-child(2) { display: grid; }
+.persona-menu strong { font-size: 0.92rem; font-weight: 600; }
+.persona-menu small { font-size: 0.8rem; color: var(--muted); }
+.persona-menu .avatar { background: var(--wash-strong); color: var(--ink); }
+.persona-menu .tick { color: var(--ok); }
+.persona-menu :focus-visible { outline-color: var(--link); }
+
+/* Menu button and panel: shown only when the links fold away. */
+.menu-button {
+  display: none; align-items: center; gap: 6px; font: inherit; font-size: 0.9rem; font-weight: 600;
+  color: var(--band-ink); background: rgb(0 0 0 / 0.16); border: 0; border-radius: var(--r-control);
+  min-height: 40px; padding: 0 12px; cursor: pointer;
+}
+.menu-button:hover { background: rgb(0 0 0 / 0.24); }
+.nav-panel { border-top: 1px solid rgb(255 255 255 / 0.16); }
+.nav-panel[hidden] { display: none; }
+.nav-panel .shell { display: grid; padding-top: 6px; padding-bottom: 10px; }
+.nav-panel a {
+  display: block; color: var(--band-ink); text-decoration: none; font-size: 1rem; padding: 11px 12px;
+  border-radius: var(--r-control); border-left: 3px solid transparent;
+}
+.nav-panel a:hover { background: rgb(0 0 0 / 0.12); }
+.nav-panel a[aria-current="page"] { font-weight: 650; border-left-color: var(--bpi-gold); background: rgb(0 0 0 / 0.12); }
+
+/* Seven links (S&I) need about 1200px beside the tools; five (business units) about 1000px. */
+@media (max-width: 1199px) {
+  .site-header[data-links="many"] .nav { display: none; }
+  .site-header[data-links="many"] .menu-button { display: inline-flex; }
+}
+@media (max-width: 999px) {
+  .site-header .nav { display: none; }
+  .site-header .menu-button { display: inline-flex; }
+}
+@media (min-width: 1200px) { .nav-panel { display: none; } }
+@media (min-width: 1000px) { .site-header[data-links="few"] .nav-panel { display: none; } }
+@media (max-width: 640px) {
+  .header-bar { gap: 10px; min-height: 60px; }
+  .wordmark small { display: none; }
+  .header-tools { gap: 6px; }
+  .persona-text, .persona-button .chev { display: none; }
+  .persona-button { padding: 4px; min-height: 44px; min-width: 44px; justify-content: center; }
+  .avatar { width: 34px; height: 34px; }
+  .theme-toggle button { width: 36px; height: 38px; }
+  .menu-button { min-height: 44px; padding: 0 10px; }
+}
+@media (max-width: 380px) { .menu-button span { display: none; } }
 
 main { padding: 48px 0 120px; }
 .page-head { margin-bottom: 32px; max-width: 760px; }
@@ -513,7 +569,7 @@ button.cite[aria-busy="true"] { cursor: progress; opacity: 0.7; }
 .analyst-foot { margin: 14px 0 0; }
 
 .analyst-panel .btn { text-decoration: none; }
-.analyst-panel, .section { scroll-margin-top: 16px; }
+.analyst-panel, .section, .row[id] { scroll-margin-top: 64px; }
 .thread { list-style: none; margin: 0 0 14px; padding: 0; display: grid; gap: 12px; }
 .thread li + li { border-top: 1px solid var(--rule); padding-top: 12px; }
 .thread-meta { font-size: 0.8rem; font-weight: 600; color: var(--muted); margin: 0 0 4px; }
@@ -603,6 +659,126 @@ h3.note-title { font-stretch: 100%; letter-spacing: 0; line-height: 1.4; }
 .meter i { width: 14px; height: 6px; border-radius: 1px; background: var(--wash-strong); display: inline-block; }
 .meter i.on { background: var(--ink); }
 .confidence-level .meter i { width: 22px; height: 8px; }
+
+/* Sections of the brief as chips, pinned to the top while reading on wide screens. On a phone the
+   bar wraps in place, since a pinned bar of ten chips would cover a third of the screen. */
+.toc {
+  position: sticky; top: 0; z-index: 10; margin: 0 0 24px; padding: 10px 0;
+  background: color-mix(in srgb, var(--paper) 94%, transparent); backdrop-filter: blur(6px);
+  border-bottom: 1px solid var(--rule);
+}
+.toc ul { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 4px; }
+.toc a {
+  display: inline-flex; align-items: center; min-height: 34px; padding: 0 12px; border-radius: 999px;
+  font-size: 0.875rem; color: var(--muted); text-decoration: none; white-space: nowrap;
+}
+.toc a:hover { color: var(--ink); background: var(--wash); }
+.toc a[aria-current="location"] { color: var(--ink); background: var(--wash-strong); font-weight: 600; }
+@media (max-width: 760px) {
+  .toc { position: static; background: none; backdrop-filter: none; padding: 0 0 14px; border-bottom: 0; }
+  .toc a { min-height: 36px; background: var(--wash); }
+}
+.answer, .fold { scroll-margin-top: 64px; }
+
+/* The brief in one screen: answer, key figures, confidence, on a quiet panel. */
+.brief-summary {
+  background: var(--wash); border-radius: 12px; padding: 28px 32px 20px; margin: 4px 0 40px;
+}
+.brief-summary .answer { border-top: 0; padding: 0 0 8px; }
+.brief-summary .key-figures { padding: 8px 0 20px; }
+.brief-summary .key-figures a { background: var(--surface); border-color: transparent; }
+.brief-summary .key-figures a:hover { border-color: var(--link); }
+.brief-summary .brief-glance { margin: 0; padding: 14px 0 0; background: none; border-radius: 0; border-top: 1px solid var(--rule); }
+.brief-summary .segmented { background: var(--wash-strong); }
+.brief-summary .segmented button[aria-pressed="true"] { background: var(--surface); }
+@media (max-width: 640px) {
+  .brief-summary { padding: 20px 16px 14px; margin-left: -16px; margin-right: -16px; border-radius: 0; }
+}
+
+/* The evidence: one row per section, open on demand. Closed, a row is its title and a one-line
+   summary, so the whole brief reads as an outline on one screen. */
+.evidence-head { display: flex; flex-wrap: wrap; align-items: end; justify-content: space-between; gap: 10px 20px; margin-bottom: 10px; }
+.evidence-head h2 { margin-bottom: 4px; }
+.evidence-head p { margin: 0; }
+.fold { padding: 0; border-top: 1px solid var(--rule); }
+.fold:last-of-type { border-bottom: 1px solid var(--rule); }
+.fold-head { margin: 0; font-size: inherit; font-stretch: 100%; letter-spacing: 0; }
+.fold-head button {
+  display: flex; align-items: flex-start; gap: 12px; width: 100%; padding: 16px 4px; text-align: left;
+  font: inherit; color: var(--ink); background: none; border: 0; cursor: pointer;
+}
+.fold-head button:hover { background: color-mix(in srgb, var(--wash) 70%, transparent); }
+.fold-head button:hover .fold-title { text-decoration: underline; text-underline-offset: 4px; text-decoration-thickness: 1px; }
+.fold-chev { flex: none; margin-top: 4px; color: var(--muted); transition: transform 150ms; }
+.fold[data-open="true"] .fold-chev { transform: rotate(90deg); color: var(--ink); }
+.fold-text { display: grid; gap: 3px; min-width: 0; }
+.fold-title {
+  display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px;
+  font-size: 1.2rem; font-weight: 650; font-stretch: 92%; letter-spacing: -0.012em; line-height: 1.25;
+}
+.fold-title .tag { font-size: 0.8rem; font-weight: 600; font-stretch: 100%; letter-spacing: 0; color: var(--warn-ink); background: var(--warn-wash); padding: 1px 8px; border-radius: 999px; }
+.fold-summary { font-size: 0.92rem; font-weight: 400; color: var(--muted); line-height: 1.45; }
+.fold-body { padding: 4px 0 28px 34px; }
+.fold[data-open="false"] .fold-body { display: none; }
+.fold .row { padding-top: 8px; }
+@media (max-width: 640px) {
+  .fold-body { padding-left: 0; }
+  .fold-title { font-size: 1.1rem; }
+}
+
+.print-only { display: none; }
+
+/* Key figures: the charted metrics as large numbers, each linking to its chart. */
+.key-figures { padding: 4px 0 28px; }
+.key-figures ul {
+  list-style: none; margin: 0; padding: 0; display: grid; gap: 12px;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+}
+.key-figures a {
+  display: grid; gap: 4px; height: 100%; padding: 16px 18px; border-radius: var(--r-panel);
+  background: var(--surface); border: 1px solid var(--rule); color: var(--ink); text-decoration: none;
+  transition: border-color 120ms;
+}
+.key-figures a:hover { border-color: var(--link); }
+.key-figures a:hover .kf-label { text-decoration: underline; text-underline-offset: 3px; }
+.kf-value { font-size: 2rem; font-weight: 650; font-stretch: 92%; line-height: 1.1; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; color: var(--link); }
+.kf-label { font-size: 0.92rem; line-height: 1.4; }
+.kf-foot { font-size: 0.8rem; color: var(--muted); margin-top: auto; padding-top: 4px; }
+.key-figures .hint { margin-top: 10px; }
+
+/* Compact reference beside a claim: chip and tier, title on one line, then method · date · who. */
+.sources { gap: 10px; }
+.ref { padding: 2px 0 2px 12px; border-left: 2px solid var(--rule); min-width: 0; }
+.ref-top { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.ref-stance { font-size: 0.78rem; font-weight: 600; color: var(--warn-ink); }
+.ref-title {
+  display: block; margin-top: 4px; color: var(--ink); font-weight: 500; line-height: 1.35; text-decoration: none;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.ref-title:hover { text-decoration: underline; text-underline-offset: 3px; }
+.ref-meta { color: var(--muted); line-height: 1.4; margin-top: 1px; font-variant-numeric: tabular-nums; }
+
+/* Studies behind this brief: each cited study once, in a grid of full cards. */
+.study-grid { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); font-size: 0.88rem; }
+.study-grid .study-card { padding: 14px 16px; }
+.study-grid .title { -webkit-line-clamp: 3; line-clamp: 3; }
+
+/* Phones: sources beside a claim become a row of chips (the full card is under "Studies behind this
+   brief"), and the key figures sit two to a row. */
+@media (max-width: 640px) {
+  .sources { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; }
+  .sources .label { flex-basis: 100%; margin: 0; }
+  .ref { border-left: 0; padding: 0; }
+  .ref-title, .ref-meta { display: none; }
+  .key-figures ul { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+  .key-figures a { padding: 12px 14px; }
+  .kf-value { font-size: 1.5rem; }
+  .kf-label { font-size: 0.86rem; }
+}
+.glance-main { display: grid; gap: 4px; }
+.glance-tiers { font-size: 0.875rem; color: var(--muted); padding-left: 60px; }
+@media (max-width: 640px) { .glance-tiers { padding-left: 0; } }
+.brief-meta a { color: inherit; }
 
 /* ---------------------------------------------------------------- ask an analyst (new question) */
 
@@ -780,6 +956,8 @@ pre.source-text { white-space: pre-wrap; font-family: var(--mono); font-size: 12
 
 /* ---------------------------------------------------------------- print: the brief as a memo */
 
+@page { size: A4; margin: 16mm 14mm 18mm; }
+
 @media print {
   /* Always print light, whatever theme is on screen: this selector outranks the dark block. */
   html:root[data-theme] {
@@ -789,11 +967,56 @@ pre.source-text { white-space: pre-wrap; font-family: var(--mono); font-size: 12
     --ok: #24704F; --ok-wash: #e3f2ea; --warn-wash: #fbf3e2; --warn-ink: #7A4E0E; color-scheme: light;
   }
   html:root[data-theme] .tier b { color: #fff; }
-  .site-header, .demo-note, .no-print, .btn, form, .restricted { display: none !important; }
+  body { font-size: 10.5pt; line-height: 1.45; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .site-header, .demo-note, .no-print, .btn, form, .restricted .request-form, nextjs-portal { display: none !important; }
   main { padding: 0; }
   .shell { max-width: none; padding: 0; }
-  .section { break-inside: avoid-page; }
-  .row { grid-template-columns: minmax(0, 1fr) 220px; gap: 8px 24px; }
-  .study-card { break-inside: avoid; }
+  h1 { font-size: 20pt; }
+
+  .print-only { display: block !important; }
+  .print-mast {
+    font-size: 8.5pt; color: var(--bpi-red); font-weight: 600; margin: 0 0 10pt;
+    padding-bottom: 6pt; border-bottom: 2pt solid var(--bpi-red);
+  }
+  .brief-head { padding-bottom: 10pt; max-width: none; }
+  .brief-head h1 { max-width: none; }
+
+  /* Summary first, on a light panel; then every section, open, flowing across pages. */
+  .brief-summary { padding: 12pt 14pt 8pt; margin: 0 0 16pt; border-radius: 6pt; break-inside: avoid; }
+  .answer-text { font-size: 12pt; }
+  .key-figures ul { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6pt; }
+  .key-figures a { padding: 8pt 10pt; border: 1px solid var(--rule) !important; }
+  .kf-value { font-size: 16pt; }
+  .kf-label { font-size: 8.5pt; }
+  /* Page 1 is the one-page summary; the evidence starts on page 2. */
+  .evidence-head { margin-bottom: 4pt; break-before: page; }
+  .fold-body { display: block !important; padding: 0 0 10pt; }
+  .fold-head button { padding: 10pt 0 4pt; }
+  .fold-chev { display: none; }
+  .fold-summary { display: none; }
+  .fold-head { break-after: avoid; }
+  .headline-text { font-size: 12.5pt; }
+
+  /* Sources under each claim, full width, rather than in a rail that A4 cannot fit beside the text.
+     Small blocks never split across a page. */
+  .row { display: block; padding: 6pt 0 10pt; break-inside: avoid; }
+  .row > aside { margin-top: 6pt; }
+  .sources { display: flex; flex-wrap: wrap; gap: 4pt 16pt; font-size: 8pt; }
+  .sources .label { flex-basis: 100%; margin: 0; }
+  .ref { max-width: 78mm; padding-left: 6pt; }
+  .ref-title { white-space: normal; overflow: visible; }
+  .sources .cite, .sources .tier, .study-grid .cite, .study-grid .tier { font-size: 7.5pt; }
+  .ref, .study-card, .verbatim, .survey-context, .segments li, .key-figures li, .disclaimer { break-inside: avoid; }
+  .study-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); font-size: 8.5pt; }
+
+  /* Charts cannot reflow to the page; their tables print instead, full width. */
+  .chart-plot { display: none !important; }
+  .chart-table { display: block !important; border: 0; overflow: visible; }
+  .table-wrap table { min-width: 0; }
+  .table-wrap td:first-child { min-width: 0; }
+  .chart-table th, .chart-table td { padding: 4pt 6pt; font-size: 8.5pt; }
+  .chart { break-inside: avoid; }
+
+  .analyst-panel { display: none; }
   a { color: inherit; text-decoration: none; }
 }

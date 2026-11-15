@@ -133,7 +133,7 @@ export function MetricChart({ chart }: { chart: ChartSpec }) {
           </p>
         )}
       </figcaption>
-      <div style={{ width: "100%", height: data.length * rowHeight + 34 }} role="img" aria-label={`${chart.title}. ${summary}`}>
+      <div className="chart-plot" style={{ width: "100%", height: data.length * rowHeight + 34 }} role="img" aria-label={`${chart.title}. ${summary}`}>
         <ResponsiveContainer>
           <BarChart data={data} layout="vertical" margin={{ top: 4, right: narrow ? 122 : 138, bottom: 4, left: 0 }} barCategoryGap={12}>
             <CartesianGrid horizontal={false} stroke="var(--rule)" strokeWidth={1} />
@@ -169,11 +169,12 @@ export function MetricChart({ chart }: { chart: ChartSpec }) {
           </BarChart>
         </ResponsiveContainer>
       </div>
-      <button type="button" className="btn btn-quiet small" aria-expanded={showTable} onClick={() => setShowTable((s) => !s)}>
+      <button type="button" className="btn btn-quiet small no-print" aria-expanded={showTable} onClick={() => setShowTable((s) => !s)}>
         {showTable ? "Hide table" : "Show as table"}
       </button>
-      {showTable && (
-        <div className="table-wrap chart-table">
+      {/* Always rendered: on paper the table replaces the chart, which cannot reflow to the page. */}
+      {(
+        <div className={`table-wrap chart-table${showTable ? "" : " print-only"}`}>
           <table>
             <caption className="visually-hidden">{chart.title}</caption>
             <thead>

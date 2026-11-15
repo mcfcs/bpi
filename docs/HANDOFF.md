@@ -31,6 +31,44 @@ _Last updated: 14 Nov 2026._
 
 ## Session log
 
+### 15 Nov 2026: header that never wraps, a brief you can scan (uncommitted at time of writing)
+
+1. **Header** (`components/SiteHeader.tsx`): one row at every width. The persona `<select>` (its
+   "name · team" text pushed the links onto two or three lines at 900–1440 px) is now a compact
+   button (initials, name over team) with a menu of personas; Escape or an outside click closes it.
+   Links fold into a Menu button and a panel under the band below 1200 px for S&I's seven links and
+   below 1000 px for business units' five (`data-links` on the header). Phones show initials only.
+2. **Brief** (`components/BriefView.tsx`, `Citation.tsx`): a sticky "sections" bar (wraps in place
+   on phones) marks the section in view; **key figures** show each charted metric's range across
+   groups ("41–52%"), read from chart values only, never from the writer; claim and chart sources
+   are compact rows (chip, tier, title on one line, method · date · who) and become chips only
+   under 640 px; each study is described once under **Studies behind this brief**; the header says
+   "16 findings from 4 studies" and "Drafted by Claude Sonnet 5.5" (`modelLabel` in `lib/format.ts`).
+   Desktop brief height about the same, but the repeated six-line study cards are gone; phone
+   brief 10,400 → 9,400 px.
+   **Second pass (16 Nov), summary first:** the brief opens with a summary card (answer, key
+   figures, confidence) and "The evidence" as folding sections, each closed under a one-line summary
+   computed from the brief (counts, codes, tiers; never model wording). Conflicts, gaps and
+   restricted matches start open; in-page links (#studies, #confidence, a key figure, #analyst) open
+   their section first. The pinned section bar (chips) stays above the summary and opens a section when clicked. Desktop brief 6,077 → 2,103 px, phone
+   10,400 → 2,926 px. **Print fixed:** `@page` A4 margins, a red memo masthead, page 1 is the summary
+   and the evidence starts on page 2, every section prints open, charts print as their tables
+   (`MetricChart` always renders the table, `print-only` on screen), sources go under each claim
+   instead of a rail A4 cannot fit, and no section-level `break-inside: avoid` (it left half-empty
+   pages).
+3. Checked with Edge via playwright-core at 1440/1200/1100/900/390/340 px, light and dark: no
+   horizontal overflow on any page; typecheck and build pass.
+4. **Pitch deck** in `deck/`: `Evidence-Brief-Pitch-Deck.pdf` (17 slides on the five required
+   sections, Bantay-Baha layout on a light background in BPI red and gold) and `script.md` (about 13–14 minutes, with a live demo
+   on slide 6); the earlier score-sheet deck is in `deck/previous/`. New measurement for it: 6 Bedrock briefs (Sonnet 5.5,
+   effort medium, Bedrock search): 1 call per brief, ≈4,500 prompt tokens (max 7,200), ≈1,100 output
+   (max 1,600), median 11.2 s, 0 fall-backs, 0 rewrites, $0.023 per brief at list prices.
+   Placeholders to fill: team name, members, contact.
+5. **This PC** (not in the repo): `backend/.venv` is Python 3.12 (pgserver has no 3.13 wheels) and its
+   `sitecustomize.py` works around Smart App Control blocking psycopg's DLL and a network whose
+   NAT64 IPv6 addresses time out (IPv4 first). Bedrock runs through the SSO profile
+   `Data_Wave_Participant-291520811820` in `backend/.env.local`.
+
 ### 14 Nov 2026: 20 more studies, Claude on Bedrock, writer and Bedrock-search evals
 
 1. **20 synthetic studies** in `data/synthetic/corpus.json` (SI-2022-051 … SI-2026-065; 10 quant,
