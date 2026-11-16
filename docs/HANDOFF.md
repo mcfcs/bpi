@@ -130,7 +130,7 @@ _Last updated: 14 Nov 2026._
    Project name is ALAMKansya (app header, tab titles, print masthead, favicon "A", deck cover, script).
    Team name is Oreo Bread (slides 1 and 18, script). The cover is title only; the close asks S&I and IT/Risk.
    Deck is now for a slides-only video (no live demo, no consultation mentions, no footer captions,
-   AI cost only: 20,000 users max, ~2 briefs each, planned at 50,000 briefs ≈ ₱72,500 / US$1,150 a month; pesos first at ₱63 = US$1). Script ≈ 14 min. 18 slides (feasibility and scale combined on 16): slide 10 compares against an AI-assistant seat for everyone (M365 Copilot US$30 list).
+   AI cost only: 20,000 users max, ~2 briefs each, planned at 50,000 briefs ≈ ₱72,500 / US$1,150 a month; pesos first at ₱63 = US$1). Script ≈ 14 min. 19 slides (feasibility and scale on 16, "What it depends on" on 17; aligned with the score sheet): slide 10 compares against an AI-assistant seat for everyone (M365 Copilot US$30 list).
 5. **This PC** (not in the repo): `backend/.venv` is Python 3.12 (pgserver has no 3.13 wheels) and its
    `sitecustomize.py` works around Smart App Control blocking psycopg's DLL and a network whose
    NAT64 IPv6 addresses time out (IPv4 first). Bedrock runs through the SSO profile

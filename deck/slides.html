@@ -101,6 +101,22 @@
   .grid3.tight p { font-size: 26px; line-height: 1.35; }
   .note { font-size: 24px; color: var(--muted); margin-top: 24px; }
   .mono { font-family: "Space Mono", monospace; }
+  table.tight td { padding-top: 11px; padding-bottom: 11px; }
+  /* Slide 12: compact checkpoints, then the approval and the audit log. */
+  .people .box { padding-top: 16px; } .people .box h3 { font-size: 40px; margin-bottom: 6px; }
+  .people .box h3 .k { color: var(--text); margin-right: 6px; }
+  .people .box p { font-size: 24px; line-height: 1.32; }
+  .people-shots { display: flex; gap: 40px; margin-top: 30px; align-items: flex-start; }
+  .people-shots .frame { height: 330px; padding: 8px; }
+  .colhead { font-family: "Space Mono", monospace; font-size: 22px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--muted); margin-bottom: 16px; }
+  ul.dots.fix li { font-size: 29px; margin-bottom: 22px; }
+  p.ba { font-size: 25px; line-height: 1.35; margin-bottom: 16px; color: var(--soft); }
+  p.ba b { color: var(--red); }
+  .impact table td { padding: 10px 22px 10px 0; font-size: 26px; } .impact .box li { font-size: 26px; margin-bottom: 10px; }
+  .value-shot { margin-top: 24px; } .value-shot .frame { height: 196px; padding: 8px; }
+  .deps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 40px; align-content: start; }
+  .deps .box { padding-top: 18px; } .deps ul.dots li { font-size: 25px; line-height: 1.32; margin-bottom: 12px; }
+  .deps ul.dots li::before { top: 13px; }
   /* A caption under each screenshot. */
   figure.shot { margin: 0; flex: none; }
   figure.shot figcaption { font-size: 21px; line-height: 1.3; color: var(--muted); margin-top: 10px; }
@@ -143,7 +159,7 @@
     <p class="lead" style="font-size:44px; margin-top:36px"><i>Ang alkansya ng kaalaman.</i> An evidence assistant for BPI Strategy &amp; Insights</p>
     <p class="mono" style="font-size:26px; letter-spacing:0.18em; text-transform:uppercase; color:var(--muted); margin-top:64px">Group Oreo Bread</p>
   </div>
-  <div class="foot"><span></span><span>01 / 18</span></div>
+  <div class="foot"><span></span><span>01 / 19</span></div>
 </section>
 
 <!-- · Problem -->
@@ -158,7 +174,7 @@
     </div>
     <p class="lead" style="margin-top:44px">Business units compete with fintechs on speed. A decision made without the study BPI already owns is <b>slower, costlier, or both.</b></p>
   </div>
-  <div class="foot"><span></span><span>02 / 18</span></div>
+  <div class="foot"><span></span><span>02 / 19</span></div>
 </section>
 
 <!-- · The slow loop -->
@@ -178,7 +194,7 @@
       <p style="font-size:32px">Today, nobody can measure how long this takes. <b>Nobody can see how many questions existing research could already answer.</b></p>
     </div>
   </div>
-  <div class="foot"><span></span><span>03 / 18</span></div>
+  <div class="foot"><span></span><span>03 / 19</span></div>
 </section>
 
 <!-- · Solution -->
@@ -188,16 +204,15 @@
   <div class="body" style="flex-direction:row; gap:56px; align-items:flex-start">
     <figure class="shot" style="width:1000px"><div class="frame" style="height:570px"><img src="img/ask.png" alt="The ask page"></div><figcaption>The ask page, signed in as Ben from SME Banking. Prototype, synthetic data.</figcaption></figure>
     <div style="flex:1">
-      <ul class="dots">
-        <li>Ask in <b>English, Filipino or Taglish</b></li>
-        <li>Matches what you <b>mean</b>, not just your exact words, across every approved study your team may read</li>
-        <li>The answer first, then the figures, who was surveyed, and what’s missing</li>
-        <li>Every statement shows the <b>study and page</b> it came from</li>
-        <li>Ask a <b>follow-up</b>, or send it to an S&amp;I analyst in one click</li>
+      <p class="colhead">Each cause, fixed</p>
+      <ul class="dots fix">
+        <li><b>Silos →</b> searches every approved study from every team; ones you can’t open yet come with a button to ask for access</li>
+        <li><b>Exact words →</b> matches meaning, in English, Filipino or Taglish</li>
+        <li><b>The S&amp;I queue →</b> the answer first, every statement linked to its study and page; one click to an analyst when that isn’t enough</li>
       </ul>
     </div>
   </div>
-  <div class="foot"><span></span><span>04 / 18</span></div>
+  <div class="foot"><span></span><span>04 / 19</span></div>
 </section>
 
 <!-- · The brief -->
@@ -213,7 +228,7 @@
       <div><h3>The evidence</h3><p>Charts, quotes, gaps and sources, one click away; prints as a memo</p></div>
     </div>
   </div>
-  <div class="foot"><span></span><span>05 / 18</span></div>
+  <div class="foot"><span></span><span>05 / 19</span></div>
 </section>
 
 <!-- · In use -->
@@ -232,7 +247,7 @@
       </ul>
     </div>
   </div>
-  <div class="foot"><span></span><span>06 / 18</span></div>
+  <div class="foot"><span></span><span>06 / 19</span></div>
 </section>
 
 <!-- · The loop -->
@@ -247,7 +262,7 @@
     <div class="box"><h3>3 · Seen</h3><p>The gap map shows what teams ask, what is covered, and where new research would be used first.</p></div>
     <figure class="shot"><div class="frame"><img src="img/loop_gaps.png" alt="Gap map: topics by place, marked Covered, Partial or Gap, with how often each was asked and left unanswered"></div><figcaption>The gap map: coverage for each place, how often each topic was asked, and how many questions went unanswered.</figcaption></figure>
   </div>
-  <div class="foot"><span></span><span>07 / 18</span></div>
+  <div class="foot"><span></span><span>07 / 19</span></div>
 </section>
 
 <!-- · Role of AI: pipeline -->
@@ -273,7 +288,7 @@
       <p style="font-size:32px"><b>The AI never</b> makes up a number, decides that studies disagree, says how sure an answer is, sees a restricted study, or approves anything.</p>
     </div>
   </div>
-  <div class="foot"><span></span><span>08 / 18</span></div>
+  <div class="foot"><span></span><span>08 / 19</span></div>
 </section>
 
 <!-- · Why AI -->
@@ -290,7 +305,7 @@
       <tr><td><b>Numbers, access, confidence, personal data</b></td><td>Plain rules and calculations</td><td>Not used: these must be exact and easy to explain</td><td>Rules</td></tr>
     </table>
   </div>
-  <div class="foot"><span></span><span>09 / 18</span></div>
+  <div class="foot"><span></span><span>09 / 19</span></div>
 </section>
 
 <!-- · Versus an AI assistant for everyone -->
@@ -311,7 +326,7 @@
     </table>
     <p class="lead" style="font-size:30px; margin-top:22px">Not instead of an AI assistant. <b>Next to it, as the research desk, for under 1% of the seat cost.</b></p>
   </div>
-  <div class="foot"><span></span><span>10 / 18</span></div>
+  <div class="foot"><span></span><span>10 / 19</span></div>
 </section>
 
 <!-- · Risks and safeguards -->
@@ -323,6 +338,7 @@
       <tr><th style="width:38%">Risk</th><th>Safeguard</th></tr>
       <tr><td><b>Made-up figures</b> or claims a study doesn’t support</td><td>Numbers copied from the studies; every source checked; unsupported sentences removed</td></tr>
       <tr><td><b>Focus-group opinions</b> read as if everyone thinks so</td><td>Must say “some participants”; never claims how many people agree</td></tr>
+      <tr><td><b>Bias</b> toward the places studies cover most</td><td>Every brief shows who was surveyed and where; gaps are named, not filled in</td></tr>
       <tr><td><b>A restricted study</b> leaking to another team</td><td>Hidden before the AI sees anything, so it can’t leak what it never saw</td></tr>
       <tr><td><b>Personal details</b> in a report’s quotes</td><td>Phone numbers, names and IDs flagged; approval waits for the analyst</td></tr>
       <tr><td>A report with <b>hidden instructions</b> for the AI</td><td>New reports wait for an S&amp;I analyst’s review before they can be searched</td></tr>
@@ -330,23 +346,26 @@
       <tr><td><b>Bank data sent</b> to an outside AI company</td><td>Sent only to AI models inside AWS (Singapore), never outside</td></tr>
     </table>
   </div>
-  <div class="foot"><span></span><span>11 / 18</span></div>
+  <div class="foot"><span></span><span>11 / 19</span></div>
 </section>
 
 <!-- · Humans decide -->
 <section>
   <span class="tag">Evidence 12 / Human in the loop</span><span class="rubric">C · Role of AI</span>
   <h2>AI helps. <span class="g">People decide.</span></h2>
-  <div class="body" style="margin-top:60px">
+  <div class="body people" style="margin-top:34px">
     <div class="grid4">
-      <div class="box"><div class="numcard"><div class="k">1</div></div><h3>Study review</h3><p>An S&amp;I analyst approves each study, after checks for personal details and repeats, before anyone can search it</p></div>
-      <div class="box"><div class="numcard"><div class="k">2</div></div><h3>Access</h3><p>The owning team grants or refuses every request to read a restricted study</p></div>
-      <div class="box"><div class="numcard"><div class="k">3</div></div><h3>Ask an analyst</h3><p>One click from any brief, with the question already drafted from what’s missing</p></div>
-      <div class="box"><div class="numcard"><div class="k">4</div></div><h3>Commissioning</h3><p>Shows what existing research covers first; nothing is sent until a person sends it</p></div>
+      <div class="box"><h3><span class="k">1</span> Study review</h3><p>An S&amp;I analyst approves each study, after checks for personal details and repeats, before anyone can search it</p></div>
+      <div class="box"><h3><span class="k">2</span> Access</h3><p>The owning team grants or refuses every request to read a restricted study</p></div>
+      <div class="box"><h3><span class="k">3</span> Ask an analyst</h3><p>One click from any brief, with the question already drafted from what’s missing</p></div>
+      <div class="box"><h3><span class="k">4</span> Commissioning</h3><p>Shows what existing research covers first; nothing is sent until a person sends it</p></div>
     </div>
-    <p class="lead" style="margin-top:48px">The system never approves, grants or commissions on its own. <b>Every decision that matters is recorded with the name of the person who made it.</b></p>
+    <div class="people-shots">
+      <figure class="shot" style="width:560px"><div class="frame"><img src="img/approve.png" alt="The Decision panel: Ana's note and the message that the study is approved and one earlier asker has been told"></div><figcaption>Checkpoint 1: Ana approves the Mindanao study, with a note. The app never approves on its own.</figcaption></figure>
+      <figure class="shot" style="flex:1"><div class="frame"><img src="img/audit.png" alt="Audit log: Ben's brief, Ana's approval with her note, and the alert sent to Ben"></div><figcaption>The audit log: who did what and when, with their note. Entries can’t be edited or deleted.</figcaption></figure>
+    </div>
   </div>
-  <div class="foot"><span></span><span>12 / 18</span></div>
+  <div class="foot"><span></span><span>12 / 19</span></div>
 </section>
 
 <!-- · Benefits -->
@@ -355,12 +374,12 @@
   <h2>Faster answers, <span class="g">fewer repeats</span></h2>
   <div class="body">
     <div class="grid3">
-      <div class="box"><h3>Business units</h3><ul class="dots"><li>An answer in seconds, in their own words</li><li>Studies from other units they didn’t know existed</li><li>Told when new research answers an old question</li></ul></div>
-      <div class="box"><h3>S&amp;I analysts</h3><ul class="dots"><li>Fewer repeat questions</li><li>Repeat studies caught before they go live</li><li>A gap map of where to research next</li></ul></div>
-      <div class="box"><h3>The bank</h3><ul class="dots"><li>More value from research already paid for</li><li>Fewer duplicate studies</li><li>One controlled, recorded way to get evidence</li></ul></div>
+      <div class="box"><h3>Business units</h3><p class="ba"><b>Today:</b> search, ask for files, wait for S&amp;I<br><b>Now:</b> a cited answer in about 11 seconds</p><ul class="dots"><li>Studies from other units they didn’t know existed</li><li>Told when new research answers an old question</li></ul></div>
+      <div class="box"><h3>S&amp;I analysts</h3><p class="ba"><b>Today:</b> re-answer what studies already cover<br><b>Now:</b> only what research can’t answer yet</p><ul class="dots"><li>Repeat studies caught before they go live</li><li>A gap map of where to research next</li></ul></div>
+      <div class="box"><h3>The bank</h3><p class="ba"><b>Today:</b> repeat studies go unnoticed<br><b>Now:</b> overlaps caught before a study goes live</p><ul class="dots"><li>More value from research already paid for</li><li>One controlled, recorded way to get evidence</li></ul></div>
     </div>
   </div>
-  <div class="foot"><span></span><span>13 / 18</span></div>
+  <div class="foot"><span></span><span>13 / 19</span></div>
 </section>
 
 <!-- · Evidence so far -->
@@ -381,14 +400,14 @@
     </div>
     <p class="lead" style="font-size:28px; margin-top:18px">Tested on synthetic data: this shows the pipeline works. <b>Real value is measured in the pilot.</b></p>
   </div>
-  <div class="foot"><span></span><span>14 / 18</span></div>
+  <div class="foot"><span></span><span>14 / 19</span></div>
 </section>
 
 <!-- · Impact measures -->
 <section>
   <span class="tag">Evidence 15 / Impact</span><span class="rubric">D · Expected benefits and impact</span>
   <h2>How we would <span class="g">prove</span> the impact</h2>
-  <div class="body" style="flex-direction:row; gap:56px">
+  <div class="body impact" style="flex-direction:row; gap:56px; margin-top:30px">
     <div style="flex:1.2">
       <table>
         <tr><th>Pilot measure</th><th class="num">Target</th></tr>
@@ -409,7 +428,8 @@
       </ul>
     </div>
   </div>
-  <div class="foot"><span></span><span>15 / 18</span></div>
+  <figure class="shot value-shot"><div class="frame"><img src="img/value.png" alt="Audit page tiles: questions answered without an analyst, briefs that reused another team's research, earlier questions answered by a new study, objectives already covered, analyst time saved"></div><figcaption>The app measures its own impact (Audit log page). Hours saved assume 30 minutes per answered question, a figure for S&amp;I to replace.</figcaption></figure>
+  <div class="foot"><span></span><span>15 / 19</span></div>
 </section>
 
 <!-- · Feasible today, built to scale -->
@@ -426,18 +446,42 @@
     </div>
     <div>
       <p class="colhead">Built to scale</p>
-      <div class="box"><h3>Cost follows questions</h3><p>Each report is read once, at upload. A brief costs about <b>₱1.45</b> (US$0.023), however many studies there are.</p></div>
+      <div class="box"><h3>Cost follows questions</h3><p>Each report is read once, at upload. A brief is <b>one LLM call</b>, ≈ 4,500 tokens in and ≈ 1,100 out: about <b>₱1.45</b> (US$0.023).</p></div>
       <div class="box"><h3>Search stays fast</h3><p>The database is indexed like the back of a book, so search stays quick as the library grows.</p></div>
       <div class="box"><h3>New unit = new settings</h3><p>Teams and who may read what are settings, not code. Adding a unit is a setup task.</p></div>
       <div class="box"><h3>Not tied to one AI</h3><p>Switching AI models is one setting. If the AI is down, the app still writes the brief from a <b>fill-in-the-blank template</b>: same sources and checks, plainer wording.</p></div>
     </div>
   </div>
-  <div class="foot"><span></span><span>16 / 18</span></div>
+  <div class="foot"><span></span><span>16 / 19</span></div>
+</section>
+
+<!-- · Assumptions, limits, dependencies -->
+<section>
+  <span class="tag">Evidence 17 / Depends on</span><span class="rubric">E · Feasibility and implementation</span>
+  <h2>What it <span class="g">depends on</span></h2>
+  <div class="body deps" style="margin-top:34px">
+    <div class="box"><h3>Assumptions</h3><ul class="dots">
+      <li>About 2 briefs per person a month; planned at 50,000 a month</li>
+      <li>≈ 5,600 tokens per brief, list prices, ₱63 = US$1</li>
+      <li>30 analyst minutes saved per answered question, for S&amp;I to replace</li>
+      <li>Synthetic data until the pilot</li></ul></div>
+    <div class="box"><h3>Limits today</h3><ul class="dots">
+      <li>Reads text PDFs; scanned reports need OCR first (e.g. Amazon Textract)</li>
+      <li>Taglish search is weaker than English (77% vs 94%)</li>
+      <li>Confidence, overlap and privacy rules are proposals S&amp;I must validate</li>
+      <li>Works from approved reports, not raw survey data</li></ul></div>
+    <div class="box"><h3>Dependencies</h3><ul class="dots">
+      <li>S&amp;I reviews every new report before it can be searched</li>
+      <li>Owning teams decide access requests</li>
+      <li>Amazon Bedrock for the AI; backup templates if it is down</li>
+      <li>BPI decides where data may be kept: Singapore, as there is no Bedrock region in the Philippines</li></ul></div>
+  </div>
+  <div class="foot"><span></span><span>17 / 19</span></div>
 </section>
 
 <!-- · Implementation -->
 <section>
-  <span class="tag">Evidence 17 / Roll-out</span><span class="rubric">E · Feasibility and implementation</span>
+  <span class="tag">Evidence 18 / Roll-out</span><span class="rubric">E · Feasibility and implementation</span>
   <h2>Pilot first, <span class="g">then the whole bank</span></h2>
   <div class="body" style="margin-top:36px">
     <div class="stages">
@@ -453,24 +497,25 @@
       <div class="box"><p class="when">Stage 2 · After the pilot</p><h3>The whole bank</h3><p>Once the pilot meets its targets: about 20,000 people, at about 2 briefs each a month. Same app, more users.</p></div>
     </div>
     <table style="margin-top:30px">
-      <tr><th>Stage</th><th class="num">Users</th><th class="num">Briefs / month</th><th class="num">AI cost / month (₱63 = US$1)</th></tr>
-      <tr><td><b>Stage 1: pilot</b></td><td class="num">≈ 300</td><td class="num">600</td><td class="num g">≈ ₱870 <span style="color:var(--muted)">($14)</span></td></tr>
-      <tr><td><b>Stage 2: whole bank</b></td><td class="num">≈ 20,000</td><td class="num">50,000</td><td class="num g">≈ ₱72,500 <span style="color:var(--muted)">($1,150)</span></td></tr>
+      <tr><th>Stage</th><th class="num">Users</th><th class="num">Briefs / month</th><th class="num">AI tokens / month</th><th class="num">AI cost / month (₱63 = US$1)</th></tr>
+      <tr><td><b>Stage 1: pilot</b></td><td class="num">≈ 300</td><td class="num">600</td><td class="num">≈ 3.4 M</td><td class="num g">≈ ₱870 <span style="color:var(--muted)">($14)</span></td></tr>
+      <tr><td><b>Stage 2: whole bank</b></td><td class="num">≈ 20,000</td><td class="num">50,000</td><td class="num">≈ 280 M</td><td class="num g">≈ ₱72,500 <span style="color:var(--muted)">($1,150)</span></td></tr>
     </table>
+    <p class="lead" style="font-size:27px; margin-top:22px"><b>As use grows:</b> tokens and cost rise with questions, not studies; servers and the database scale up on AWS; S&amp;I’s review work grows with new reports, not with users.</p>
   </div>
-  <div class="foot"><span></span><span>17 / 18</span></div>
+  <div class="foot"><span></span><span>18 / 19</span></div>
 </section>
 
 <!-- · Close -->
 <section>
-  <span class="tag">Evidence 18 / Next</span><span class="rubric">Group Oreo Bread</span>
+  <span class="tag">Evidence 19 / Next</span><span class="rubric">Group Oreo Bread</span>
   <div style="width:240px; height:18px; background:var(--fill); position:absolute; top:168px; left:100px"></div>
   <h2 style="margin-top:150px; font-size:150px">Let business units <span class="g">ask the research</span></h2>
   <div class="grid2" style="margin-top:70px; max-width:1500px">
     <div class="box"><h3>From S&amp;I</h3><p>Real questions, names removed, to test on, and sign-off on our proposed rules</p></div>
     <div class="box"><h3>From IT and Risk</h3><p>An AWS test space, and approval to use Amazon’s AI service and where the data is kept</p></div>
   </div>
-  <div class="foot"><span></span><span>18 / 18</span></div>
+  <div class="foot"><span></span><span>19 / 19</span></div>
 </section>
 
 </body>

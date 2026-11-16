@@ -65,7 +65,7 @@
 <ul>
   <li><b>The latest code is on GitHub</b> (<code>mcfcs/bpi</code>, branch <code>main</code>), including <code>frontend/proxy.ts</code>, the backend key check and the newest migrations. Commit and push first; never commit <code>backend/.env.local</code>.</li>
   <li>Accounts: <b>Vercel</b> and <b>Render</b> (both signed in with GitHub and allowed to read the repo), <b>Supabase</b>, and an uptime checker such as <b>UptimeRobot</b>.</li>
-  <li>A laptop with the repo and a working backend virtualenv (you seed the database from it), and Node (for the Supabase CLI).</li>
+  <li>A laptop with the repo and a working backend virtualenv (you load the database from it). Node is only needed for resetting the demo (step 10).</li>
   <li>Two random strings, one for the key and one for the sign-in tokens. Make each with <code>openssl rand -hex 32</code>, or any long password generator.</li>
   <li>About 1½ hours.</li>
 </ul>
@@ -97,36 +97,20 @@
 <pre><code>postgresql://postgres.abcdefghijkl:PASSWORD@aws-0-ap-southeast-1.pooler.supabase.com:5432/postgres</code></pre>
 <p class="note">Use the session pooler, not the transaction pooler (port 6543): the app sets each user’s identity inside a database transaction and uses prepared statements, which the transaction pooler doesn’t handle well. <code>abcdefghijkl</code> is your project ref.</p>
 
-<h2 class="pb"><span class="step">3</span>Create the tables (from your laptop)</h2>
-<pre><code>cd bpi
-npx supabase init            # only if supabase/config.toml doesn't exist; answer "no" to the prompts
-npx supabase login
-npx supabase link --project-ref abcdefghijkl
-npx supabase db push         # applies every file in supabase/migrations, in order</code></pre>
-<p>On Supabase the migrations run as they are: the auth schema, roles and pgvector already exist. Don’t use <code>scripts/dev_db.py</code> here; it is for the built-in local database.</p>
+<h2 class="pb"><span class="step">3</span>Fill in <code>backend/.env.supabase</code></h2>
+<p>The repo has a fill-in file for this, kept out of Git. Open <code>backend/.env.supabase</code> and set:</p>
+<ul>
+  <li><code>SUPABASE_DB_URL</code>: the Session pooler string from step 2, with your password.</li>
+  <li><code>EMBEDDING_PROVIDER</code> / <code>EMBEDDING_MODEL</code>: leave them as Bedrock + Cohere Embed v4 (they must match Render in step 5).</li>
+  <li>How this laptop reaches Bedrock: the access key from step 1 (<code>AWS_ACCESS_KEY_ID</code>, <code>AWS_SECRET_ACCESS_KEY</code>), or leave those blank to use your AWS sign-in (<code>AWS_PROFILE</code>).</li>
+</ul>
+<p class="note">Never commit this file or paste it in chat. It is listed in <code>.gitignore</code>.</p>
 
-<h2><span class="step">4</span>Load the synthetic studies (from your laptop)</h2>
-<p>This adds the teams, the demo people, 33 approved studies, 6 reports waiting for review, and the search data for every finding. Sign in to AWS on the laptop first (<code>bpi_sso_login.py</code>). The search model here must be the <b>same one the backend uses</b>, or search finds nothing.</p>
-<pre><code>cd backend
-export DATABASE_URL='postgresql://postgres.abcdefghijkl:PASSWORD@aws-0-ap-southeast-1.pooler.supabase.com:5432/postgres'
-export EMBEDDING_PROVIDER=bedrock EMBEDDING_MODEL=global.cohere.embed-v4:0 AWS_REGION=ap-southeast-1
-export AWS_PROFILE=Data_Wave_Participant-291520811820
-
-.venv/Scripts/python - &lt;&lt;'EOF'
-import os
-from datetime import date
-from app.db import Database
-from app.embeddings import build_embedder
-from app.jobs.reembed import reembed_all
-from app.seed import seed
-db = Database(os.environ["DATABASE_URL"], max_size=2)
-embedder = build_embedder()
-result = seed(db, date.today(), embedder=embedder)
-print(len(result["studies"]), "approved studies,", len(result["pending"]), "waiting for review,",
-      reembed_all(db, embedder), "findings embedded with", embedder.name)
-db.close()
-EOF</code></pre>
-<p>Expect “33 approved studies, 6 waiting for review, 160 findings embedded with bedrock:global.cohere.embed-v4:0”. On macOS or Linux use <code>.venv/bin/python</code>.</p>
+<h2><span class="step">4</span>Create the tables and load the studies</h2>
+<p>From the repo folder on your laptop:</p>
+<pre><code>backend/.venv/Scripts/python backend/scripts/supabase_setup.py --check   # connection + search model only
+backend/.venv/Scripts/python backend/scripts/supabase_setup.py           # migrations, studies, search data</code></pre>
+<p>It applies every file in <code>supabase/migrations</code> (on Supabase they run as they are: the auth schema, roles and pgvector already exist), then loads the teams, demo people, 33 approved studies, 6 reports waiting for review and the search data for all 160 findings. Expect it to end with “Embedded 160 findings with bedrock:global.cohere.embed-v4:0”. Running it again is safe. On macOS or Linux use <code>.venv/bin/python</code>.</p>
 
 <h2 class="pb"><span class="step">5</span>Deploy the backend on Render (free)</h2>
 <p>Render → <b>New</b> → <b>Web Service</b> → connect <code>mcfcs/bpi</code>.</p>
@@ -197,8 +181,10 @@ DEMO_BASIC_AUTH=judges:CHOOSE-A-PASSWORD</code></pre>
 
 <h2><span class="step">10</span>Resetting the demo</h2>
 <p>Approving the Mindanao report uses up the demo. Before each judging session, from your laptop:</p>
-<pre><code>npx supabase db reset --linked     # wipes the Supabase database and re-applies the migrations
-# then run step 4 again</code></pre>
+<pre><code>npx supabase login
+npx supabase link --project-ref abcdefghijkl     # once; the ref is in your Supabase URL
+npx supabase db reset --linked                  # wipes the database and re-applies the migrations
+backend/.venv/Scripts/python backend/scripts/supabase_setup.py --seed-only</code></pre>
 
 <h2>What to send the judges</h2>
 <div class="note">
@@ -237,7 +223,7 @@ DEMO_BASIC_AUTH=judges:CHOOSE-A-PASSWORD</code></pre>
   <tr><th>Symptom</th><th>Check</th></tr>
   <tr><td>Every page says “Open the app through its own link”</td><td><code>BACKEND_SHARED_SECRET</code> differs between Vercel and Render, or Vercel wasn’t redeployed after setting it</td></tr>
   <tr><td><code>llm_ready: false</code></td><td>The AWS key, secret and region are set on Render, and the IAM user’s policy allows Bedrock. Render → backend → <b>Logs</b>.</td></tr>
-  <tr><td>Every question finds nothing</td><td><code>EMBEDDING_PROVIDER</code> / <code>EMBEDDING_MODEL</code> on Render must match step 4. If you change them, run step 10.</td></tr>
+  <tr><td>Every question finds nothing</td><td><code>EMBEDDING_PROVIDER</code> / <code>EMBEDDING_MODEL</code> on Render must match <code>backend/.env.supabase</code>. If you change them, run step 10.</td></tr>
   <tr><td>First question after a quiet period fails</td><td>The backend was asleep: check the uptime monitor (step 8)</td></tr>
   <tr><td>Briefs fail only through Vercel</td><td>The forwarding timeout: use the fallback</td></tr>
   <tr><td>Database connection errors</td><td>The <b>session</b> pooler string (port 5432) with the password filled in; the Supabase project isn’t paused</td></tr>

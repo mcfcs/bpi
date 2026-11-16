@@ -5,6 +5,7 @@ __pycache__/
 .pytest_cache/
 backend/.env
 backend/.env.local
+backend/.env.supabase
 
 # Node / Next.js
 node_modules/

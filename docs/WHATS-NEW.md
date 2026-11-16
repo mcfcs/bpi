@@ -71,7 +71,10 @@ Changes since commit `01b5f3e` ("Design Improvements + Slides"), 16 Nov 2026. Al
 ## Pitch deck and script (`deck/`)
 - **Slides-only video.** No live demo: slide 6 ("In use") is narrated from screenshots. Nothing
   mentions consultations or what BPI "asked for".
-- **Deck: 18 slides.** Feasibility and scale share one slide (16).
+- **Deck: 19 slides,** checked against the judging score sheet. Feasibility and scale share slide 16; new slide 17
+    "What it depends on" lists assumptions, limits today and dependencies. Token use is shown per brief (slide 16)
+    and per month (slide 18), bias is a named risk (slide 11), benefits have Today / Now lines (slide 13), the
+    value counter screenshot is on slide 15, and slide 4 maps each cause of the problem to its fix.
   - New slide 10, "Why not give everyone an AI assistant?", compares ALAMKansya with a seat for all
     20,000 users (Microsoft 365 Copilot at its US$30 list price): about ₱37.8M a month against
     about ₱72,500, plus what each one searches, shows and checks.

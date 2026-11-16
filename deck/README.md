@@ -2,10 +2,10 @@
 
 For the 13 Nov submission: pitch deck plus a recorded presentation of 10–15 minutes.
 
-- `Evidence-Brief-Pitch-Deck.pdf`: the deck, 18 slides at 1920×1080. The box at the top right of
+- `Evidence-Brief-Pitch-Deck.pdf`: the deck, 19 slides at 1920×1080. The box at the top right of
   each slide names the required section it covers (A customer problem, B proposed solution,
   C role of AI, D expected benefits and impact, E feasibility and implementation).
-- `Evidence-Brief-Pitch-Script.pdf`: what to say on each slide with running times (about 14
+- `Evidence-Brief-Pitch-Script.pdf`: what to say on each slide with running times (about 14½
   minutes, slides only), with notes for recording. Source:
   `script.md` (rendered through `script.html`).
 - `slides.html`: the deck source, in the Bantay-Baha layout (Bebas Neue, Barlow, Space Mono) on a
