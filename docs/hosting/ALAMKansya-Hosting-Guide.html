@@ -1,0 +1,277 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Hosting guide · ALAMKansya</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow:ital,wght@0,400;0,600;0,700;1,400&family=Space+Mono:wght@400;700&display=swap">
+<style>
+  @page { size: A4; margin: 16mm 16mm 18mm; }
+  body { font-family: Barlow, "Segoe UI", sans-serif; color: #1C1416; font-size: 10.5pt; line-height: 1.5; margin: 0; }
+  h1 { font-family: "Bebas Neue", sans-serif; font-weight: 400; font-size: 34pt; line-height: 1; margin: 0 0 4pt; padding-top: 10pt; border-top: 6pt solid #E2BC3F; }
+  .sub { color: #6B5F61; margin: 0 0 10pt; }
+  h2 { font-family: "Bebas Neue", sans-serif; font-weight: 400; font-size: 18pt; color: #9A191E; margin: 18pt 0 4pt; border-bottom: 1px solid #E2D9CE; padding-bottom: 2pt; break-after: avoid; }
+  h3 { font-size: 11pt; margin: 12pt 0 3pt; break-after: avoid; }
+  p { margin: 0 0 6pt; }
+  ul, ol { padding-left: 16pt; margin: 0 0 6pt; } li { margin-bottom: 3pt; }
+  code { font-family: "Space Mono", monospace; font-size: 8.4pt; background: #F1ECE4; padding: 0 3pt; }
+  pre { font-family: "Space Mono", monospace; font-size: 8.2pt; line-height: 1.45; background: #1C1416; color: #F3ECE2; padding: 8pt 10pt; margin: 4pt 0 8pt; white-space: pre-wrap; word-break: break-word; break-inside: avoid; }
+  pre code { background: none; padding: 0; font-size: inherit; color: inherit; }
+  .note { background: #FAF7F2; border: 1px solid #E2D9CE; padding: 6pt 10pt; margin: 6pt 0 8pt; break-inside: avoid; }
+  .warn { background: #FBEAEA; border: 1px solid #E8B9BB; padding: 6pt 10pt; margin: 6pt 0 8pt; break-inside: avoid; }
+  table { border-collapse: collapse; width: 100%; margin: 4pt 0 8pt; font-size: 9.8pt; break-inside: avoid; }
+  th { text-align: left; font-family: "Space Mono", monospace; font-size: 7.6pt; letter-spacing: .08em; text-transform: uppercase; color: #6B5F61; border-bottom: 1.5px solid #E2D9CE; padding: 3pt 8pt 3pt 0; }
+  td { border-bottom: 1px solid #ECE5DC; padding: 4pt 8pt 4pt 0; vertical-align: top; }
+  .step { font-family: "Space Mono", monospace; font-size: 8pt; color: #fff; background: #9A191E; padding: 1pt 5pt; margin-right: 4pt; }
+  .pb { break-before: page; }
+</style>
+</head>
+<body>
+
+<h1>Hosting ALAMKansya for the judges</h1>
+<p class="sub">Option B: one small server on the DataWave AWS account, with its own permission to call Bedrock · Group Oreo Bread · 16 Nov 2026</p>
+
+<h2>What you are building</h2>
+<p>One Ubuntu server (EC2) in Singapore runs the same app we run on our laptops: the built-in database, the Python backend and the Next.js frontend. In front of it, <b>Caddy</b> adds HTTPS and a username and password for the judges. The server is given an <b>IAM role</b> that lets it call Bedrock, so nobody has to sign in to AWS every few hours.</p>
+<pre><code>Judge's browser ──HTTPS──▶ Caddy (ports 80/443, password)
+                              │
+                              ▼
+                     Next.js frontend  127.0.0.1:10012
+                              │  /api/*
+                              ▼
+                     FastAPI backend   127.0.0.1:8000
+                        │                    │
+                        ▼                    ▼
+              Built-in Postgres     Amazon Bedrock (Claude + Cohere)
+              (pgserver, on disk)   via the server's IAM role</code></pre>
+<p>Only Caddy is reachable from the internet. The frontend and backend listen on the server itself, as they do on our laptops.</p>
+
+<table>
+  <tr><th>Item</th><th>Choice</th><th>Rough cost (check AWS pricing)</th></tr>
+  <tr><td>Server</td><td>EC2 <code>t3.medium</code> (2 vCPU, 4 GB), Ubuntu 24.04, 20 GB disk</td><td>about US$40 a month on demand, about US$20 for two weeks</td></tr>
+  <tr><td>Public address</td><td>Elastic IP (one fixed IPv4 address)</td><td>about US$4 a month</td></tr>
+  <tr><td>AI</td><td>Bedrock: Claude Sonnet 5.5 + Cohere Embed v4</td><td>about US$0.023 (₱1.45) per brief</td></tr>
+  <tr><td>HTTPS</td><td>Caddy with a free Let’s Encrypt certificate</td><td>free</td></tr>
+</table>
+<p><code>t3.small</code> (2 GB) also works if you add a swap file (step 4), at about half the price; the frontend build needs the extra memory.</p>
+
+<div class="warn"><b>Check first.</b> The <code>Data_Wave_Participant</code> role may not be allowed to launch EC2 or create IAM roles. Try step 1; if AWS says “not authorized”, ask the organisers before going further. Use only the synthetic data in the repo; never load real BPI data.</div>
+
+<h2>Before you start</h2>
+<ul>
+  <li><b>The latest code is on GitHub.</b> The new features (alerts, gap map, review checks, follow-ups) are not committed yet. Commit and push to <code>origin main</code> first. Never commit <code>backend/.env.local</code>.</li>
+  <li>The AWS console, signed in to the DataWave account, region <b>Asia Pacific (Singapore) ap-southeast-1</b>.</li>
+  <li>Bedrock model access is already on for this account (the app already calls Claude Sonnet 5.5 and Cohere Embed v4 there).</li>
+  <li>About 2 hours.</li>
+</ul>
+
+<h2><span class="step">1</span>Create the IAM role for the server</h2>
+<ol>
+  <li>IAM → <b>Roles</b> → <b>Create role</b> → Trusted entity: <b>AWS service</b>, use case <b>EC2</b>.</li>
+  <li>Attach <b>AmazonSSMManagedInstanceCore</b> (lets you open a terminal from the browser, so no SSH key is needed).</li>
+  <li>Name it <code>alamkansya-demo-role</code> and create it.</li>
+  <li>Open the role → <b>Add permissions</b> → <b>Create inline policy</b> → JSON, paste this, name it <code>bedrock-invoke</code>:</li>
+</ol>
+<pre><code>{
+  "Version": "2012-10-17",
+  "Statement": [{
+    "Effect": "Allow",
+    "Action": ["bedrock:InvokeModel", "bedrock:InvokeModelWithResponseStream"],
+    "Resource": "*"
+  }]
+}</code></pre>
+<p class="note"><code>"Resource": "*"</code> is the simple choice for a short demo: the <code>global.</code> model IDs route across regions, so a narrow policy has to list the inference profile and the model in every region. Tighten it for anything longer-lived.</p>
+
+<h2><span class="step">2</span>Launch the server</h2>
+<ol>
+  <li>EC2 → <b>Launch instance</b>. Name: <code>alamkansya-demo</code>.</li>
+  <li>Image: <b>Ubuntu Server 24.04 LTS</b>, architecture <b>64-bit (x86)</b>.</li>
+  <li>Type: <b>t3.medium</b>. Key pair: optional (Session Manager works without one).</li>
+  <li>Network: allow <b>HTTP (80)</b> and <b>HTTPS (443)</b> from anywhere. Leave SSH (22) off, or allow it from <b>My IP</b> only. Do not open 8000 or 10012.</li>
+  <li>Storage: <b>20 GB gp3</b>.</li>
+  <li>Advanced details → <b>IAM instance profile</b>: <code>alamkansya-demo-role</code>.</li>
+  <li>Launch. Then EC2 → <b>Elastic IPs</b> → Allocate → Associate it with the instance. Write the address down, e.g. <code>13.229.10.20</code>.</li>
+</ol>
+<p>Your site name will be the address with dashes plus <code>.sslip.io</code>, e.g. <code>13-229-10-20.sslip.io</code>. It points at your Elastic IP with no DNS setup. (If the team owns a domain, add an A record to the Elastic IP and use that name instead.)</p>
+
+<h2><span class="step">3</span>Open a terminal on the server</h2>
+<p>EC2 → select the instance → <b>Connect</b> → <b>Session Manager</b> → Connect. Then switch to the normal user (the database refuses to run as root):</p>
+<pre><code>sudo -iu ubuntu</code></pre>
+
+<h2 class="pb"><span class="step">4</span>Install the tools</h2>
+<pre><code># System packages: Python 3.12 (Ubuntu 24.04's default), git, build tools
+sudo apt-get update
+sudo apt-get install -y python3.12-venv python3-pip git build-essential curl
+
+# Node.js 22
+curl -fsSL https://deb.nodesource.com/setup_22.x | sudo -E bash -
+sudo apt-get install -y nodejs
+
+# Caddy (HTTPS + password)
+sudo apt-get install -y debian-keyring debian-archive-keyring apt-transport-https
+curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/gpg.key' | sudo gpg --dearmor -o /usr/share/keyrings/caddy-stable-archive-keyring.gpg
+curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/debian.deb.txt' | sudo tee /etc/apt/sources.list.d/caddy-stable.list
+sudo apt-get update && sudo apt-get install -y caddy
+
+# Only on t3.small: add 2 GB of swap for the frontend build
+sudo fallocate -l 2G /swapfile && sudo chmod 600 /swapfile && sudo mkswap /swapfile && sudo swapon /swapfile
+echo '/swapfile none swap sw 0 0' | sudo tee -a /etc/fstab</code></pre>
+
+<h2><span class="step">5</span>Get the code</h2>
+<p>The repo is private, so give the server a read-only <b>deploy key</b>:</p>
+<pre><code>ssh-keygen -t ed25519 -N "" -f ~/.ssh/id_ed25519
+cat ~/.ssh/id_ed25519.pub</code></pre>
+<p>On GitHub: repo → Settings → <b>Deploy keys</b> → Add key → paste it (leave “write access” off). Then:</p>
+<pre><code>git clone git@github.com:mcfcs/bpi.git ~/bpi
+cd ~/bpi</code></pre>
+
+<h2><span class="step">6</span>Set up the backend</h2>
+<pre><code>cd ~/bpi/backend
+python3.12 -m venv .venv
+.venv/bin/pip install -r requirements.txt
+
+# Check the server can reach Bedrock with its role (should print the account number)
+.venv/bin/python -c "import boto3; print(boto3.client('sts').get_caller_identity()['Account'])"</code></pre>
+<p>Create the settings file. <b>Do not add <code>AWS_PROFILE</code></b>: without it, the app uses the server’s IAM role.</p>
+<pre><code>cat > ~/bpi/backend/.env.local &lt;&lt;'EOF'
+LLM_PROVIDER=bedrock
+AWS_REGION=ap-southeast-1
+AWS_BEDROCK_MODEL=global.anthropic.claude-sonnet-5-5
+LLM_EFFORT=medium
+EMBEDDING_PROVIDER=bedrock
+EMBEDDING_MODEL=global.cohere.embed-v4:0
+EOF
+
+# First run: starts the built-in database, applies migrations, seeds the synthetic studies,
+# embeds the findings with Bedrock, and adds DATABASE_URL and DEMO_MODE to .env.local.
+.venv/bin/python scripts/dev_db.py</code></pre>
+<p>It should end with “Seeded 33 approved studies; 6 new report(s) in the review queue” and “Embedded 160 findings with bedrock:global.cohere.embed-v4:0”. Then stop it; the service in step 8 starts it again:</p>
+<pre><code>.venv/bin/python scripts/dev_db.py --stop</code></pre>
+
+<h2><span class="step">7</span>Build the frontend</h2>
+<pre><code>cd ~/bpi/frontend
+npm ci
+BACKEND_URL=http://127.0.0.1:8000 npx next build</code></pre>
+
+<h2 class="pb"><span class="step">8</span>Run both as services (start on boot, restart on failure)</h2>
+<pre><code>sudo tee /etc/systemd/system/alamkansya-api.service &gt;/dev/null &lt;&lt;'EOF'
+[Unit]
+Description=ALAMKansya backend and database
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+User=ubuntu
+WorkingDirectory=/home/ubuntu/bpi/backend
+# Starts or reuses the built-in database, migrates and seeds if empty
+ExecStartPre=/home/ubuntu/bpi/backend/.venv/bin/python scripts/dev_db.py
+ExecStart=/home/ubuntu/bpi/backend/.venv/bin/python -m uvicorn app.main:create_app --factory --host 127.0.0.1 --port 8000
+Restart=on-failure
+TimeoutStartSec=600
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+sudo tee /etc/systemd/system/alamkansya-web.service &gt;/dev/null &lt;&lt;'EOF'
+[Unit]
+Description=ALAMKansya frontend
+After=alamkansya-api.service
+Wants=alamkansya-api.service
+
+[Service]
+User=ubuntu
+WorkingDirectory=/home/ubuntu/bpi/frontend
+Environment=NODE_ENV=production
+Environment=BACKEND_URL=http://127.0.0.1:8000
+ExecStart=/usr/bin/npx next start -H 127.0.0.1 -p 10012
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+sudo systemctl daemon-reload
+sudo systemctl enable --now alamkansya-api alamkansya-web
+
+# Check: llm_ready and search_ready should both be true
+curl -s http://127.0.0.1:10012/api/health</code></pre>
+
+<h2><span class="step">9</span>Add HTTPS and the judges’ password</h2>
+<pre><code># Make a password hash (type the password when asked)
+caddy hash-password
+
+sudo tee /etc/caddy/Caddyfile &gt;/dev/null &lt;&lt;'EOF'
+13-229-10-20.sslip.io {
+    basic_auth {
+        judges PASTE_THE_HASH_HERE
+    }
+    reverse_proxy 127.0.0.1:10012
+}
+EOF
+
+sudo systemctl reload caddy</code></pre>
+<p>Use your own sslip.io name. Within a minute Caddy gets a certificate. Open <code>https://13-229-10-20.sslip.io</code>: the browser asks for the username <code>judges</code> and the password, then the app opens.</p>
+<p class="note">Why a password: the demo sign-in lets anyone pick Ben or Ana without a password, which is what we want for judges, but anyone with the link could otherwise use up Bedrock credit. If Caddy prints an error about <code>basic_auth</code>, your Caddy is older: write <code>basicauth</code> instead.</p>
+
+<h2><span class="step">10</span>Reset the demo every night</h2>
+<p>Approving the Mindanao report uses up the demo, so the next judge would find it already done. This script puts everything back:</p>
+<pre><code>cat > ~/reset-demo.sh &lt;&lt;'EOF'
+#!/bin/bash
+set -euo pipefail
+cd /home/ubuntu/bpi/backend
+sudo systemctl stop alamkansya-web alamkansya-api
+.venv/bin/python scripts/dev_db.py --reset
+.venv/bin/python scripts/dev_db.py --stop
+sudo systemctl start alamkansya-api alamkansya-web
+EOF
+chmod +x ~/reset-demo.sh
+
+# Every day at 03:00 Manila time (19:00 UTC)
+(crontab -l 2>/dev/null; echo "0 19 * * * /home/ubuntu/reset-demo.sh >> /home/ubuntu/reset.log 2>&1") | crontab -</code></pre>
+<p>Run <code>~/reset-demo.sh</code> by hand any time, e.g. after a rehearsal.</p>
+
+<h2 class="pb"><span class="step">11</span>Set a budget alert</h2>
+<p>Billing → <b>Budgets</b> → Create budget → Monthly cost budget, e.g. <b>US$30</b>, alert to the team email at 80%.</p>
+
+<h2>What to send the judges</h2>
+<div class="note">
+<p><b>ALAMKansya prototype</b> · <code>https://13-229-10-20.sslip.io</code> · username <code>judges</code> · password <code>…</code></p>
+<p>All data is synthetic. The demo resets every night.</p>
+<ol>
+  <li>Top right, pick <b>Ben Santos (SME Banking)</b>. Click the example “Why do SME owners drop off during online loan applications?”. A cited brief appears in about 11 seconds.</li>
+  <li>Under the brief, ask the follow-up “What about owners in Mindanao?”.</li>
+  <li>Ask “How do sari-sari store owners use supplier credit?”. No approved study answers it yet.</li>
+  <li>Switch to <b>Ana Reyes (S&amp;I)</b> → Review queue → <i>Cebu SME Digital Onboarding Focus Groups 2026</i>: see the personal-data and overlap checks.</li>
+  <li>Review queue → <i>Mindanao Sari-sari Store Credit Focus Groups 2026</i> → Approve.</li>
+  <li>Switch back to Ben: the alert “A new study answers your earlier question”.</li>
+  <li>As Ana, open <b>Gap map</b> and <b>Audit log</b>.</li>
+</ol>
+</div>
+
+<h2>Updating the server after a change</h2>
+<pre><code>cd ~/bpi && git pull
+cd backend && .venv/bin/pip install -r requirements.txt
+cd ../frontend && npm ci && BACKEND_URL=http://127.0.0.1:8000 npx next build
+sudo systemctl restart alamkansya-api alamkansya-web</code></pre>
+<p>New database migrations apply on restart.</p>
+
+<h2>If something goes wrong</h2>
+<table>
+  <tr><th>Symptom</th><th>Check</th></tr>
+  <tr><td>Health shows <code>llm_ready: false</code> or <code>search_ready: false</code></td><td>The IAM role is attached (step 2.6), the policy is saved (step 1.4), and <code>.env.local</code> has no <code>AWS_PROFILE</code>. Logs: <code>journalctl -u alamkansya-api -n 100</code></td></tr>
+  <tr><td>Site does not load at all</td><td>Security group allows 80 and 443; <code>sudo systemctl status caddy</code>; the sslip.io name matches the Elastic IP</td></tr>
+  <tr><td>502 from Caddy</td><td>The app is not up yet or crashed: <code>systemctl status alamkansya-web alamkansya-api</code>; the first start embeds 160 findings and can take a minute or two</td></tr>
+  <tr><td>Frontend build killed</td><td>Not enough memory: use t3.medium, or add the swap file (step 4)</td></tr>
+  <tr><td>Database will not start</td><td><code>journalctl -u alamkansya-api</code>; as a last resort run <code>~/reset-demo.sh</code></td></tr>
+</table>
+
+<h2>Tearing it down after judging</h2>
+<ol>
+  <li>EC2 → Instances → <code>alamkansya-demo</code> → <b>Terminate</b> (this deletes the disk and its synthetic data).</li>
+  <li>EC2 → Elastic IPs → <b>Release</b> the address (it costs money while unattached).</li>
+  <li>IAM → delete <code>alamkansya-demo-role</code>. GitHub → remove the deploy key.</li>
+  <li>Delete the budget if you no longer need it.</li>
+</ol>
+
+</body>
+</html>

@@ -254,15 +254,16 @@
 <section>
   <span class="tag">Evidence 08 / Role of AI</span><span class="rubric">C · Role of AI</span>
   <h2>AI finds and writes. <span class="g">Rules decide.</span></h2>
-  <div class="body" style="margin-top:56px">
+  <p class="lead" style="font-size:34px; margin-top:22px">Under the hood: <b>RAG</b>, retrieval-augmented generation, <b>built for a bank</b>. Permissions before retrieval, numbers from the database, every citation checked.</p>
+  <div class="body" style="margin-top:40px">
     <div class="flow">
       <div class="step"><span class="kind">Rules</span><h3>1 · Permissions</h3><p>Before searching, the database hides every study this person’s team may not read</p></div>
       <div class="arrow"></div>
-      <div class="step ai"><span class="kind">AI</span><h3>2 · Find</h3><p>Finds the findings that match the question’s meaning, then drops off-topic ones</p></div>
+      <div class="step ai"><span class="kind">AI · Retrieval</span><h3>2 · Find</h3><p>Finds the findings that match the question’s meaning, then drops off-topic ones</p></div>
       <div class="arrow"></div>
       <div class="step"><span class="kind">Rules</span><h3>3 · Compare</h3><p>Explains why studies differ (age, region, year or a real conflict) and rates each one’s strength</p></div>
       <div class="arrow"></div>
-      <div class="step ai"><span class="kind">AI (LLM)</span><h3>4 · Write</h3><p>Writes the answer in plain words from those findings only, citing each one</p></div>
+      <div class="step ai"><span class="kind">LLM · Generation</span><h3>4 · Write</h3><p>Writes the answer in plain words from those findings only, citing each one</p></div>
       <div class="arrow"></div>
       <div class="step"><span class="kind">Rules</span><h3>5 · Check</h3><p>Removes any sentence with a wrong source, or a focus-group opinion stated as fact</p></div>
       <div class="arrow"></div>

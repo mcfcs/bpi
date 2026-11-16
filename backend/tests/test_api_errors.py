@@ -61,3 +61,24 @@ def test_expired_tokens_say_so(client):
     response = client.get("/api/me", headers=_token(claims))
     assert response.status_code == 401
     assert "expired" in response.json()["detail"]
+
+
+def test_shared_secret_blocks_calls_that_skip_the_frontend(db):
+    """Option D hosting: the backend has a public URL, so only requests carrying the frontend's key get
+    through. Health stays open for an uptime checker; without the setting nothing changes."""
+    from dataclasses import replace
+
+    from fastapi.testclient import TestClient
+
+    from app.main import create_app
+    from tests.conftest import EMAILS, TEST_SETTINGS
+
+    locked = TestClient(create_app(replace(TEST_SETTINGS, backend_shared_secret="s3cret"), db=db))
+    assert locked.get("/api/health").status_code == 200
+    assert locked.post("/api/demo/login", json={"email": EMAILS["ben"]}).status_code == 401
+    assert locked.post("/api/demo/login", json={"email": EMAILS["ben"]},
+                       headers={"x-demo-key": "wrong"}).status_code == 401
+    assert locked.post("/api/demo/login", json={"email": EMAILS["ben"]},
+                       headers={"x-demo-key": "s3cret"}).status_code == 200
+    open_app = TestClient(create_app(TEST_SETTINGS, db=db))
+    assert open_app.post("/api/demo/login", json={"email": EMAILS["ben"]}).status_code == 200

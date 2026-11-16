@@ -50,47 +50,47 @@ of that slide, at a relaxed 125 words a minute. The limit is 15 minutes; if a ta
 
 > That's the loop we close. Before a new study goes live, the app flags any personal details and shows past studies it repeats, and an analyst decides. Anyone who asked a question the study now answers gets an alert, but only if their team is allowed to read it. And S&I sees it all on a gap map: what teams ask about, what's covered, and where new research would be used first. None of this adds to the AI bill. It reuses work the AI already did when each study and question came in.
 
-## Slide 8 · Role of AI (6:08)
+## Slide 8 · Role of AI (6:15)
 
-> So where is the AI? In two places. Finding the findings that match the question's meaning, and an LLM, a large language model, writing the answer in plain words from those findings, citing each one.
+> So where is the AI? Under the hood, this is RAG: retrieval-augmented generation. The AI retrieves the findings that match the question's meaning, and an LLM, a large language model, generates the answer in plain words from only those findings, citing each one. But it's RAG built for a bank.
 >
 > Everything else is fixed rules. Before any search, the database hides the studies this person may not read. Rules compare the studies, check every sentence the AI writes, and build the charts and the confidence from the studies' own numbers. The AI never makes up a number, never decides that studies disagree, never sees a restricted study, and never approves anything.
 >
 > Because the AI only ever sees what this person is allowed to read, there is nothing restricted for it to leak, however the question is worded.
 
-## Slide 9 · Why AI here (6:54)
+## Slide 9 · Why AI here (7:01)
 
 > We used AI only where it clearly beats a simpler tool. Word matching misses questions asked in different words; meaning search finds the right study anyway. Fill-in-the-blank templates can pull in unrelated figures; the LLM sticks to what the studies measured. On real public reports from the BSP, fixed rules missed most of the findings; the LLM pulled them out, each with its page. We'll show the numbers in a moment. And for numbers, access, confidence and personal details, we kept plain rules, because those have to be exact.
 
-## Slide 10 · Versus an AI assistant (8:20)
+## Slide 10 · Versus an AI assistant (8:27)
 
 > A fair question: why not give everyone an AI assistant, like Microsoft 365 Copilot? That's priced per seat: about eighteen hundred and ninety pesos per person, every month, whether they use it or not. For twenty thousand people, that's about thirty-seven million pesos a month. ALAMKansya is priced per question: about one peso and forty-five centavos each, only when someone asks. Even fifty thousand questions a month comes to about seventy-two thousand pesos. It's quicker to trust, too: an assistant drafts in seconds, but you still open the files to check every number. ALAMKansya gives a brief already checked against the studies in about eleven seconds. And the job is different. A general assistant searches every file you can open, drafts included; studies you can't open stay invisible; and it writes the numbers itself. ALAMKansya searches only approved studies, shows what you can ask access to, copies every number from a study, and tells you when new research answers your question. So it sits next to an AI assistant, as the research desk.
 
-## Slide 11 · Risks and safeguards (9:23)
+## Slide 11 · Risks and safeguards (9:31)
 
 > For each risk, a safeguard. Made-up figures: numbers are copied from the studies, and every source is checked. Focus-group opinions read as if everyone thinks so: the answer has to say "some participants", and can never claim how many people feel that way. A restricted study leaking to another team: it's hidden before the AI sees anything, so the AI can't leak what it never saw. Personal details in a report: flagged, and approval waits. Hidden instructions for the AI inside a report: an analyst reviews every report first. People trusting a brief too much: how sure it is and what's missing come first, and every action is permanently recorded. And bank data only goes to AI models inside AWS, never to an outside AI company.
 
-## Slide 12 · People decide (9:54)
+## Slide 12 · People decide (10:01)
 
 > AI helps, but people make the final call. There are four checkpoints. An analyst approves every study, after the checks for personal details and repeats. The team that owns a study decides every access request. Any brief can go to an analyst in one click. And no new research is ordered until a person sends the request.
 
-## Slide 13 · Benefits (10:23)
+## Slide 13 · Benefits (10:30)
 
 > Business units get answers in seconds, find studies from other units, and are told when new research answers an old question. S&I gets fewer repeat questions, catches repeat studies before they go live, and gets a gap map of where to research next. And the bank gets more from research it has already paid for.
 
-## Slide 14 · What we measured (11:13)
+## Slide 14 · What we measured (11:20)
 
 > Every number here comes from checking the app against an answer key we wrote first. On the prototype: search finds ninety-four percent of the right studies even when questions use different words, and puts one first ninety-three percent of the time. A full brief typically takes eleven seconds. In eighteen test runs on Amazon's AI service, the AI never failed over to the backup templates. And in about thirty briefs written to try to break it, nothing restricted leaked. This is synthetic test data: it shows the pipeline works. Real value has to be measured with real users.
 
-## Slide 15 · Proving the impact (11:41)
+## Slide 15 · Proving the impact (11:48)
 
 > So we propose an eight-week pilot with about three hundred people: marketing council members, product managers and other executives. The targets: half of questions answered without an analyst, ninety-five percent of statements rated accurate by S&I, zero leaks, and time to a checked answer, compared with today and with an AI assistant.
 
-## Slide 16 · Feasible today, built to scale (12:38)
+## Slide 16 · Feasible today, built to scale (12:46)
 
 > It's feasible today, and built to grow. It's already built and working on Amazon's AI service, with two hundred and fifteen automated tests. There's no data to move, no AI to train, and it runs on a standard database and web app that bank IT already knows. And it grows cheaply. Each report is read once, so the AI cost follows questions: about one peso and forty-five centavos a brief. Search stays quick as the library grows, adding a unit is a setup task, and switching AI models is one setting. If the AI is down, the app falls back to fill-in-the-blank templates, with the same sources and checks, so it keeps working.
 
-## Slide 17 · Pilot first, then the whole bank (13:39)
+## Slide 17 · Pilot first, then the whole bank (13:47)
 
 > First, two weeks to set up a BPI test space: staff sign in with their normal BPI accounts, and S&I's approved reports are loaded and reviewed.
 >
@@ -98,7 +98,7 @@ of that slide, at a relaxed 125 words a minute. The limit is 15 minutes; if a ta
 >
 > Once the pilot meets its targets, stage two is the whole bank: about twenty thousand people, on the same app. At about two briefs each, we plan for fifty thousand briefs a month. The AI costs about seventy-two thousand five hundred pesos a month: under four pesos per person.
 
-## Slide 18 · Close (14:06)
+## Slide 18 · Close (14:13)
 
 > So our ask: let business units ask the research. From S&I: real questions, with names removed, to test on, and sign-off on our rules. From IT and Risk: a test space on AWS, and approval to use Amazon's AI service and where the data is kept. Thank you.
 

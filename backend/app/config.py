@@ -421,6 +421,10 @@ class Settings:
     cors_origins: tuple[str, ...]
     embedding_provider: str = "hashing"   # "hashing" or "fastembed"
     embedding_model: str | None = None    # fastembed model name; None for the default
+    # Hosted demos where the backend has its own public URL (docs/hosting, option D): when set, every
+    # /api request except /api/health must carry this value in X-Demo-Key, which frontend/proxy.ts adds.
+    # Unset locally and in tests, so nothing changes there.
+    backend_shared_secret: str | None = None
 
 
 @lru_cache
@@ -450,4 +454,5 @@ def get_settings() -> Settings:
         ),
         embedding_provider=env.get("EMBEDDING_PROVIDER", "hashing").lower(),
         embedding_model=env.get("EMBEDDING_MODEL") or None,
+        backend_shared_secret=env.get("BACKEND_SHARED_SECRET") or None,
     )

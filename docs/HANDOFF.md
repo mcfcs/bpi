@@ -122,6 +122,11 @@ _Last updated: 14 Nov 2026._
    on slide 6); the earlier score-sheet deck is in `deck/previous/`. New measurement for it: 6 Bedrock briefs (Sonnet 5.5,
    effort medium, Bedrock search): 1 call per brief, ≈4,500 prompt tokens (max 7,200), ≈1,100 output
    (max 1,600), median 11.2 s, 0 fall-backs, 0 rewrites, $0.023 per brief at list prices.
+   Hosting guides (untested on real hosts): docs/hosting/ALAMKansya-Hosting-Guide.pdf (Option B, one EC2 server
+   with an IAM role + Caddy) and ALAMKansya-Hosting-Guide-Option-D.pdf (free plans: Vercel frontend, Render backend,
+   Supabase, Bedrock access keys). frontend/proxy.ts: optional basic auth (DEMO_BASIC_AUTH=user:password) and,
+   with BACKEND_SHARED_SECRET, an X-Demo-Key header the backend then requires on every /api call except /api/health
+   (config.backend_shared_secret; test in test_api_errors.py). Both off unless set.
    Project name is ALAMKansya (app header, tab titles, print masthead, favicon "A", deck cover, script).
    Team name is Oreo Bread (slides 1 and 18, script). The cover is title only; the close asks S&I and IT/Risk.
    Deck is now for a slides-only video (no live demo, no consultation mentions, no footer captions,

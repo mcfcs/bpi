@@ -1,0 +1,255 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Hosting guide, option D · ALAMKansya</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow:ital,wght@0,400;0,600;0,700;1,400&family=Space+Mono:wght@400;700&display=swap">
+<style>
+  @page { size: A4; margin: 16mm 16mm 18mm; }
+  body { font-family: Barlow, "Segoe UI", sans-serif; color: #1C1416; font-size: 10.5pt; line-height: 1.5; margin: 0; }
+  h1 { font-family: "Bebas Neue", sans-serif; font-weight: 400; font-size: 34pt; line-height: 1; margin: 0 0 4pt; padding-top: 10pt; border-top: 6pt solid #E2BC3F; }
+  .sub { color: #6B5F61; margin: 0 0 10pt; }
+  h2 { font-family: "Bebas Neue", sans-serif; font-weight: 400; font-size: 18pt; color: #9A191E; margin: 18pt 0 4pt; border-bottom: 1px solid #E2D9CE; padding-bottom: 2pt; break-after: avoid; }
+  h3 { font-size: 11pt; margin: 12pt 0 3pt; break-after: avoid; }
+  p { margin: 0 0 6pt; }
+  ul, ol { padding-left: 16pt; margin: 0 0 6pt; } li { margin-bottom: 3pt; }
+  code { font-family: "Space Mono", monospace; font-size: 8.4pt; background: #F1ECE4; padding: 0 3pt; }
+  pre { font-family: "Space Mono", monospace; font-size: 8.2pt; line-height: 1.45; background: #1C1416; color: #F3ECE2; padding: 8pt 10pt; margin: 4pt 0 8pt; white-space: pre-wrap; word-break: break-word; break-inside: avoid; }
+  pre code { background: none; padding: 0; font-size: inherit; color: inherit; }
+  .note { background: #FAF7F2; border: 1px solid #E2D9CE; padding: 6pt 10pt; margin: 6pt 0 8pt; break-inside: avoid; }
+  .warn { background: #FBEAEA; border: 1px solid #E8B9BB; padding: 6pt 10pt; margin: 6pt 0 8pt; break-inside: avoid; }
+  table { border-collapse: collapse; width: 100%; margin: 4pt 0 8pt; font-size: 9.8pt; break-inside: avoid; }
+  th { text-align: left; font-family: "Space Mono", monospace; font-size: 7.6pt; letter-spacing: .08em; text-transform: uppercase; color: #6B5F61; border-bottom: 1.5px solid #E2D9CE; padding: 3pt 8pt 3pt 0; }
+  td { border-bottom: 1px solid #ECE5DC; padding: 4pt 8pt 4pt 0; vertical-align: top; }
+  .step { font-family: "Space Mono", monospace; font-size: 8pt; color: #fff; background: #9A191E; padding: 1pt 5pt; margin-right: 4pt; }
+  .pb { break-before: page; }
+</style>
+</head>
+<body>
+
+<h1>Hosting ALAMKansya on free plans</h1>
+<p class="sub">Option D: Vercel (frontend) + Render (backend) + Supabase (database), with Bedrock for the AI · Group Oreo Bread · 16 Nov 2026</p>
+
+<h2>What you are building</h2>
+<pre><code>Judge's browser ──HTTPS──▶ Vercel: Next.js frontend
+                             · asks for the judges' password (DEMO_BASIC_AUTH)
+                             · adds a secret key to every /api call (BACKEND_SHARED_SECRET)
+                                    │  /api/*
+                                    ▼
+                           Render: FastAPI backend (free web service)
+                             · refuses any call without the key
+                             │                         │
+                             ▼                         ▼
+                 Supabase: Postgres + pgvector     Amazon Bedrock with AWS access keys
+                 (our schema runs as-is)           (Claude Sonnet 5.5 + Cohere Embed v4)</code></pre>
+<table>
+  <tr><th>Part</th><th>Plan</th><th>Cost</th><th>The catch</th></tr>
+  <tr><td>Frontend</td><td>Vercel Hobby</td><td>free</td><td>Hobby is for personal, non-commercial projects; check the terms suit a hackathon prototype</td></tr>
+  <tr><td>Backend</td><td>Render free web service</td><td>free</td><td>Sleeps after about 15 idle minutes; a free uptime checker keeps it awake (step 8)</td></tr>
+  <tr><td>Database</td><td>Supabase Free</td><td>free</td><td>Pauses after about a week with no use</td></tr>
+  <tr><td>AI</td><td>Bedrock with AWS keys</td><td><b>paid</b>, about ₱1.45 (US$0.023) per brief</td><td>The only real cost: 100 briefs is about ₱145</td></tr>
+</table>
+
+<h3>Why the two guards</h3>
+<ul>
+  <li><b>The judges’ password</b> (<code>DEMO_BASIC_AUTH</code>): the demo sign-in lets anyone pick Ben or Ana with no password, which is what we want for judges, but not for anyone who finds the link.</li>
+  <li><b>The secret key</b> (<code>BACKEND_SHARED_SECRET</code>): on Render’s free plan the backend has its own public address. The frontend adds the key to every call it forwards, and the backend refuses calls without it, so nobody can skip the password by calling the backend directly. <code>/api/health</code> stays open so the uptime checker can reach it.</li>
+</ul>
+<p>Both live in the code already (<code>frontend/proxy.ts</code> and the backend’s settings) and are off unless their variables are set, so our laptops are unaffected.</p>
+
+<div class="warn"><b>Test the timeout before sending the link (step 9).</b> Vercel forwards each <code>/api</code> call to Render, and its documentation doesn’t say how long it waits. Our briefs take about 11 seconds, at most 20 in testing, so this should be fine. If briefs fail through the Vercel link, move the frontend to Render (the fallback at the end).</div>
+
+<div class="note">Use only the synthetic data in the repo. Keep every key in the hosts’ environment settings, never in Git.</div>
+
+<h2 class="pb">Before you start</h2>
+<ul>
+  <li><b>The latest code is on GitHub</b> (<code>mcfcs/bpi</code>, branch <code>main</code>), including <code>frontend/proxy.ts</code>, the backend key check and the newest migrations. Commit and push first; never commit <code>backend/.env.local</code>.</li>
+  <li>Accounts: <b>Vercel</b> and <b>Render</b> (both signed in with GitHub and allowed to read the repo), <b>Supabase</b>, and an uptime checker such as <b>UptimeRobot</b>.</li>
+  <li>A laptop with the repo and a working backend virtualenv (you seed the database from it), and Node (for the Supabase CLI).</li>
+  <li>Two random strings, one for the key and one for the sign-in tokens. Make each with <code>openssl rand -hex 32</code>, or any long password generator.</li>
+  <li>About 1½ hours.</li>
+</ul>
+
+<h2><span class="step">1</span>Get an AWS access key for Bedrock</h2>
+<p>Off AWS, the backend can’t use your SSO sign-in or an IAM role, so it needs a key.</p>
+<ol>
+  <li>AWS console (DataWave account) → IAM → <b>Users</b> → Create user <code>alamkansya-render</code> (no console access).</li>
+  <li>Add an inline policy, name it <code>bedrock-invoke</code>:</li>
+</ol>
+<pre><code>{
+  "Version": "2012-10-17",
+  "Statement": [{
+    "Effect": "Allow",
+    "Action": ["bedrock:InvokeModel", "bedrock:InvokeModelWithResponseStream"],
+    "Resource": "*"
+  }]
+}</code></pre>
+<ol start="3">
+  <li>User → Security credentials → <b>Create access key</b> → “Application running outside AWS”. Save the key ID and secret somewhere private.</li>
+</ol>
+<div class="note"><b>If AWS says you aren’t allowed to create users</b>, ask the organisers for a key. Without one, use the Anthropic API instead: set <code>LLM_PROVIDER=anthropic</code>, <code>ANTHROPIC_API_KEY</code> and <code>LLM_MODEL=claude-sonnet-5-5</code> in step 5, and <code>EMBEDDING_PROVIDER=hashing</code> in steps 4 and 5. It works on the free plan, but search is weaker (about 75% on reworded questions, against 94% on the slides), and prompts go to Anthropic rather than staying in AWS.</div>
+
+<h2><span class="step">2</span>Create the Supabase database</h2>
+<ol>
+  <li>supabase.com → <b>New project</b>, Free plan, region <b>Southeast Asia (Singapore)</b>. Set a strong database password and save it.</li>
+  <li>Project → <b>Connect</b> → copy the <b>Session pooler</b> string (port <b>5432</b>). Fill in the password:</li>
+</ol>
+<pre><code>postgresql://postgres.abcdefghijkl:PASSWORD@aws-0-ap-southeast-1.pooler.supabase.com:5432/postgres</code></pre>
+<p class="note">Use the session pooler, not the transaction pooler (port 6543): the app sets each user’s identity inside a database transaction and uses prepared statements, which the transaction pooler doesn’t handle well. <code>abcdefghijkl</code> is your project ref.</p>
+
+<h2 class="pb"><span class="step">3</span>Create the tables (from your laptop)</h2>
+<pre><code>cd bpi
+npx supabase init            # only if supabase/config.toml doesn't exist; answer "no" to the prompts
+npx supabase login
+npx supabase link --project-ref abcdefghijkl
+npx supabase db push         # applies every file in supabase/migrations, in order</code></pre>
+<p>On Supabase the migrations run as they are: the auth schema, roles and pgvector already exist. Don’t use <code>scripts/dev_db.py</code> here; it is for the built-in local database.</p>
+
+<h2><span class="step">4</span>Load the synthetic studies (from your laptop)</h2>
+<p>This adds the teams, the demo people, 33 approved studies, 6 reports waiting for review, and the search data for every finding. Sign in to AWS on the laptop first (<code>bpi_sso_login.py</code>). The search model here must be the <b>same one the backend uses</b>, or search finds nothing.</p>
+<pre><code>cd backend
+export DATABASE_URL='postgresql://postgres.abcdefghijkl:PASSWORD@aws-0-ap-southeast-1.pooler.supabase.com:5432/postgres'
+export EMBEDDING_PROVIDER=bedrock EMBEDDING_MODEL=global.cohere.embed-v4:0 AWS_REGION=ap-southeast-1
+export AWS_PROFILE=Data_Wave_Participant-291520811820
+
+.venv/Scripts/python - &lt;&lt;'EOF'
+import os
+from datetime import date
+from app.db import Database
+from app.embeddings import build_embedder
+from app.jobs.reembed import reembed_all
+from app.seed import seed
+db = Database(os.environ["DATABASE_URL"], max_size=2)
+embedder = build_embedder()
+result = seed(db, date.today(), embedder=embedder)
+print(len(result["studies"]), "approved studies,", len(result["pending"]), "waiting for review,",
+      reembed_all(db, embedder), "findings embedded with", embedder.name)
+db.close()
+EOF</code></pre>
+<p>Expect “33 approved studies, 6 waiting for review, 160 findings embedded with bedrock:global.cohere.embed-v4:0”. On macOS or Linux use <code>.venv/bin/python</code>.</p>
+
+<h2 class="pb"><span class="step">5</span>Deploy the backend on Render (free)</h2>
+<p>Render → <b>New</b> → <b>Web Service</b> → connect <code>mcfcs/bpi</code>.</p>
+<table>
+  <tr><th>Setting</th><th>Value</th></tr>
+  <tr><td>Name / region</td><td><code>alamkansya-api</code> / <b>Singapore</b></td></tr>
+  <tr><td>Root directory</td><td><code>backend</code></td></tr>
+  <tr><td>Runtime</td><td>Python 3</td></tr>
+  <tr><td>Build command</td><td><code>pip install -r requirements.txt</code></td></tr>
+  <tr><td>Start command</td><td><code>uvicorn app.main:create_app --factory --host 0.0.0.0 --port $PORT</code></td></tr>
+  <tr><td>Instance type</td><td><b>Free</b></td></tr>
+  <tr><td>Health check path (Advanced)</td><td><code>/api/health</code></td></tr>
+</table>
+<p>Environment variables:</p>
+<pre><code>PYTHON_VERSION=3.12.8
+DATABASE_URL=postgresql://postgres.abcdefghijkl:PASSWORD@aws-0-ap-southeast-1.pooler.supabase.com:5432/postgres
+DEMO_MODE=true
+SUPABASE_JWT_SECRET=&lt;random string #1&gt;
+BACKEND_SHARED_SECRET=&lt;random string #2&gt;
+LLM_PROVIDER=bedrock
+AWS_REGION=ap-southeast-1
+AWS_BEDROCK_MODEL=global.anthropic.claude-sonnet-5-5
+LLM_EFFORT=medium
+EMBEDDING_PROVIDER=bedrock
+EMBEDDING_MODEL=global.cohere.embed-v4:0
+AWS_ACCESS_KEY_ID=&lt;from step 1&gt;
+AWS_SECRET_ACCESS_KEY=&lt;from step 1&gt;</code></pre>
+<p class="note"><code>DEMO_MODE=true</code> keeps the persona menu (Ben, Ana, Carla). <code>SUPABASE_JWT_SECRET</code> only signs the app’s own demo sign-in tokens; we don’t use Supabase’s login. <b>Don’t</b> set <code>AWS_PROFILE</code> here.</p>
+<p>After it deploys, note its address, e.g. <code>https://alamkansya-api.onrender.com</code>, and check:</p>
+<pre><code>curl https://alamkansya-api.onrender.com/api/health          # llm_ready and search_ready: true
+curl -i -X POST https://alamkansya-api.onrender.com/api/demo/login   # 401: the key check is on</code></pre>
+
+<h2 class="pb"><span class="step">6</span>Deploy the frontend on Vercel (free)</h2>
+<ol>
+  <li>vercel.com → <b>Add New… → Project</b> → import <code>mcfcs/bpi</code>.</li>
+  <li><b>Root Directory</b>: <code>frontend</code>. Framework preset: Next.js (detected). Leave the build settings as they are.</li>
+  <li>Environment Variables:</li>
+</ol>
+<pre><code>BACKEND_URL=https://alamkansya-api.onrender.com
+BACKEND_SHARED_SECRET=&lt;random string #2, the same as on Render&gt;
+DEMO_BASIC_AUTH=judges:CHOOSE-A-PASSWORD</code></pre>
+<ol start="4">
+  <li><b>Deploy</b>. Then Project → Settings → <b>Functions</b> → Function Region: <b>Singapore (sin1)</b>, if your plan offers it, and redeploy. It puts Vercel’s forwarding next to the backend instead of in the US.</li>
+</ol>
+<p class="note"><code>BACKEND_SHARED_SECRET</code> must match on both sides exactly. If you change it, redeploy both.</p>
+
+<h2><span class="step">7</span>Check it</h2>
+<ol>
+  <li>Open the Vercel address, e.g. <code>https://alamkansya.vercel.app</code>. The browser asks for <code>judges</code> and the password.</li>
+  <li>Pick <b>Ben Santos</b> from the persona menu and click the SME example question. A cited brief should appear.</li>
+</ol>
+
+<h2><span class="step">8</span>Keep the backend awake</h2>
+<p>Render’s free backend sleeps after about 15 idle minutes, and waking takes about a minute, long enough for a judge’s first question to fail.</p>
+<ol>
+  <li>UptimeRobot (free) → <b>New monitor</b> → HTTP(s).</li>
+  <li>URL <code>https://alamkansya-api.onrender.com/api/health</code>, every <b>5 minutes</b>.</li>
+</ol>
+<p class="note">Render gives each account about 750 free hours a month, enough to keep one service awake the whole month. Vercel doesn’t sleep. Check Render’s current free-tier rules; turn the monitor off after judging.</p>
+
+<h2 class="pb"><span class="step">9</span>Test the timeout</h2>
+<p>Through the Vercel link, ask 5 or 6 different questions, including the three below and a follow-up. Every brief should finish. If any fails with an error or a timeout while the same question works when you test locally, Vercel is cutting off the forwarded call: use the fallback below.</p>
+<ul>
+  <li>“Why do SME owners drop off during online loan applications?”</li>
+  <li>“How do market vendors feel about accepting QR payments?”</li>
+  <li>“Do young professionals prefer cashback or travel rewards on credit cards?”</li>
+</ul>
+
+<h2><span class="step">10</span>Resetting the demo</h2>
+<p>Approving the Mindanao report uses up the demo. Before each judging session, from your laptop:</p>
+<pre><code>npx supabase db reset --linked     # wipes the Supabase database and re-applies the migrations
+# then run step 4 again</code></pre>
+
+<h2>What to send the judges</h2>
+<div class="note">
+<p><b>ALAMKansya prototype</b> · <code>https://alamkansya.vercel.app</code> · username <code>judges</code> · password <code>…</code></p>
+<p>All data is synthetic.</p>
+<ol>
+  <li>Top right, pick <b>Ben Santos (SME Banking)</b>. Click the example “Why do SME owners drop off during online loan applications?”.</li>
+  <li>Under the brief, ask the follow-up “What about owners in Mindanao?”.</li>
+  <li>Ask “How do sari-sari store owners use supplier credit?”. No approved study answers it yet.</li>
+  <li>Switch to <b>Ana Reyes (S&amp;I)</b> → Review queue → <i>Cebu SME Digital Onboarding Focus Groups 2026</i>: the personal-data and overlap checks.</li>
+  <li>Review queue → <i>Mindanao Sari-sari Store Credit Focus Groups 2026</i> → Approve.</li>
+  <li>Switch back to Ben: the alert “A new study answers your earlier question”.</li>
+  <li>As Ana, open <b>Gap map</b> and <b>Audit log</b>.</li>
+</ol>
+</div>
+
+<h2 class="pb">Fallback: frontend on Render instead of Vercel</h2>
+<p>Use this only if step 9 shows timeouts. Render runs <code>next start</code> exactly as we do locally, with our 5-minute forwarding limit.</p>
+<p>Render → New → <b>Web Service</b> → same repo:</p>
+<table>
+  <tr><th>Setting</th><th>Value</th></tr>
+  <tr><td>Name / region</td><td><code>alamkansya</code> / Singapore</td></tr>
+  <tr><td>Root directory / runtime</td><td><code>frontend</code> / Node</td></tr>
+  <tr><td>Build command</td><td><code>npm ci &amp;&amp; npm run build</code></td></tr>
+  <tr><td>Start command</td><td><code>npx next start -H 0.0.0.0 -p $PORT</code></td></tr>
+  <tr><td>Instance type</td><td>Free</td></tr>
+  <tr><td>Environment</td><td><code>NODE_VERSION=22</code>, plus the same three variables as step 6</td></tr>
+</table>
+<p>With two free Render services, keeping both awake uses the 750 free hours in about 15 days: enough for a two-week judging window, not a whole month. Add a second uptime monitor for the frontend’s address. Delete the Vercel project so judges only get one link.</p>
+
+<h2>Updating after a change</h2>
+<p>Push to <code>main</code>: Vercel and Render redeploy on their own. If the change adds a migration, run <code>npx supabase db push</code> from your laptop.</p>
+
+<h2>If something goes wrong</h2>
+<table>
+  <tr><th>Symptom</th><th>Check</th></tr>
+  <tr><td>Every page says “Open the app through its own link”</td><td><code>BACKEND_SHARED_SECRET</code> differs between Vercel and Render, or Vercel wasn’t redeployed after setting it</td></tr>
+  <tr><td><code>llm_ready: false</code></td><td>The AWS key, secret and region are set on Render, and the IAM user’s policy allows Bedrock. Render → backend → <b>Logs</b>.</td></tr>
+  <tr><td>Every question finds nothing</td><td><code>EMBEDDING_PROVIDER</code> / <code>EMBEDDING_MODEL</code> on Render must match step 4. If you change them, run step 10.</td></tr>
+  <tr><td>First question after a quiet period fails</td><td>The backend was asleep: check the uptime monitor (step 8)</td></tr>
+  <tr><td>Briefs fail only through Vercel</td><td>The forwarding timeout: use the fallback</td></tr>
+  <tr><td>Database connection errors</td><td>The <b>session</b> pooler string (port 5432) with the password filled in; the Supabase project isn’t paused</td></tr>
+  <tr><td>Step 4 fails inserting into <code>auth.users</code></td><td>Your Supabase project restricts the auth schema: retry with the direct connection string from Project → Connect, or ask us to add another seed path</td></tr>
+</table>
+
+<h2>Tearing it down after judging</h2>
+<ol>
+  <li>Vercel → delete the project. Render → delete the service(s). UptimeRobot → delete the monitor(s).</li>
+  <li>Supabase → Project settings → <b>Delete project</b>.</li>
+  <li>AWS → IAM → delete the access key and the user <code>alamkansya-render</code>.</li>
+</ol>
+
+</body>
+</html>
