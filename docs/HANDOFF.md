@@ -127,6 +127,8 @@ _Last updated: 14 Nov 2026._
    Supabase, Bedrock access keys). frontend/proxy.ts: optional basic auth (DEMO_BASIC_AUTH=user:password) and,
    with BACKEND_SHARED_SECRET, an X-Demo-Key header the backend then requires on every /api call except /api/health
    (config.backend_shared_secret; test in test_api_errors.py). Both off unless set.
+   New /how page (frontend/app/how/page.tsx, static): personas, features, walkthrough; linked from a "New here?"
+   card at the top of the ask page. Checked at 1440 light/dark and 390; next build passes.
    Project name is ALAMKansya (app header, tab titles, print masthead, favicon "A", deck cover, script).
    Team name is Oreo Bread (slides 1 and 18, script). The cover is title only; the close asks S&I and IT/Risk.
    Deck is now for a slides-only video (no live demo, no consultation mentions, no footer captions,

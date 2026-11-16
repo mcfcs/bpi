@@ -56,6 +56,9 @@ Changes since commit `01b5f3e` ("Design Improvements + Slides"), 16 Nov 2026. Al
 - Users can only continue their own briefs.
 
 ## Design changes
+- **How it works page (`/how`).** Explains the four demo personas (Ben, Dino, Carla, Ana: what each can read and
+  what to try), every feature for business users and for S&I analysts, a five-minute walkthrough and the trust
+  rules. A "New here?" link at the top of the ask page leads to it.
 - **Ask page redesigned.** It now opens with a band holding the alerts, the ask box and example
   questions as chips. Under it are "Your desk" cards and a short "How a brief is made" strip.
   - S&I cards: review queue, analyst desk, gap map, access decisions.

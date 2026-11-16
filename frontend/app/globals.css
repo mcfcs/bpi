@@ -978,6 +978,36 @@ pre.source-text { white-space: pre-wrap; font-family: var(--mono); font-size: 12
   .hero { margin-top: -32px; padding: 32px 0 28px; }
 }
 
+/* "New here?" at the top of the ask band: leads to the how-to page (app/how). */
+.guide-intro {
+  display: flex; align-items: center; gap: 12px; max-width: 880px; margin: 0 0 28px; padding: 12px 16px;
+  border: 1px solid var(--rule); border-radius: var(--r-panel); background: var(--surface);
+  color: var(--ink); text-decoration: none; font-size: 0.95rem; line-height: 1.4; transition: border-color 120ms;
+}
+.guide-intro svg { flex: none; color: var(--link); }
+.guide-intro strong { font-weight: 650; }
+.guide-intro:hover { border-color: var(--link); }
+.guide-intro .guide-go { margin-left: auto; color: var(--muted); transition: transform 120ms; }
+.guide-intro:hover .guide-go { transform: translateX(3px); color: var(--link); }
+
+/* The how-to page: persona cards, feature lists, the walkthrough and the trust notes. */
+.guide-personas { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; grid-template-columns: repeat(4, minmax(0, 1fr)); }
+@media (max-width: 1100px) { .guide-personas { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 640px) { .guide-personas { grid-template-columns: minmax(0, 1fr); } }
+.guide-personas > li { border: 1px solid var(--rule); border-radius: var(--r-panel); background: var(--surface); padding: 16px 18px; }
+.guide-personas p { margin: 10px 0 0; font-size: 0.92rem; line-height: 1.45; }
+.guide-person { display: flex; align-items: center; gap: 10px; }
+.guide-person strong { display: block; font-weight: 650; }
+.guide-person small { display: block; color: var(--muted); font-size: 0.82rem; }
+.guide-features { list-style: none; margin: 0; padding: 0; display: grid; gap: 22px 40px; grid-template-columns: repeat(2, minmax(0, 1fr)); max-width: 1100px; }
+@media (max-width: 760px) { .guide-features { grid-template-columns: minmax(0, 1fr); } }
+.guide-features h3 { font-size: 1.02rem; margin-bottom: 4px; }
+.guide-features p { margin: 0; max-width: var(--measure); line-height: 1.5; }
+.guide-features .guide-where { margin-top: 6px; font-size: 0.875rem; color: var(--muted); }
+.guide-first { border-top: 0; padding-top: 0; }
+.guide-steps { margin: 0; padding-left: 1.4em; max-width: var(--measure); display: grid; gap: 8px; line-height: 1.5; }
+.guide-notes { margin: 0; padding-left: 1.2em; max-width: var(--measure); display: grid; gap: 8px; line-height: 1.5; }
+
 /* What is waiting for this person: four cards that link to where the work is done. */
 .desk { margin: 40px 0 8px; }
 .desk h2 { font-size: 1.15rem; margin-bottom: 12px; }

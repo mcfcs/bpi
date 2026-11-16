@@ -26,3 +26,10 @@ costs are proposals and estimates.
 A 6-minute core demo in three acts (Ben asks, Ana reviews and approves, Ben is told), four optional extras
 (permissions and access, ask an analyst, before you commission, Taglish), a pre-demo checklist and what to do if
 something goes wrong.
+
+`ALAMKansya-Demo.mp4`: a silent 5½-minute screen recording of acts 1–3 of the demo script, recorded from the
+live app on synthetic data, with a visible cursor and a short caption per step, for the team to voice over.
+
+`ALAMKansya-Demo-Edited.mp4`: the same recording with effects (hook card, act cards, zooms, callouts, spotlight,
+end card), identical timing. `ALAMKansya-Demo-Voiceover.pdf` (source `demo-voiceover.md`): the voice-over cued to
+the video's timestamps, each line sized to fit its slot.

@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { ArrowRight, BookOpen } from "lucide-react";
 import { AnswerAlerts } from "@/components/AnswerAlerts";
 import { Desk } from "@/components/Desk";
 import { Meter, type ConfidenceLevel } from "@/components/Citation";
@@ -169,6 +170,13 @@ function Ask() {
     <>
       <title>Ask a question · ALAMKansya</title>
       <section className="hero" aria-labelledby="ask-title">
+        <Link href="/how" className="guide-intro">
+          <BookOpen size={20} strokeWidth={1.75} aria-hidden />
+          <span>
+            <strong>New here?</strong> See how ALAMKansya works: the four demo personas and what each feature does.
+          </span>
+          <ArrowRight size={18} strokeWidth={1.75} aria-hidden className="guide-go" />
+        </Link>
         <AnswerAlerts profileId={profile?.id} busy={busy} onAsk={(q) => { setQuestion(q); ask(q); }} />
         <div className="hero-copy">
           <h1 id="ask-title">What does our research already say?</h1>
