@@ -72,7 +72,7 @@ def create_app(settings: Settings | None = None, *, db: Database | None = None, 
         @app.middleware("http")
         async def require_frontend_key(request: Request, call_next):
             """When the backend has its own public URL, refuse calls that didn't come through the
-            password-protected frontend. /api/health stays open so an uptime checker can keep it awake."""
+            frontend, which adds the key. /api/health stays open so an uptime checker can keep it awake."""
             if request.url.path != "/api/health" and request.method != "OPTIONS" and not hmac.compare_digest(
                     request.headers.get("x-demo-key", ""), expected_key):
                 return JSONResponse(status_code=401, content={"detail": "Open the app through its own link."})

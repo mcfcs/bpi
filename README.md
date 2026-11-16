@@ -19,7 +19,7 @@ project (slides, tests, evaluation, notes) is on `main`. Render and Vercel deplo
 ## How it is hosted
 
 ```
-Browser ─▶ Vercel (Next.js frontend, optional password)
+Browser ─▶ Vercel (Next.js frontend, open to anyone with the link)
               │  /api/*  + X-Demo-Key
               ▼
            Render (FastAPI backend, free web service)
@@ -72,14 +72,13 @@ and these environment variables (see `frontend/.env.example`):
 ```
 BACKEND_URL=https://<your-service>.onrender.com
 BACKEND_SHARED_SECRET=<the same value as on Render>
-DEMO_BASIC_AUTH=judges:<choose-a-password>
 ```
 
 Vercel builds `main` first. In the project settings, set the **production branch** to `deployment` (under Git, or
 Environments → Production), and if your plan allows it **Functions → Region** to Singapore (`sin1`). Then redeploy.
 
-Then open the Vercel URL, sign in with the `DEMO_BASIC_AUTH` user and password, and pick a persona at the top
-right. The **How it works** page (`/how`) explains the personas and features.
+Then open the Vercel URL and pick a persona at the top right. There is no password: anyone with the link can
+use the demo. The **How it works** page (`/how`) explains the personas and features.
 
 If long requests time out through Vercel, deploy the frontend as a second Render web service instead: root
 `frontend`, build `npm ci && npm run build`, start `npx next start -H 0.0.0.0 -p $PORT`, same variables.
