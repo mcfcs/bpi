@@ -71,7 +71,7 @@ function Access() {
   return (
     <>
       <section className="page-head">
-        <title>Access requests · Evidence brief</title>
+        <title>Access requests · ALAMKansya</title>
         <h1>Access requests</h1>
         <p>
           Studies paid for by a business unit are shared with other teams only when the owning team or S&amp;I approves.

@@ -2,6 +2,12 @@
 
 Changes since commit `01b5f3e` ("Design Improvements + Slides"), 16 Nov 2026. All data is still synthetic.
 
+## New name: ALAMKansya
+- The app and the pitch are now called **ALAMKansya**: *alam* (know) inside *alkansya* (piggy bank),
+  "ang alkansya ng kaalaman". Each answer is still called an evidence brief.
+- The header, browser tab titles and the printed brief all use the new name, and the header and
+  favicon mark is now an "A".
+
 ## New features
 
 ### 1. Answer alerts: "a new study answers your earlier question"
@@ -63,16 +69,28 @@ Changes since commit `01b5f3e` ("Design Improvements + Slides"), 16 Nov 2026. Al
   instead of a gold stripe.
 
 ## Pitch deck and script (`deck/`)
-- **Deck: 18 slides.**
+- **Slides-only video.** No live demo: slide 6 ("In use") is narrated from screenshots. Nothing
+  mentions consultations or what BPI "asked for".
+- **Deck: 18 slides.** Feasibility and scale share one slide (16).
+  - New slide 10, "Why not give everyone an AI assistant?", compares ALAMKansya with a seat for all
+    20,000 users (Microsoft 365 Copilot at its US$30 list price): about ₱37.8M a month against
+    about ₱72,500, plus what each one searches, shows and checks.
   - New slide 7, "New study in. Askers told.", covers the review checks, the alert and the gap map.
-  - The demo, AI-versus-simpler-tool, risks, checkpoints and benefits slides now include the new
-    features.
+  - The AI-versus-simpler-tool, risks, checkpoints and benefits slides now include the new features.
   - The test count on the slides is now 215.
 - **Cover slide** shows only the title, a one-line subtitle and the team name, **Oreo Bread**.
-  The numbers moved to "What we measured".
 - **Closing slide** asks S&I and IT/Risk only; the "From us" box is gone.
-- **Script**: rewritten for the new demo, about 13½ minutes, now also available as
-  `Evidence-Brief-Pitch-Script.pdf`. It starts with a checklist to run before recording.
+- **New look, less template-like.** There are no side stripes, tinted cards or drop shadows; sections
+  sit under thin black rules. Key lines and the two AI steps are dark panels. Footers show only the
+  page number, and the small source captions are gone.
+- **Cost is AI only.** Hosting cost is removed. The deck assumes at most 20,000 users at about
+  2 briefs each a month (about 40,000 briefs). Planning for 50,000 briefs gives an AI cost of about
+  ₱72,500 (US$1,150) a month, under ₱4 per user. Costs are shown in pesos first, at ₱63 per US$1
+  (early November 2026 rate).
+- **Plain wording throughout.** No technical terms on the slides or in the script: no "embeddings",
+  "row-level security", "tokens" or "templates fell back". Scores are shown as percentages.
+- **Script**: rewritten for the slides-only flow, about 14 minutes relaxed and 12½ brisk, and
+  exported as `Evidence-Brief-Pitch-Script.pdf`.
 
 ## For developers
 - **Database**: two new migrations.

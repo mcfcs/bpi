@@ -122,7 +122,10 @@ _Last updated: 14 Nov 2026._
    on slide 6); the earlier score-sheet deck is in `deck/previous/`. New measurement for it: 6 Bedrock briefs (Sonnet 5.5,
    effort medium, Bedrock search): 1 call per brief, ≈4,500 prompt tokens (max 7,200), ≈1,100 output
    (max 1,600), median 11.2 s, 0 fall-backs, 0 rewrites, $0.023 per brief at list prices.
+   Project name is ALAMKansya (app header, tab titles, print masthead, favicon "A", deck cover, script).
    Team name is Oreo Bread (slides 1 and 18, script). The cover is title only; the close asks S&I and IT/Risk.
+   Deck is now for a slides-only video (no live demo, no consultation mentions, no footer captions,
+   AI cost only: 20,000 users max, ~2 briefs each, planned at 50,000 briefs ≈ ₱72,500 / US$1,150 a month; pesos first at ₱63 = US$1). Script ≈ 14 min. 18 slides (feasibility and scale combined on 16): slide 10 compares against an AI-assistant seat for everyone (M365 Copilot US$30 list).
 5. **This PC** (not in the repo): `backend/.venv` is Python 3.12 (pgserver has no 3.13 wheels) and its
    `sitecustomize.py` works around Smart App Control blocking psycopg's DLL and a network whose
    NAT64 IPv6 addresses time out (IPv4 first). Bedrock runs through the SSO profile

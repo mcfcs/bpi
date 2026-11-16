@@ -1,12 +1,12 @@
-# Pitch deck: Evidence Brief (BPI DataWave 2026)
+# Pitch deck: ALAMKansya (BPI DataWave 2026)
 
 For the 13 Nov submission: pitch deck plus a recorded presentation of 10–15 minutes.
 
 - `Evidence-Brief-Pitch-Deck.pdf`: the deck, 18 slides at 1920×1080. The box at the top right of
   each slide names the required section it covers (A customer problem, B proposed solution,
   C role of AI, D expected benefits and impact, E feasibility and implementation).
-- `Evidence-Brief-Pitch-Script.pdf`: what to say on each slide with running times (about 13½
-  minutes), the pre-recording checklist and a click-by-click live demo on slide 6. Source:
+- `Evidence-Brief-Pitch-Script.pdf`: what to say on each slide with running times (about 14
+  minutes, slides only), with notes for recording. Source:
   `script.md` (rendered through `script.html`).
 - `slides.html`: the deck source, in the Bantay-Baha layout (Bebas Neue, Barlow, Space Mono) on a
   light background in BPI red and gold. `img/` holds prototype screenshots (synthetic data).

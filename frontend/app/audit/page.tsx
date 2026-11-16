@@ -135,7 +135,7 @@ function Audit() {
   return (
     <>
       <section className="page-head">
-        <title>Audit log · Evidence brief</title>
+        <title>Audit log · ALAMKansya</title>
         <h1>Audit log</h1>
         <p>Every brief, review edit, tier change, override, access decision, escalation and export. Entries are append-only: nobody can change or delete them.</p>
       </section>

@@ -467,9 +467,9 @@ export function BriefView({ brief }: { brief: Brief }) {
 
   return (
     <article onClick={onClick}>
-      <title>{`${brief.question} · Evidence brief`}</title>
+      <title>{`${brief.question} · ALAMKansya`}</title>
       <p className="print-only print-mast">
-        Evidence brief · BPI Strategy &amp; Insights · Synthetic demonstration data
+        ALAMKansya evidence brief · BPI Strategy &amp; Insights · Synthetic demonstration data
       </p>
       <header className="brief-head">
         <p className="crumbs no-print">

@@ -216,7 +216,7 @@ function NewQuestion() {
 
   return (
     <>
-      <title>Ask an analyst · Evidence brief</title>
+      <title>Ask an analyst · ALAMKansya</title>
       <section className="page-head">
         {briefId && <p className="crumbs"><Link href={`/briefs/${briefId}`}>Back to the brief</Link></p>}
         <h1>Ask an analyst</h1>

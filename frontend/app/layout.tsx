@@ -25,7 +25,7 @@ const mono = Fragment_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Evidence brief · Strategy & Insights",
+  title: "ALAMKansya · Strategy & Insights",
   description: "Approved research findings, cited, for BPI business teams. Synthetic demonstration data.",
 };
 

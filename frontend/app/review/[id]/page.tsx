@@ -434,7 +434,7 @@ function Review({ id }: { id: string }) {
             {stateLabel(study.review_status)}
           </span>
         </p>
-        <title>{`Review: ${study.title} · Evidence brief`}</title>
+        <title>{`Review: ${study.title} · ALAMKansya`}</title>
         <h1>{study.title}</h1>
         <p>
           {study.owner_team} · {study.access_level} · fieldwork ended {monthYear(study.fieldwork_end)} · source{" "}

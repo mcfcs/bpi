@@ -167,7 +167,7 @@ function Ask() {
 
   return (
     <>
-      <title>Ask a question · Evidence brief</title>
+      <title>Ask a question · ALAMKansya</title>
       <section className="hero" aria-labelledby="ask-title">
         <AnswerAlerts profileId={profile?.id} busy={busy} onAsk={(q) => { setQuestion(q); ask(q); }} />
         <div className="hero-copy">

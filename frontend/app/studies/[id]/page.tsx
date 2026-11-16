@@ -110,7 +110,7 @@ function Study({ id }: { id: string }) {
     const missing = /not found|access/i.test(error);
     return missing ? (
       <section className="page-head">
-        <title>Study not available · Evidence brief</title>
+        <title>Study not available · ALAMKansya</title>
         <p className="crumbs"><Link href="/studies">Studies</Link></p>
         <h1>This study is not available to you</h1>
         <p>
@@ -132,7 +132,7 @@ function Study({ id }: { id: string }) {
   return (
     <>
       <section className="page-head study-head">
-        <title>{`${study.title} · Evidence brief`}</title>
+        <title>{`${study.title} · ALAMKansya`}</title>
         <p className="crumbs">
           <Link href="/studies">Studies</Link>
           <CiteChip code={study.code} />

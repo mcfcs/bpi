@@ -62,7 +62,7 @@ function Gaps() {
   return (
     <>
       <section className="page-head">
-        <title>Gap map · Evidence brief</title>
+        <title>Gap map · ALAMKansya</title>
         <h1>Gap map</h1>
         <p>
           What approved research covers, for which places, and what business teams ask about. Coverage is decided in code

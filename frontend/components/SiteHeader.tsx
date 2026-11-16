@@ -159,13 +159,13 @@ export function SiteHeader() {
           <svg width="20" height="26" viewBox="9 7 14 18" aria-hidden>
             <g fill="var(--bpi-gold)">
               <rect x="9" y="7" width="3.5" height="18" />
+              <rect x="19.5" y="7" width="3.5" height="18" />
               <rect x="9" y="7" width="14" height="3.5" />
-              <rect x="9" y="14.25" width="10" height="3.5" />
-              <rect x="9" y="21.5" width="14" height="3.5" />
+              <rect x="9" y="15" width="14" height="3.5" />
             </g>
           </svg>
           <span>
-            <strong>Evidence brief</strong>
+            <strong>ALAMKansya</strong>
             <small>Strategy &amp; Insights</small>
           </span>
         </Link>

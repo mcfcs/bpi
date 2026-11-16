@@ -94,7 +94,7 @@ function Desk() {
   return (
     <>
       <section className="page-head">
-        <title>{`${isSi ? "Analyst desk" : "Ask an analyst"} · Evidence brief`}</title>
+        <title>{`${isSi ? "Analyst desk" : "Ask an analyst"} · ALAMKansya`}</title>
         <h1>{isSi ? "Analyst desk" : "Ask an analyst"}</h1>
         <p>
           {isSi

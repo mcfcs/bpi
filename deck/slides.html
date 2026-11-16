@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<title>Evidence Brief · BPI DataWave 2026</title>
+<title>ALAMKansya · BPI DataWave 2026</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Space+Mono:wght@400;700&display=swap">
 <style>
@@ -53,15 +53,17 @@
   .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 36px; }
   .grid3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 36px; }
   .grid4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 32px; }
-  .box { border: 2px solid var(--panel-line); background: var(--panel); padding: 30px 32px; box-shadow: 0 6px 18px rgb(60 30 20 / 0.05); }
-  .box.gold { border-color: var(--fill); background: var(--fill-wash); }
+  .box { border-top: 3px solid var(--text); padding: 26px 0 0; }
+  /* A full-width callout: dark panel, light text, gold emphasis. */
+  .box.gold { background: var(--text); border: 0; padding: 30px 40px; }
+  .box.gold p, .box.gold h3 { color: #F3ECE2; } .box.gold b { color: var(--fill); }
 
-  .stat { border-left: 6px solid var(--fill); padding-left: 22px; }
+  .stat { border-top: 3px solid var(--text); padding-top: 26px; }
   .stat .n { font-family: "Bebas Neue", sans-serif; font-size: 140px; line-height: 0.85; color: var(--gold); }
   .stat p { margin-top: 10px; font-size: 28px; }
   .stat .src { font-family: "Space Mono", monospace; font-size: 18px; color: var(--muted); margin-top: 8px; letter-spacing: 0.04em; }
 
-  .frame { background: #FFFFFF; border: 2px solid var(--panel-line); border-top: 8px solid var(--fill); padding: 18px; box-shadow: 0 14px 40px rgb(60 30 20 / 0.10); }
+  .frame { background: #FFFFFF; border: 2px solid var(--text); padding: 10px; }
   .frame img { display: block; width: 100%; height: 100%; object-fit: contain; }
 
   table { border-collapse: collapse; width: 100%; }
@@ -78,12 +80,13 @@
 
   /* Pipeline: six boxes and arrows, each marked AI or code. */
   .flow { display: flex; align-items: stretch; }
-  .step { flex: 1; border: 2px solid var(--panel-line); padding: 24px 22px; display: flex; flex-direction: column; gap: 10px; background: var(--panel); }
-  .step.ai { border-color: var(--fill); background: var(--fill-wash); }
+  .step { flex: 1; border-top: 3px solid var(--text); padding: 24px 6px 0 0; display: flex; flex-direction: column; gap: 10px; }
+  .step.ai { background: var(--text); border: 0; padding: 24px 22px; }
+  .step.ai h3, .step.ai p { color: #F3ECE2; }
   .step h3 { font-size: 40px; margin: 0; }
   .step p { font-size: 25px; }
   .kind { font-family: "Space Mono", monospace; font-size: 17px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--muted); }
-  .step.ai .kind { color: #7A5A00; font-weight: 700; }
+  .step.ai .kind { color: var(--fill); font-weight: 700; }
   .arrow { width: 46px; flex: none; display: flex; align-items: center; justify-content: center; }
   .arrow::before { content: ""; width: 24px; height: 4px; background: var(--gold); }
   .arrow::after { content: ""; border-left: 12px solid var(--gold); border-top: 9px solid transparent; border-bottom: 9px solid transparent; }
@@ -93,11 +96,40 @@
   ul.dots li { position: relative; padding-left: 34px; margin-bottom: 16px; }
   ul.dots li::before { content: ""; position: absolute; left: 4px; top: 16px; width: 10px; height: 10px; border-radius: 50%; background: var(--gold); }
   .grid3.tight { gap: 24px; }
-  .grid3.tight .box { padding: 22px 26px; }
+  .grid3.tight .box { padding: 22px 0 0; }
   .grid3.tight h3 { font-size: 40px; margin-bottom: 8px; }
   .grid3.tight p { font-size: 26px; line-height: 1.35; }
   .note { font-size: 24px; color: var(--muted); margin-top: 24px; }
   .mono { font-family: "Space Mono", monospace; }
+  /* A caption under each screenshot. */
+  figure.shot { margin: 0; flex: none; }
+  figure.shot figcaption { font-size: 21px; line-height: 1.3; color: var(--muted); margin-top: 10px; }
+  .loop-rows figure.shot figcaption { margin-top: 6px; font-size: 19px; }
+  /* Slide 16: two columns, can we build it / can it grow. */
+  .feas { display: grid; grid-template-columns: 1fr 1fr; gap: 64px; align-content: start; }
+  .feas .colhead { font-family: "Space Mono", monospace; font-size: 22px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--muted); margin-bottom: 14px; }
+  .feas .box { padding-top: 14px; margin-bottom: 18px; } .feas .box h3 { font-size: 38px; margin-bottom: 4px; }
+  .feas .box p { font-size: 25px; line-height: 1.32; }
+  /* Slide 18: set-up, a wider pilot column, then the bank. */
+  .stages { display: grid; grid-template-columns: 1fr 1.7fr 1fr; gap: 36px; align-items: start; }
+  .stages .box { padding-top: 18px; } .stages .box p:not(.when) { font-size: 26px; line-height: 1.35; }
+  .stages ul.dots li { font-size: 25px; line-height: 1.32; margin-bottom: 8px; }
+  .stages ul.dots li::before { top: 13px; }
+  /* Slide 14: each result says how it was measured, at reading size. */
+  .results .stat { padding-top: 18px; } .results .stat .n { font-size: 108px; }
+  .results .stat p { font-size: 26px; margin-top: 6px; line-height: 1.3; }
+  .results .box { padding-top: 16px; } .results h3 { margin-bottom: 4px; }
+  .results .box p { font-size: 26px; line-height: 1.3; }
+  .results p.how { font-size: 21px; line-height: 1.28; color: var(--muted); margin-top: 8px; }
+  .results p.how b { color: var(--red); font-weight: 600; }
+  table.compare th { font-size: 17px; line-height: 1.35; letter-spacing: 0.1em; }
+  table.compare td { font-size: 25px; line-height: 1.32; padding: 9px 22px 9px 0; }
+  /* Slide 7: one row per feature, words on the left, its screenshot on the right. */
+  .loop-rows { display: grid; grid-template-columns: 500px 1fr; gap: 22px 48px; align-content: start; }
+  .loop-rows .box { padding-top: 16px; }
+  .loop-rows h3 { font-size: 40px; margin-bottom: 6px; }
+  .loop-rows p { font-size: 25px; line-height: 1.35; }
+  .loop-rows .frame { height: 168px; padding: 8px; }
 </style>
 </head>
 <body>
@@ -107,11 +139,11 @@
   <span class="tag">Evidence 01</span><span class="rubric">BPI DataWave 2026</span>
   <div style="flex:1; display:flex; flex-direction:column; justify-content:center">
     <div style="width:240px; height:18px; background:var(--fill); margin-bottom:56px"></div>
-    <h1>Evidence <span class="g">Brief</span></h1>
-    <p class="lead" style="font-size:44px; margin-top:36px">An evidence assistant for BPI Strategy &amp; Insights</p>
-    <p class="mono" style="font-size:26px; letter-spacing:0.18em; text-transform:uppercase; color:var(--muted); margin-top:64px">Oreo Bread</p>
+    <h1>Alam<span class="g">Kansya</span></h1>
+    <p class="lead" style="font-size:44px; margin-top:36px"><i>Ang alkansya ng kaalaman.</i> An evidence assistant for BPI Strategy &amp; Insights</p>
+    <p class="mono" style="font-size:26px; letter-spacing:0.18em; text-transform:uppercase; color:var(--muted); margin-top:64px">Group Oreo Bread</p>
   </div>
-  <div class="foot"><span>Oreo Bread · Strategy &amp; Insights challenge</span><span>01 / 18</span></div>
+  <div class="foot"><span></span><span>01 / 18</span></div>
 </section>
 
 <!-- · Problem -->
@@ -126,7 +158,7 @@
     </div>
     <p class="lead" style="margin-top:44px">Business units compete with fintechs on speed. A decision made without the study BPI already owns is <b>slower, costlier, or both.</b></p>
   </div>
-  <div class="foot"><span>From our S&amp;I consultations, 21 Oct and 4 Nov 2026</span><span>02 / 18</span></div>
+  <div class="foot"><span></span><span>02 / 18</span></div>
 </section>
 
 <!-- · The slow loop -->
@@ -143,10 +175,10 @@
       <div><p class="when">Today</p><h3 style="color:var(--gold)">Decide anyway</h3><p>Or commission new research that repeats what BPI already knows</p></div>
     </div>
     <div class="box gold" style="margin-top:56px">
-      <p style="font-size:32px">How long this takes “can’t be quantified,” S&amp;I told us. <b>Nobody can see how many questions existing research could already answer.</b></p>
+      <p style="font-size:32px">Today, nobody can measure how long this takes. <b>Nobody can see how many questions existing research could already answer.</b></p>
     </div>
   </div>
-  <div class="foot"><span>Evidence Brief / BPI DataWave 2026</span><span>03 / 18</span></div>
+  <div class="foot"><span></span><span>03 / 18</span></div>
 </section>
 
 <!-- · Solution -->
@@ -154,18 +186,18 @@
   <span class="tag">Evidence 04 / Solution</span><span class="rubric">B · Proposed solution</span>
   <h2>One question in. <span class="g">One cited brief</span> out.</h2>
   <div class="body" style="flex-direction:row; gap:56px; align-items:flex-start">
-    <div class="frame" style="width:1000px; height:588px"><img src="img/ask.png" alt="The ask page"></div>
+    <figure class="shot" style="width:1000px"><div class="frame" style="height:570px"><img src="img/ask.png" alt="The ask page"></div><figcaption>The ask page, signed in as Ben from SME Banking. Prototype, synthetic data.</figcaption></figure>
     <div style="flex:1">
       <ul class="dots">
         <li>Ask in <b>English, Filipino or Taglish</b></li>
-        <li>Searched <b>by meaning</b> across every approved study your team may read</li>
-        <li>Answer first, then the figures, who was asked, and the gaps</li>
-        <li>Every claim cites the <b>study and report page</b></li>
+        <li>Matches what you <b>mean</b>, not just your exact words, across every approved study your team may read</li>
+        <li>The answer first, then the figures, who was surveyed, and what’s missing</li>
+        <li>Every statement shows the <b>study and page</b> it came from</li>
         <li>Ask a <b>follow-up</b>, or send it to an S&amp;I analyst in one click</li>
       </ul>
     </div>
   </div>
-  <div class="foot"><span>Working prototype · synthetic data only</span><span>04 / 18</span></div>
+  <div class="foot"><span></span><span>04 / 18</span></div>
 </section>
 
 <!-- · The brief -->
@@ -173,74 +205,74 @@
   <span class="tag">Evidence 05 / The brief</span><span class="rubric">B · Proposed solution</span>
   <h2>The whole answer on <span class="g">one screen</span></h2>
   <div class="body" style="flex-direction:row; gap:52px; align-items:flex-start">
-    <div class="frame" style="width:1110px; height:600px"><img src="img/summary.png" alt="The summary card of a brief"></div>
+    <figure class="shot" style="width:1110px"><div class="frame" style="height:580px"><img src="img/summary.png" alt="The summary card of a brief"></div><figcaption>The top of a brief: the answer, key figures from the studies, and how sure it is.</figcaption></figure>
     <div style="flex:1; display:flex; flex-direction:column; gap:22px">
-      <div><h3>The answer</h3><p>Executive, Analyst or Plain-language wording of the same evidence</p></div>
-      <div><h3>Key figures</h3><p>Read from the studies in the database; the AI writes no numbers</p></div>
-      <div><h3>Confidence</h3><p>Worked out from study strength, shown with its reasons</p></div>
+      <div><h3>The answer</h3><p>Executive, analyst or plain wording; the facts stay the same</p></div>
+      <div><h3>Key figures</h3><p>Copied straight from the studies; the AI never writes a number</p></div>
+      <div><h3>Confidence</h3><p>How sure the answer is, based on how strong the studies are, with reasons</p></div>
       <div><h3>The evidence</h3><p>Charts, quotes, gaps and sources, one click away; prints as a memo</p></div>
     </div>
   </div>
-  <div class="foot"><span>Prototype screenshot · synthetic SME studies</span><span>05 / 18</span></div>
+  <div class="foot"><span></span><span>05 / 18</span></div>
 </section>
 
-<!-- · Demo -->
+<!-- · In use -->
 <section>
-  <span class="tag">Evidence 06 / Demo</span><span class="rubric">B · Proposed solution</span>
+  <span class="tag">Evidence 06 / In use</span><span class="rubric">B · Proposed solution</span>
   <h2>What a <span class="g">business unit</span> sees</h2>
   <div class="body" style="flex-direction:row; gap:52px; align-items:flex-start">
-    <div class="frame" style="width:1000px; height:600px"><img src="img/followup.png" alt="A follow-up brief: What about owners in Mindanao?"></div>
+    <figure class="shot" style="width:1000px"><div class="frame" style="height:580px"><img src="img/followup.png" alt="A follow-up brief: What about owners in Mindanao?"></div><figcaption>Ben’s follow-up, “What about owners in Mindanao?”, linked to his first question.</figcaption></figure>
     <div style="flex:1">
       <ul class="dots">
-        <li><b>Ben, SME Banking</b> asks why owners drop off loan applications: a cited brief</li>
+        <li><b>Ben, SME Banking</b>, asks why owners drop off loan applications and gets a cited brief</li>
         <li>Follow-up <b>“What about owners in Mindanao?”</b> keeps the subject and says there is no Mindanao evidence yet</li>
         <li>Ben asks about <b>sari-sari store credit</b>: no approved study answers it, yet</li>
-        <li><b>Ana, S&amp;I</b> reviews a new Mindanao report: personal-data and overlap checks, then approves</li>
+        <li><b>Ana, S&amp;I</b> reviews a new Mindanao report, checks it for personal details and repeats, then approves it</li>
         <li>Ben’s screen: <b>“A new study answers your earlier question”</b></li>
       </ul>
     </div>
   </div>
-  <div class="foot"><span>Live demo · about 2½ minutes</span><span>06 / 18</span></div>
+  <div class="foot"><span></span><span>06 / 18</span></div>
 </section>
 
 <!-- · The loop -->
 <section>
   <span class="tag">Evidence 07 / The loop</span><span class="rubric">B · Proposed solution</span>
   <h2>New study in. <span class="g">Askers told.</span></h2>
-  <div class="body" style="margin-top:36px">
-    <div class="grid3 tight">
-      <div class="box"><h3>1 · Checked</h3><p>Before a study goes live: personal data flagged, overlap with approved studies shown. The analyst decides.</p></div>
-      <div class="box gold"><h3>2 · Told</h3><p>Whoever asked a question it now answers gets an alert, searched as them, under their own access.</p></div>
-      <div class="box"><h3>3 · Seen</h3><p>The gap map shows what teams ask, what is covered, and where new research would be used first.</p></div>
-    </div>
-    <div class="frame" style="width:1720px; height:320px; margin-top:28px"><img src="img/alert.png" alt="Ben's ask page: A new study answers your earlier question"></div>
+  <div class="body loop-rows" style="margin-top:30px">
+    <div class="box"><h3>1 · Checked</h3><p>Before a study goes live, the app flags personal details and shows past studies it repeats. An analyst decides.</p></div>
+    <figure class="shot"><div class="frame"><img src="img/loop_checks.png" alt="Review page: a phone number flagged in a quote, and three approved studies the new one overlaps"></div><figcaption>Review page: a phone number flagged in a quote, and an approved study the new one overlaps.</figcaption></figure>
+    <div class="box"><h3>2 · Told</h3><p>Anyone who asked a question it now answers gets an alert, but only if their team may read the study.</p></div>
+    <figure class="shot"><div class="frame"><img src="img/loop_alert.png" alt="Ben's ask page: A new study answers your earlier question"></div><figcaption>Ben’s ask page after the Mindanao study is approved: a badge and an alert.</figcaption></figure>
+    <div class="box"><h3>3 · Seen</h3><p>The gap map shows what teams ask, what is covered, and where new research would be used first.</p></div>
+    <figure class="shot"><div class="frame"><img src="img/loop_gaps.png" alt="Gap map: topics by place, marked Covered, Partial or Gap, with how often each was asked and left unanswered"></div><figcaption>The gap map: coverage for each place, how often each topic was asked, and how many questions went unanswered.</figcaption></figure>
   </div>
-  <div class="foot"><span>No extra AI calls: pattern rules, stored embeddings and code</span><span>07 / 18</span></div>
+  <div class="foot"><span></span><span>07 / 18</span></div>
 </section>
 
 <!-- · Role of AI: pipeline -->
 <section>
   <span class="tag">Evidence 08 / Role of AI</span><span class="rubric">C · Role of AI</span>
-  <h2>AI reads and writes. <span class="g">Code decides.</span></h2>
+  <h2>AI finds and writes. <span class="g">Rules decide.</span></h2>
   <div class="body" style="margin-top:56px">
     <div class="flow">
-      <div class="step"><span class="kind">Database</span><h3>1 · Permissions</h3><p>The search runs as the user; row-level security returns only what their team may read</p></div>
+      <div class="step"><span class="kind">Rules</span><h3>1 · Permissions</h3><p>Before searching, the database hides every study this person’s team may not read</p></div>
       <div class="arrow"></div>
-      <div class="step ai"><span class="kind">AI search</span><h3>2 · Find</h3><p>Finds findings by meaning, not keywords; topic checks drop false hits</p></div>
+      <div class="step ai"><span class="kind">AI</span><h3>2 · Find</h3><p>Finds the findings that match the question’s meaning, then drops off-topic ones</p></div>
       <div class="arrow"></div>
-      <div class="step"><span class="kind">Code</span><h3>3 · Compare</h3><p>Sorts differences into age, region, period or a real conflict; scores study strength</p></div>
+      <div class="step"><span class="kind">Rules</span><h3>3 · Compare</h3><p>Explains why studies differ (age, region, year or a real conflict) and rates each one’s strength</p></div>
       <div class="arrow"></div>
-      <div class="step ai"><span class="kind">Claude</span><h3>4 · Write</h3><p>Writes plain wording from those findings only, citing each one</p></div>
+      <div class="step ai"><span class="kind">AI (LLM)</span><h3>4 · Write</h3><p>Writes the answer in plain words from those findings only, citing each one</p></div>
       <div class="arrow"></div>
-      <div class="step"><span class="kind">Code</span><h3>5 · Check</h3><p>Rejects claims with wrong citations or unhedged focus-group views</p></div>
+      <div class="step"><span class="kind">Rules</span><h3>5 · Check</h3><p>Removes any sentence with a wrong source, or a focus-group opinion stated as fact</p></div>
       <div class="arrow"></div>
-      <div class="step"><span class="kind">Database</span><h3>6 · Assemble</h3><p>Charts and confidence from stored values; every step logged</p></div>
+      <div class="step"><span class="kind">Rules</span><h3>6 · Assemble</h3><p>Builds charts and confidence from the studies’ own numbers; records every step</p></div>
     </div>
     <div class="box gold" style="margin-top:48px">
-      <p style="font-size:32px"><b>The AI never</b> supplies a number, labels a disagreement, sets confidence, sees a restricted study, or approves anything.</p>
+      <p style="font-size:32px"><b>The AI never</b> makes up a number, decides that studies disagree, says how sure an answer is, sees a restricted study, or approves anything.</p>
     </div>
   </div>
-  <div class="foot"><span>Claude Sonnet 5.5 + Cohere Embed v4 on Amazon Bedrock (Singapore)</span><span>08 / 18</span></div>
+  <div class="foot"><span></span><span>08 / 18</span></div>
 </section>
 
 <!-- · Why AI -->
@@ -250,191 +282,194 @@
   <div class="body">
     <table class="tight">
       <tr><th style="width:22%">Job</th><th style="width:32%">Simpler tool</th><th style="width:32%">With AI</th><th>We use</th></tr>
-      <tr><td><b>Find the right studies</b></td><td>Word matching: 0.75 of reworded questions found</td><td>Meaning search: <b>0.94</b> found, right study on top 0.93</td><td class="g">AI</td></tr>
-      <tr><td><b>Write the answer</b></td><td>Templates: fast, but padded with off-topic figures</td><td>Claude keeps to what the studies measured and names the gaps</td><td class="g">AI, then checked</td></tr>
-      <tr><td><b>Read new reports</b></td><td>Rules found 0–7% of findings in real public reports</td><td>Claude found 67–83%, each quoted with its page</td><td class="g">AI, then reviewed</td></tr>
-      <tr><td><b>Spot overlap, place unanswered questions</b></td><td>Keyword tags miss reworded topics</td><td>Meaning search over stored embeddings, compared in code</td><td class="g">AI search, no model call</td></tr>
-      <tr><td><b>Numbers, access, confidence, personal data</b></td><td>Database rules, code and pattern checks</td><td>Not used: these must be exact and explainable</td><td>Code</td></tr>
+      <tr><td><b>Find the right studies</b></td><td>Word matching misses questions asked in different words</td><td>Meaning search finds the right study even when the words differ</td><td class="g">AI</td></tr>
+      <tr><td><b>Write the answer</b></td><td>Fill-in-the-blank templates: fast, but can pull in unrelated figures</td><td>The LLM sticks to what the studies measured and says what’s missing</td><td class="g">AI, checked by rules</td></tr>
+      <tr><td><b>Read new reports</b></td><td>Fixed rules miss most findings in real reports, whose layouts vary</td><td>The LLM pulls out each finding with its page</td><td class="g">AI, checked by an analyst</td></tr>
+      <tr><td><b>Spot repeat studies, sort unanswered questions</b></td><td>Keyword tags miss topics worded differently</td><td>Reuses the meaning data saved when each study and question came in</td><td class="g">Saved AI data, no extra AI cost</td></tr>
+      <tr><td><b>Numbers, access, confidence, personal data</b></td><td>Plain rules and calculations</td><td>Not used: these must be exact and easy to explain</td><td>Rules</td></tr>
     </table>
-    <p class="note">Search: 64 test questions incl. reworded, Taglish and off-topic. Reports: two BSP surveys. If the AI is down, briefs come from templates.</p>
   </div>
-  <div class="foot"><span>Measured with the prototype’s evaluation scripts</span><span>09 / 18</span></div>
+  <div class="foot"><span></span><span>09 / 18</span></div>
+</section>
+
+<!-- · Versus an AI assistant for everyone -->
+<section>
+  <span class="tag">Evidence 10 / Compare</span><span class="rubric">C · Role of AI</span>
+  <h2>Why not give everyone <span class="g">an AI assistant?</span></h2>
+  <div class="body" style="margin-top:36px">
+    <table class="compare">
+      <tr><th style="width:21%"></th><th style="width:40%">AI assistant for all 20,000 staff<br>(e.g. Microsoft 365 Copilot, US$30 a seat)</th><th>ALAMKansya</th></tr>
+      <tr><td><b>How AI is paid for</b></td><td><b>Per seat:</b> ≈ ₱1,890 (US$30) a person a month, used or not<br>20,000 seats ≈ <b>₱37.8M</b> (US$600,000) a month</td><td class="g"><b class="g">Per question:</b> ≈ ₱1.45 (US$0.023), only when someone asks<br>50,000 questions ≈ <b class="g">₱72,500</b> (US$1,150) a month; servers extra</td></tr>
+      <tr><td><b>Time to a checked answer</b></td><td>Seconds for a draft, then minutes opening files to check each number</td><td class="g"><b class="g">≈ 11 seconds</b>, numbers already checked against the studies</td></tr>
+      <tr><td><b>What it searches</b></td><td>Every file you can open, drafts and old decks included</td><td>Only studies S&amp;I has approved</td></tr>
+      <tr><td><b>Studies you can’t open</b></td><td>Invisible: you never learn they exist</td><td>Shown as a title, with a button to ask for access</td></tr>
+      <tr><td><b>Numbers</b></td><td>Written by the AI; you check them</td><td>Copied from the study; every source checked</td></tr>
+      <tr><td><b>Survey or focus group</b></td><td>Treated the same</td><td>Rated by strength; opinions marked as opinions</td></tr>
+      <tr><td><b>No study yet</b></td><td>A general answer, or nothing</td><td>Question saved; the asker is told when research arrives</td></tr>
+      <tr><td><b>Best at</b></td><td>Emails, drafts, everyday work</td><td>One job: answers from BPI’s own research</td></tr>
+    </table>
+    <p class="lead" style="font-size:30px; margin-top:22px">Not instead of an AI assistant. <b>Next to it, as the research desk, for under 1% of the seat cost.</b></p>
+  </div>
+  <div class="foot"><span></span><span>10 / 18</span></div>
 </section>
 
 <!-- · Risks and safeguards -->
 <section>
-  <span class="tag">Evidence 10 / Trust</span><span class="rubric">C · Role of AI</span>
+  <span class="tag">Evidence 11 / Trust</span><span class="rubric">C · Role of AI</span>
   <h2>What could go wrong. <span class="g">What stops it.</span></h2>
   <div class="body">
     <table class="tight">
       <tr><th style="width:38%">Risk</th><th>Safeguard</th></tr>
-      <tr><td><b>Invented figures</b> or claims a study doesn’t support</td><td>Numbers come from the database; every citation is checked; failing claims are dropped</td></tr>
-      <tr><td><b>Focus-group views</b> read as population figures</td><td>Qualitative claims must be hedged and may never say how common a view is</td></tr>
-      <tr><td><b>A restricted study</b> leaking to another team</td><td>The database filters before the AI sees anything; red-team tests on every change</td></tr>
-      <tr><td><b>Personal data</b> in a report’s quotes</td><td>Phone numbers, names and IDs are flagged; approval waits until the analyst edits or confirms</td></tr>
-      <tr><td><b>Instructions hidden</b> in an uploaded report</td><td>New reports wait for an S&amp;I analyst’s review before they can be searched</td></tr>
-      <tr><td><b>Acting on a brief</b> without reading its limits</td><td>Confidence and gaps shown first; one click to an analyst; an audit log nobody can edit</td></tr>
-      <tr><td><b>Data leaving the country</b></td><td>Prompts stay inside AWS; Singapore region; the model is one setting to swap</td></tr>
+      <tr><td><b>Made-up figures</b> or claims a study doesn’t support</td><td>Numbers copied from the studies; every source checked; unsupported sentences removed</td></tr>
+      <tr><td><b>Focus-group opinions</b> read as if everyone thinks so</td><td>Must say “some participants”; never claims how many people agree</td></tr>
+      <tr><td><b>A restricted study</b> leaking to another team</td><td>Hidden before the AI sees anything, so it can’t leak what it never saw</td></tr>
+      <tr><td><b>Personal details</b> in a report’s quotes</td><td>Phone numbers, names and IDs flagged; approval waits for the analyst</td></tr>
+      <tr><td>A report with <b>hidden instructions</b> for the AI</td><td>New reports wait for an S&amp;I analyst’s review before they can be searched</td></tr>
+      <tr><td><b>Acting on a brief</b> without reading its limits</td><td>How sure it is and what’s missing come first; every action recorded</td></tr>
+      <tr><td><b>Bank data sent</b> to an outside AI company</td><td>Sent only to AI models inside AWS (Singapore), never outside</td></tr>
     </table>
   </div>
-  <div class="foot"><span>Enforced by automated acceptance, permission and red-team tests</span><span>10 / 18</span></div>
+  <div class="foot"><span></span><span>11 / 18</span></div>
 </section>
 
 <!-- · Humans decide -->
 <section>
-  <span class="tag">Evidence 11 / Human in the loop</span><span class="rubric">C · Role of AI</span>
+  <span class="tag">Evidence 12 / Human in the loop</span><span class="rubric">C · Role of AI</span>
   <h2>AI helps. <span class="g">People decide.</span></h2>
   <div class="body" style="margin-top:60px">
     <div class="grid4">
-      <div class="box"><div class="numcard"><div class="k">1</div></div><h3>Study review</h3><p>An S&amp;I analyst approves each study, after a personal-data and overlap check, before anyone can search it</p></div>
+      <div class="box"><div class="numcard"><div class="k">1</div></div><h3>Study review</h3><p>An S&amp;I analyst approves each study, after checks for personal details and repeats, before anyone can search it</p></div>
       <div class="box"><div class="numcard"><div class="k">2</div></div><h3>Access</h3><p>The owning team grants or refuses every request to read a restricted study</p></div>
       <div class="box"><div class="numcard"><div class="k">3</div></div><h3>Ask an analyst</h3><p>One click from any brief, with the question already drafted from what’s missing</p></div>
-      <div class="box"><div class="numcard"><div class="k">4</div></div><h3>Commissioning</h3><p>A coverage check before new research; nothing is sent until a person sends it</p></div>
+      <div class="box"><div class="numcard"><div class="k">4</div></div><h3>Commissioning</h3><p>Shows what existing research covers first; nothing is sent until a person sends it</p></div>
     </div>
-    <p class="lead" style="margin-top:48px">The system never approves, grants or commissions on its own. That is what BPI asked for: <b>guardrails from day one.</b></p>
+    <p class="lead" style="margin-top:48px">The system never approves, grants or commissions on its own. <b>Every decision that matters is recorded with the name of the person who made it.</b></p>
   </div>
-  <div class="foot"><span>Evidence Brief / BPI DataWave 2026</span><span>11 / 18</span></div>
+  <div class="foot"><span></span><span>12 / 18</span></div>
 </section>
 
 <!-- · Benefits -->
 <section>
-  <span class="tag">Evidence 12 / Benefits</span><span class="rubric">D · Expected benefits and impact</span>
+  <span class="tag">Evidence 13 / Benefits</span><span class="rubric">D · Expected benefits and impact</span>
   <h2>Faster answers, <span class="g">fewer repeats</span></h2>
   <div class="body">
     <div class="grid3">
       <div class="box"><h3>Business units</h3><ul class="dots"><li>An answer in seconds, in their own words</li><li>Studies from other units they didn’t know existed</li><li>Told when new research answers an old question</li></ul></div>
-      <div class="box"><h3>S&amp;I analysts</h3><ul class="dots"><li>Fewer repeat questions</li><li>Duplicates caught at review</li><li>A gap map of where to research next</li></ul></div>
-      <div class="box"><h3>The bank</h3><ul class="dots"><li>More value from research already paid for</li><li>Fewer duplicate studies</li><li>One governed, auditable path to evidence</li></ul></div>
+      <div class="box"><h3>S&amp;I analysts</h3><ul class="dots"><li>Fewer repeat questions</li><li>Repeat studies caught before they go live</li><li>A gap map of where to research next</li></ul></div>
+      <div class="box"><h3>The bank</h3><ul class="dots"><li>More value from research already paid for</li><li>Fewer duplicate studies</li><li>One controlled, recorded way to get evidence</li></ul></div>
     </div>
   </div>
-  <div class="foot"><span>Expected benefits; the pilot measures them</span><span>12 / 18</span></div>
+  <div class="foot"><span></span><span>13 / 18</span></div>
 </section>
 
 <!-- · Evidence so far -->
 <section>
-  <span class="tag">Evidence 13 / Results</span><span class="rubric">D · Expected benefits and impact</span>
+  <span class="tag">Evidence 14 / Results</span><span class="rubric">D · Expected benefits and impact</span>
   <h2>What we have <span class="g">measured</span> so far</h2>
-  <div class="body" style="margin-top:64px">
+  <div class="body results" style="margin-top:34px">
     <div class="grid4">
-      <div class="stat"><div class="n">0.94</div><p>of reworded questions find the right study</p><p class="src">64 test questions</p></div>
-      <div class="stat"><div class="n">0.93</div><p>get the right study as the top result</p><p class="src">same test</p></div>
-      <div class="stat"><div class="n">11 sec</div><p>median time to a full cited brief</p><p class="src">6 test briefs</p></div>
-      <div class="stat"><div class="n">0/18</div><p>briefs fell back to templates</p><p class="src">18 test briefs on Bedrock</p></div>
+      <div class="stat"><div class="n">94%</div><p>of the right studies found, even with different words</p><p class="how"><b>How:</b> We wrote 29 questions in our own words and listed the right studies for each. Search found 94% of the listed studies.</p></div>
+      <div class="stat"><div class="n">93%</div><p>put the right study first</p><p class="how"><b>How:</b> Same 29 questions: was the first study returned one we had listed? Yes for 93%.</p></div>
+      <div class="stat"><div class="n">11 sec</div><p>typical time to a full answer with sources</p><p class="how"><b>How:</b> The app clocks each brief from pressing Ask to the finished page. Middle value of 6 briefs.</p></div>
+      <div class="stat"><div class="n">0/18</div><p>times the AI failed and backup templates took over</p><p class="how"><b>How:</b> The app records whether each brief came from the LLM or the backup. All 18 came from the LLM.</p></div>
     </div>
-    <div class="grid3" style="margin-top:64px">
-      <div class="box"><h3>99% of findings</h3><p>pulled from 37 reports with the right page</p></div>
-      <div class="box"><h3>0 leaks</h3><p>of restricted findings in an adversarial test of about 30 briefs</p></div>
-      <div class="box"><h3>Honest “no”</h3><p>Most off-topic questions get “no approved study answers this”</p></div>
+    <div class="grid3" style="margin-top:34px">
+      <div class="box"><h3>99% of findings</h3><p>read correctly out of 37 reports, with the right page</p><p class="how"><b>How:</b> 37 test reports with a hand-made list of every finding and its page. Compared one by one: 1 finding missed, 1 page wrong.</p></div>
+      <div class="box"><h3>0 leaks</h3><p>of restricted findings</p><p class="how"><b>How:</b> About 30 questions asked as teams without access, trying to pull out restricted studies. None of their text appeared.</p></div>
+      <div class="box"><h3>Honest “no”</h3><p>5 of 6 off-topic questions get “no approved study answers this”</p><p class="how"><b>How:</b> 6 questions on topics no study covers, like mortgage rates. 5 got this reply; 1 got a brief.</p></div>
     </div>
-    <p class="note">On a synthetic set of 33 studies: it shows the mechanism works. Real value is measured in the pilot.</p>
+    <p class="lead" style="font-size:28px; margin-top:18px">Tested on synthetic data: this shows the pipeline works. <b>Real value is measured in the pilot.</b></p>
   </div>
-  <div class="foot"><span>Prototype evaluation results</span><span>13 / 18</span></div>
+  <div class="foot"><span></span><span>14 / 18</span></div>
 </section>
 
 <!-- · Impact measures -->
 <section>
-  <span class="tag">Evidence 14 / Impact</span><span class="rubric">D · Expected benefits and impact</span>
+  <span class="tag">Evidence 15 / Impact</span><span class="rubric">D · Expected benefits and impact</span>
   <h2>How we would <span class="g">prove</span> the impact</h2>
   <div class="body" style="flex-direction:row; gap:56px">
     <div style="flex:1.2">
       <table>
         <tr><th>Pilot measure</th><th class="num">Target</th></tr>
         <tr><td>Questions answered without an analyst</td><td class="num g">≥ 50%</td></tr>
-        <tr><td>Claims S&amp;I rates accurate</td><td class="num g">≥ 95%</td></tr>
-        <tr><td>Citations pointing to the right page</td><td class="num g">≥ 95%</td></tr>
+        <tr><td>Statements S&amp;I rates accurate</td><td class="num g">≥ 95%</td></tr>
+        <tr><td>Sources pointing to the right page</td><td class="num g">≥ 95%</td></tr>
         <tr><td>Restricted findings shown to the wrong team</td><td class="num g">0</td></tr>
-        <tr><td>Time to first answer vs today</td><td class="num g">measured</td></tr>
+        <tr><td>Time to a checked answer vs today and vs an AI assistant</td><td class="num g">measured</td></tr>
       </table>
     </div>
     <div class="box" style="flex:1">
       <h3>How</h3>
       <ul class="dots">
-        <li>8 weeks, S&amp;I plus one business unit</li>
-        <li>Real, anonymised questions, kept apart from tuning</li>
-        <li>S&amp;I rates briefs blind, without knowing which writer</li>
+        <li>8 weeks, about 300 users: marketing council members, product managers and other executives</li>
+        <li>Real questions with names removed, never used to tune the system</li>
+        <li>S&amp;I grades briefs without knowing if the AI or a template wrote them</li>
         <li>Weekly numbers back to S&amp;I</li>
       </ul>
     </div>
   </div>
-  <div class="foot"><span>Targets are our proposal, to agree with S&amp;I</span><span>14 / 18</span></div>
+  <div class="foot"><span></span><span>15 / 18</span></div>
 </section>
 
-<!-- · Feasibility -->
+<!-- · Feasible today, built to scale -->
 <section>
-  <span class="tag">Evidence 15 / Feasibility</span><span class="rubric">E · Feasibility and implementation</span>
-  <h2>Feasible <span class="g">today</span>, not someday</h2>
-  <div class="body" style="flex-direction:row; gap:48px">
-    <div style="flex:1; display:grid; grid-template-columns:1fr 1fr; gap:28px; align-content:start">
-      <div class="box gold"><h3>Already built</h3><p>Working end to end on real Bedrock models, with 215 automated tests. Not a mock-up.</p></div>
-      <div class="box"><h3>No data migration</h3><p>Uses the PDF reports S&amp;I already has. No raw respondent data.</p></div>
-      <div class="box"><h3>No model training</h3><p>Off-the-shelf models on Amazon Bedrock; prompts stay in AWS.</p></div>
-      <div class="box"><h3>Standard parts</h3><p>Postgres, a Python API, a web app: tools bank IT already runs.</p></div>
+  <span class="tag">Evidence 16 / Feasibility</span><span class="rubric">E · Feasibility and implementation</span>
+  <h2>Feasible today, <span class="g">built to scale</span></h2>
+  <div class="body feas" style="margin-top:34px">
+    <div>
+      <p class="colhead">Feasible today</p>
+      <div class="box"><h3>Already built</h3><p>Works end to end on Amazon’s AI service, with 215 automated tests. Not a mock-up.</p></div>
+      <div class="box"><h3>No data to move</h3><p>Uses the PDF reports S&amp;I already has. No individual survey answers.</p></div>
+      <div class="box"><h3>Nothing to train</h3><p>Ready-made AI models from Amazon, used as they come.</p></div>
+      <div class="box"><h3>Standard parts</h3><p>A standard database and web app, the kind bank IT already runs.</p></div>
     </div>
-    <div style="flex:0.9">
-      <h3 style="margin-bottom:18px">AI use per brief, measured</h3>
-      <table>
-        <tr><td>AI calls</td><td class="num"><b>1</b> (2 if rewritten)</td></tr>
-        <tr><td>Tokens in</td><td class="num"><b>≈ 4,500</b></td></tr>
-        <tr><td>Tokens out</td><td class="num"><b>≈ 1,100</b></td></tr>
-        <tr><td>Cost</td><td class="num g"><b class="g">≈ US$0.023</b></td></tr>
-      </table>
-      <p class="note">6 briefs, Claude Sonnet 5.5, list prices; Bedrock bills its own.</p>
+    <div>
+      <p class="colhead">Built to scale</p>
+      <div class="box"><h3>Cost follows questions</h3><p>Each report is read once, at upload. A brief costs about <b>₱1.45</b> (US$0.023), however many studies there are.</p></div>
+      <div class="box"><h3>Search stays fast</h3><p>The database is indexed like the back of a book, so search stays quick as the library grows.</p></div>
+      <div class="box"><h3>New unit = new settings</h3><p>Teams and who may read what are settings, not code. Adding a unit is a setup task.</p></div>
+      <div class="box"><h3>Not tied to one AI</h3><p>Switching AI models is one setting. If the AI is down, the app still writes the brief from a <b>fill-in-the-blank template</b>: same sources and checks, plainer wording.</p></div>
     </div>
   </div>
-  <div class="foot"><span>Prototype: 33 synthetic studies, 4 demo personas, 215 automated tests</span><span>15 / 18</span></div>
-</section>
-
-<!-- · Scales -->
-<section>
-  <span class="tag">Evidence 16 / Scale</span><span class="rubric">E · Feasibility and implementation</span>
-  <h2>Built to <span class="g">scale</span> from day one</h2>
-  <div class="body" style="margin-top:36px">
-    <div class="grid3 tight">
-      <div class="box"><h3>Cost follows questions</h3><p>A report is processed once at upload. Each brief costs about 2 US cents, however many studies there are.</p></div>
-      <div class="box"><h3>Search stays fast</h3><p>Vector and full-text indexes inside Postgres keep look-ups quick as the library grows.</p></div>
-      <div class="box"><h3>New unit = new data</h3><p>Teams and access rules are database rows. Onboarding a unit needs no code change.</p></div>
-      <div class="box"><h3>Grows on AWS</h3><p>Add containers behind a load balancer; move to Aurora when volume calls for it.</p></div>
-      <div class="box"><h3>No single AI dependency</h3><p>The model is one setting to swap. If the AI is down, briefs still come from templates.</p></div>
-      <div class="box"><h3>Reusable</h3><p>Any team with approved reports and access rules can join: research, credit policy, compliance.</p></div>
-    </div>
-    <div class="box gold" style="margin-top:24px; padding:22px 32px">
-      <p style="font-size:30px">From <b>500 to 50,000 briefs a month</b>, the core design stays the same. What grows is the database and the AI bill: <b>about $12 to $1,150 a month.</b></p>
-    </div>
-  </div>
-  <div class="foot"><span>AI cost at US$0.023 per measured brief, list prices</span><span>16 / 18</span></div>
+  <div class="foot"><span></span><span>16 / 18</span></div>
 </section>
 
 <!-- · Implementation -->
 <section>
   <span class="tag">Evidence 17 / Roll-out</span><span class="rubric">E · Feasibility and implementation</span>
-  <h2>From one unit to <span class="g">the bank</span></h2>
-  <div class="body" style="margin-top:40px">
-    <div class="grid4">
-      <div class="box"><p class="when">Weeks 0–2</p><h3>Set up</h3><p>BPI sandbox on AWS, sign-in through BPI’s identity provider, load S&amp;I’s approved reports</p></div>
-      <div class="box gold"><p class="when">Weeks 2–10</p><h3>Pilot</h3><p>S&amp;I plus one unit, about 20 users, about 500 briefs a month</p></div>
-      <div class="box"><p class="when">Next</p><h3>Department</h3><p>Five units, about 5,000 briefs a month; same design, larger database</p></div>
-      <div class="box"><p class="when">Later</p><h3>Bank-wide</h3><p>All pillars; private network links, high availability</p></div>
+  <h2>Pilot first, <span class="g">then the whole bank</span></h2>
+  <div class="body" style="margin-top:36px">
+    <div class="stages">
+      <div class="box"><p class="when">Weeks 0–2</p><h3>Set up</h3><p>A BPI test space on AWS. Staff sign in with their BPI accounts. S&amp;I’s approved reports are loaded and reviewed.</p></div>
+      <div class="box pilot"><p class="when">Stage 1 · Weeks 2–10</p><h3>Pilot with 300 people</h3>
+        <ul class="dots">
+          <li><b>Who:</b> marketing council members, product managers and other executives</li>
+          <li><b>What they do:</b> ask their real questions instead of emailing S&amp;I</li>
+          <li><b>What S&amp;I does:</b> grades the briefs and answers what the app can’t</li>
+          <li><b>What we report:</b> the targets on slide 15, every week</li>
+        </ul>
+      </div>
+      <div class="box"><p class="when">Stage 2 · After the pilot</p><h3>The whole bank</h3><p>Once the pilot meets its targets: about 20,000 people, at about 2 briefs each a month. Same app, more users.</p></div>
     </div>
-    <table style="margin-top:40px">
-      <tr><th>Stage</th><th class="num">Briefs / month</th><th class="num">Tokens / month</th><th class="num">AI cost / month</th><th class="num">Hosting / month</th></tr>
-      <tr><td><b>Pilot</b></td><td class="num">500</td><td class="num">≈ 2.8 M</td><td class="num g">≈ $12</td><td class="num">≈ $80–95</td></tr>
-      <tr><td><b>Department</b></td><td class="num">5,000</td><td class="num">≈ 28 M</td><td class="num g">≈ $115</td><td class="num">to size with BPI</td></tr>
-      <tr><td><b>Bank-wide</b></td><td class="num">50,000</td><td class="num">≈ 280 M</td><td class="num g">≈ $1,150</td><td class="num">to size with BPI</td></tr>
+    <table style="margin-top:30px">
+      <tr><th>Stage</th><th class="num">Users</th><th class="num">Briefs / month</th><th class="num">AI cost / month (₱63 = US$1)</th></tr>
+      <tr><td><b>Stage 1: pilot</b></td><td class="num">≈ 300</td><td class="num">600</td><td class="num g">≈ ₱870 <span style="color:var(--muted)">($14)</span></td></tr>
+      <tr><td><b>Stage 2: whole bank</b></td><td class="num">≈ 20,000</td><td class="num">50,000</td><td class="num g">≈ ₱72,500 <span style="color:var(--muted)">($1,150)</span></td></tr>
     </table>
   </div>
-  <div class="foot"><span>Cost grows with questions, not studies: a report is processed once</span><span>17 / 18</span></div>
+  <div class="foot"><span></span><span>17 / 18</span></div>
 </section>
 
 <!-- · Close -->
 <section>
-  <span class="tag">Evidence 18 / Next</span><span class="rubric">Oreo Bread</span>
+  <span class="tag">Evidence 18 / Next</span><span class="rubric">Group Oreo Bread</span>
   <div style="width:240px; height:18px; background:var(--fill); position:absolute; top:168px; left:100px"></div>
   <h2 style="margin-top:150px; font-size:150px">Let business units <span class="g">ask the research</span></h2>
   <div class="grid2" style="margin-top:70px; max-width:1500px">
-    <div class="box"><h3>From S&amp;I</h3><p>Real, anonymised questions to test on, and sign-off on our proposed rules</p></div>
-    <div class="box"><h3>From IT and Risk</h3><p>An AWS sandbox and a decision on Bedrock and data residency</p></div>
+    <div class="box"><h3>From S&amp;I</h3><p>Real questions, names removed, to test on, and sign-off on our proposed rules</p></div>
+    <div class="box"><h3>From IT and Risk</h3><p>An AWS test space, and approval to use Amazon’s AI service and where the data is kept</p></div>
   </div>
-  <div class="foot"><span>Evidence Brief / BPI DataWave 2026 · thank you</span><span>18 / 18</span></div>
+  <div class="foot"><span></span><span>18 / 18</span></div>
 </section>
 
 </body>

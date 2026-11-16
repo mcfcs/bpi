@@ -135,7 +135,7 @@ function Queue() {
   return (
     <>
       <section className="page-head">
-        <title>Review queue · Evidence brief</title>
+        <title>Review queue · ALAMKansya</title>
         <h1>Review queue</h1>
         <p>
           New reports wait here until an analyst checks the study card. Nothing is searchable until it is approved. The
