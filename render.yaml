@@ -1,0 +1,31 @@
+# Render Blueprint for the ALAMKansya backend (FastAPI). The frontend runs on Vercel (see README.md).
+# Render → New → Blueprint → mcfcs/bpi, branch "deployment". You will be asked for the values marked sync: false.
+services:
+  - type: web
+    name: alamkansya-api
+    runtime: python
+    region: singapore
+    plan: free
+    rootDir: backend
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:create_app --factory --host 0.0.0.0 --port $PORT
+    healthCheckPath: /api/health
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.12.8
+      - key: DEMO_MODE
+        value: "true"
+      # Template briefs and word-matching search: no AWS needed. See README.md to switch to Bedrock.
+      - key: LLM_PROVIDER
+        value: offline
+      - key: EMBEDDING_PROVIDER
+        value: hashing
+      # Supabase → Connect → Session pooler string (port 5432), with the database password.
+      - key: DATABASE_URL
+        sync: false
+      # Signs the app's own demo sign-in tokens.
+      - key: SUPABASE_JWT_SECRET
+        generateValue: true
+      # Must equal BACKEND_SHARED_SECRET on Vercel; the backend refuses /api calls without it.
+      - key: BACKEND_SHARED_SECRET
+        sync: false

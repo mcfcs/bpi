@@ -265,7 +265,7 @@ function Commission() {
   return (
     <>
       <section className="page-head">
-        <title>Before you commission · Evidence brief</title>
+        <title>Before you commission · ALAMKansya</title>
         <h1>Before you commission</h1>
         <p>
           List your research objectives. Each one is checked against approved studies your team can read, so new

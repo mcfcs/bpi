@@ -5,7 +5,7 @@ import { SignedIn } from "@/components/SiteHeader";
 import { LoadError } from "@/components/LoadError";
 import { useApi } from "@/lib/useApi";
 
-import type { AuditRow, UsageSummary } from "@/lib/types";
+import type { AuditRow, UsageSummary, UsageValue } from "@/lib/types";
 import { dateTime } from "@/lib/format";
 
 function summarise(details: Record<string, unknown>): string {
@@ -25,6 +25,46 @@ function Tile({ label, value, note }: { label: string; value: number; note?: str
   );
 }
 
+/**
+ * What the briefs delivered: counts from the audit log and governance tables, plus analyst time
+ * saved, which is an estimate (VALUE_CONFIG minutes per answered question) and says so.
+ */
+function Value({ v, days }: { v: UsageValue; days: number }) {
+  const pct = v.share_without_analyst == null ? null : Math.round(v.share_without_analyst * 100);
+  return (
+    <section className="value" aria-labelledby="value-title">
+      <h2 id="value-title">What the briefs delivered, last {days} days</h2>
+      <div className="value-tiles">
+        <div className="value-tile">
+          <p className="value-n nums">{v.answered_without_analyst}</p>
+          <p className="value-label">questions answered without an analyst</p>
+          <p className="value-note">{pct == null ? "No briefs yet" : `${pct}% of ${v.briefs} briefs`}</p>
+        </div>
+        <div className="value-tile">
+          <p className="value-n nums">{v.cross_team}</p>
+          <p className="value-label">briefs that reused another team&rsquo;s research</p>
+          <p className="value-note">{v.studies_reused} {v.studies_reused === 1 ? "study" : "studies"} used outside the team that owns {v.studies_reused === 1 ? "it" : "them"}</p>
+        </div>
+        <div className="value-tile">
+          <p className="value-n nums">{v.alerts_sent}</p>
+          <p className="value-label">earlier questions answered by a new study</p>
+          <p className="value-note">{v.alerts_opened} opened by the person who asked</p>
+        </div>
+        <div className="value-tile">
+          <p className="value-n nums">{v.already_covered}</p>
+          <p className="value-label">research objectives already covered</p>
+          <p className="value-note">Found by commissioning checks before anything was commissioned</p>
+        </div>
+        <div className="value-tile estimate">
+          <p className="value-n nums">≈ {v.hours_saved} h</p>
+          <p className="value-label">analyst time saved (estimate)</p>
+          <p className="value-note">At {v.minutes_per_question} minutes per answered question, a figure for S&amp;I to replace with its own</p>
+        </div>
+      </div>
+    </section>
+  );
+}
+
 /** The last 30 days at a glance: what teams asked and what happened next. */
 function Usage() {
   const { data: u, error, reload } = useApi<UsageSummary>("/api/audit/summary?days=30");
@@ -34,6 +74,7 @@ function Usage() {
   const share = (n: number) => (b.total ? `${Math.round((100 * n) / b.total)}% of briefs` : undefined);
   return (
     <section className="section usage" aria-labelledby="usage-title">
+      {u.value && <Value v={u.value} days={u.days} />}
       <div className="section-head">
         <h2 id="usage-title">Last {u.days} days</h2>
       </div>
@@ -94,7 +135,7 @@ function Audit() {
   return (
     <>
       <section className="page-head">
-        <title>Audit log · Evidence brief</title>
+        <title>Audit log · ALAMKansya</title>
         <h1>Audit log</h1>
         <p>Every brief, review edit, tier change, override, access decision, escalation and export. Entries are append-only: nobody can change or delete them.</p>
       </section>

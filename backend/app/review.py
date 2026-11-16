@@ -13,7 +13,7 @@ from datetime import date
 import psycopg
 from psycopg.types.json import Jsonb
 
-from . import audit
+from . import audit, privacy
 from .embeddings import Embedder, to_pgvector
 from .schemas import FindingPatch, StudyPatch
 from .tiers import compute_tier_or_none, tier_breakdown
@@ -142,7 +142,8 @@ def update_finding(conn: psycopg.Connection, finding_id: str, patch: FindingPatc
     return _jsonable(row)
 
 
-def decide_study(conn: psycopg.Connection, study_id: str, approve: bool, note: str | None, user_id: str) -> None:
+def decide_study(conn: psycopg.Connection, study_id: str, approve: bool, note: str | None, user_id: str,
+                 privacy_checked: bool = False) -> None:
     study = conn.execute(
         "select review_status, method_type, fieldwork_end, robustness_tier from public.studies where id = %s for update",
         [study_id],
@@ -158,12 +159,20 @@ def decide_study(conn: psycopg.Connection, study_id: str, approve: bool, note: s
         ).fetchone()["n"]
         if untyped:
             raise ReviewError(f"{untyped} finding(s) have no finding type.")
+        flagged = privacy.study_flags(conn, study_id)["findings"]
+        if flagged and not privacy_checked:
+            kinds = sorted({m["label"].lower() for f in flagged for m in f["matches"]})
+            raise ReviewError(f"{len(flagged)} finding(s) may contain personal data ({', '.join(kinds)}). "
+                              "Edit them, or confirm you checked that they identify no one.")
+    else:
+        flagged = []
     conn.execute(
         "update public.studies set review_status = %s, reviewed_by = %s, reviewed_at = now(), review_note = %s where id = %s",
         ["approved" if approve else "rejected", user_id, note, study_id],
     )
     audit.log(conn, "study.approved" if approve else "study.rejected", "study", study_id,
-              {"note": note, "tier": study["robustness_tier"]})
+              {"note": note, "tier": study["robustness_tier"],
+               **({"privacy_flags": len(flagged), "privacy_checked": True} if flagged else {})})
 
 
 def embedding_text(study_title: str | None, theme: str | None, text: str) -> str:

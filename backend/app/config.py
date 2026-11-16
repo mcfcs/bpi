@@ -190,6 +190,67 @@ QUAL_TIER_CONFIG: dict = {"recency_tiers": [(12, "B")], "older": "C"}
 # than this is "covered_stale" rather than "covered".
 COVERAGE_STATE_CONFIG: dict = {"stale_months": 24}
 
+# "A new study answers your question" (alerts.py): when a study is approved, unanswered questions
+# asked in the last lookback_days are searched again as their askers, at most max_questions of them
+# (one embedding call each). Proposed defaults, not validated by S&I.
+ALERT_CONFIG: dict = {"lookback_days": 180, "max_questions": 50}
+
+# Value summary on the audit page (usage.py). Minutes an analyst would spend finding and explaining
+# an answer that a brief gave without escalation: a proposed estimate for S&I to replace with its own
+# figure. Shown as an estimate, never as a measurement.
+VALUE_CONFIG: dict = {"analyst_minutes_per_question": 30}
+
+# Research-gap map (gaps.py): rows are metric families (the part of a metric key before ":"; a
+# "_trend" family joins its base). Labels are proposed wording for S&I to review.
+FAMILY_LABELS: dict[str, str] = {
+    "barrier": "SME loan application drop-off",
+    "support": "SME support and contact person",
+    "card_dropoff": "Credit card application drop-off",
+    "reward_pref": "Credit card rewards",
+    "qr": "QR payments",
+    "app": "Mobile app experience",
+    "atm": "ATM access",
+    "fraud": "Scams and fraud",
+    "service": "Complaints and service",
+    "literacy": "Financial literacy",
+    "budget": "Payday budgeting",
+    "wellness": "Workplace money wellness",
+    "gig": "Gig and delivery workers",
+    "fisherfolk": "Fisherfolk household finances",
+    "climate": "Typhoons and household finances",
+    "green": "Green products",
+    "privacy": "Data privacy and sharing",
+    "inclusive": "Customers with disabilities",
+    "treasury": "Corporate treasury",
+}
+# Gap-map columns, from geography.area_type of the finding's place. A study across Metro Manila and
+# provincial areas ("mixed") counts in both.
+GAP_AREAS: dict[str, tuple[str, ...]] = {
+    "metro_manila": ("Metro Manila",), "provincial_city": ("Provincial",), "provincial": ("Provincial",),
+    "rural": ("Rural",), "mixed": ("Metro Manila", "Provincial"), "nationwide": ("Nationwide",),
+}
+GAP_COLUMNS: tuple[str, ...] = ("Metro Manila", "Provincial", "Rural", "Nationwide")
+# An unanswered question is placed on the topic most common among its nearest approved findings.
+GAP_CONFIG: dict = {"nearest_findings": 5}
+
+# Personal-data check at study review (privacy.py): patterns that suggest a finding identifies a
+# person. A match blocks approval until the analyst edits the finding or confirms they checked it.
+# Proposed patterns for Philippine formats, not validated by S&I or BPI's data privacy office;
+# false positives are expected and cost one confirmation click.
+PRIVACY_PATTERNS: dict[str, tuple[str, str]] = {
+    "phone": ("Phone number", r"(?:\+63[\s-]?|\b0)9\d{2}[\s-]?\d{3}[\s-]?\d{4}\b"),
+    "email": ("Email address", r"\b[\w.+-]+@[\w-]+\.[\w.-]+\b"),
+    "account": ("Account or card number", r"\b\d(?:[ -]?\d){11,18}\b"),
+    "tin": ("Tax ID (TIN)", r"\b\d{3}-\d{3}-\d{3}(?:-\d{3,5})?\b"),
+    "name": ("A person's name", r"\b(?:my name is|ako si|pangalan ko(?: ay)?|Mr\.?|Mrs\.?|Ms\.?|Dr\.?|Gng\.?)\s+[A-Z][a-z]+(?:\s+[A-Z][a-z]+)?"),
+    "address": ("Street address", r"\b\d{1,5}\s+(?:[A-Z][a-z]+\s+){1,3}(?:St|Street|Ave|Avenue|Road|Rd|Blvd)\b\.?"),
+}
+
+# Overlap check at study review (overlap.py): approved findings closest to each finding of the new
+# study. A study counts as overlapping when it shares a metric family or a finding at least this
+# similar (the embedder's retrieval floor plus overlap_margin). Proposed defaults.
+OVERLAP_CONFIG: dict = {"neighbours_per_finding": 3, "overlap_margin": 0.1, "max_studies": 4}
+
 METRIC_LABELS.update({
     "card_dropoff:id_verification": "ID verification",
     "card_dropoff:fees": "Fees",
@@ -360,6 +421,10 @@ class Settings:
     cors_origins: tuple[str, ...]
     embedding_provider: str = "hashing"   # "hashing" or "fastembed"
     embedding_model: str | None = None    # fastembed model name; None for the default
+    # Hosted demos where the backend has its own public URL (see README.md): when set, every
+    # /api request except /api/health must carry this value in X-Demo-Key, which frontend/proxy.ts adds.
+    # Unset locally and in tests, so nothing changes there.
+    backend_shared_secret: str | None = None
 
 
 @lru_cache
@@ -389,4 +454,5 @@ def get_settings() -> Settings:
         ),
         embedding_provider=env.get("EMBEDDING_PROVIDER", "hashing").lower(),
         embedding_model=env.get("EMBEDDING_MODEL") or None,
+        backend_shared_secret=env.get("BACKEND_SHARED_SECRET") or None,
     )

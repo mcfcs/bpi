@@ -193,6 +193,8 @@ export interface EscalationDraft {
 export interface Brief {
   id: string;
   question: string;
+  /** Set on a follow-up: the brief it continues. */
+  follow_up_of?: { id: string; question: string } | null;
   created_at: string;
   generated_by: string | null;
   generator_note: string | null;
@@ -327,6 +329,32 @@ export interface StudyDetail {
   tier_breakdown: TierBreakdown | null;
   findings: FindingRow[];
   finding_count?: number;
+  /** Checkpoint 1 aids, on pending studies for S&I only. */
+  privacy?: PrivacyFlags;
+  overlaps?: StudyOverlap[];
+}
+
+/** Findings that may identify a person (privacy.py pattern rules). */
+export interface PrivacyFlags {
+  findings: { finding_id: string; ordinal: number; text: string; matches: { kind: string; label: string; match: string; start: number; end: number }[] }[];
+  source_matches: number;
+}
+
+/** An approved study a pending one overlaps (overlap.py), compared in code. */
+export interface StudyOverlap {
+  study_id: string;
+  code: string;
+  title: string;
+  tier: Tier | null;
+  owner_team: string;
+  place: string;
+  fieldwork_end: string | null;
+  topics: string[];
+  matches: number;
+  verdict: "repeat" | "newer_wave" | "same_topic";
+  verdict_text: string;
+  differs_by: string[];
+  figures: { metric: string; new: string; old: string }[];
 }
 
 export interface AccessRequest {
@@ -409,6 +437,7 @@ export interface SubmittedCheck {
 
 /** GET /api/audit/summary: counts from the audit log for S&I. */
 export interface UsageSummary {
+  value?: UsageValue;
   days: number;
   briefs: {
     total: number;
@@ -442,4 +471,55 @@ export interface Team {
   id: string;
   name: string;
   kind: "si" | "bu";
+}
+
+/** "A new study answers your question": an earlier unanswered question of the reader's. */
+export interface AnswerAlert {
+  id: string;
+  brief_id: string;
+  study_id: string;
+  question: string;
+  created_at: string;
+  read_at: string | null;
+  /** Null when the reader has since lost access to the study. */
+  study_code: string | null;
+  study_title: string | null;
+}
+
+
+export interface GapRow {
+  family: string;
+  label: string;
+  cells: Record<string, CoverageState>;
+  best: CoverageState;
+  studies: string[];
+  newest_fieldwork: string | null;
+  asked: number;
+  /** Questions no readable study answered whose closest topic is this one. */
+  unanswered: number;
+  teams: string[];
+  attention: boolean;
+}
+
+export interface GapMap {
+  columns: string[];
+  rows: GapRow[];
+  days: number;
+  studies_read: number;
+  unanswered: { question: string; team: string; last_asked: string; times: number; topic: string | null }[];
+}
+
+/** What briefs delivered (usage.value): counts, plus hours saved as a labelled estimate. */
+export interface UsageValue {
+  briefs: number;
+  answered: number;
+  answered_without_analyst: number;
+  share_without_analyst: number | null;
+  cross_team: number;
+  studies_reused: number;
+  already_covered: number;
+  alerts_sent: number;
+  alerts_opened: number;
+  hours_saved: number;
+  minutes_per_question: number;
 }

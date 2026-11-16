@@ -3,31 +3,27 @@ __pycache__/
 *.py[cod]
 .venv/
 .pytest_cache/
+
+# Secrets: never commit these
 backend/.env
 backend/.env.local
+backend/.env.supabase
+frontend/.env
+frontend/.env.local
 
 # Node / Next.js
 node_modules/
 frontend/.next/
 frontend/out/
 frontend/next-env.d.ts
-frontend/.env.local
 *.tsbuildinfo
+.vercel
 
-# Tooling output
+# Misc
 *.log
-
-# Local run and QA artefacts
-.run/
-.playwright-cli/
-**/.playwright-cli/
-.claude/settings.local.json
-
-# Downloaded embedding models
-backend/.cache/
-.claude/worktrees/
-
-# Third-party public report PDFs (downloaded by backend/scripts/fetch_public_reports.py; never commit)
 data/public/pdfs/
-# Locally rendered synthetic report PDFs (backend/scripts/build_synthetic_pdfs.py)
 data/synthetic/pdfs/
+
+# Written by Next.js tooling for coding assistants; not part of the app
+frontend/AGENTS.md
+CLAUDE.md

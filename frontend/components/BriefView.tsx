@@ -12,6 +12,7 @@ import { CiteLink } from "./ReportLink";
 import { RequestAccess } from "./RequestAccess";
 import { AnalystPanel } from "./brief/AnalystPanel";
 import { AudienceAnswer } from "./brief/AudienceAnswer";
+import { FollowUp } from "./brief/FollowUp";
 import { ConflictRow, NoteRow, PatternRow } from "./brief/Segments";
 
 // recharts is the heaviest dependency; load it only for briefs that have charts.
@@ -466,12 +467,19 @@ export function BriefView({ brief }: { brief: Brief }) {
 
   return (
     <article onClick={onClick}>
-      <title>{`${brief.question} · Evidence brief`}</title>
+      <title>{`${brief.question} · ALAMKansya`}</title>
       <p className="print-only print-mast">
-        Evidence brief · BPI Strategy &amp; Insights · Synthetic demonstration data
+        ALAMKansya evidence brief · BPI Strategy &amp; Insights · Synthetic demonstration data
       </p>
       <header className="brief-head">
-        <p className="crumbs no-print"><Link href="/">Ask another question</Link></p>
+        <p className="crumbs no-print">
+          <Link href="/">Ask another question</Link>
+          {brief.follow_up_of && (
+            <span>
+              Follow-up to <Link href={`/briefs/${brief.follow_up_of.id}`}>{brief.follow_up_of.question}</Link>
+            </span>
+          )}
+        </p>
         <h1>{brief.question}</h1>
         <div className="brief-meta">
           <span>{dateTime(brief.created_at)}</span>
@@ -508,6 +516,8 @@ export function BriefView({ brief }: { brief: Brief }) {
           </button>
         </div>
       </div>
+
+      <FollowUp brief={brief} />
 
       <div className="evidence-head">
         <div>

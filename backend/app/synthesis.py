@@ -24,7 +24,7 @@ from .confidence import compute_confidence
 from .config import ROLE_LABELS, TEAM_METRIC_FOCUS, retrieval_config, topicality_config
 from .db import Database
 from .describe import compute_gap_items, emotions_for, qual_contrasts, source_view, topic_label
-from .embeddings import Embedder
+from .embeddings import Embedder, to_pgvector
 from .llm_types import LLM, BriefRequest, LLMError, PromptGroup, QualContrast, Reader
 from .retrieval import Source
 from .schemas import Claim, EvidenceBrief
@@ -87,6 +87,22 @@ def prepared_for(reader: Reader, sources: list[Source], cited: set[str]) -> dict
             "team_study_codes": list(reader.team_study_codes), "note": note}
 
 
+def answering_sources(conn, question: str, embedder: Embedder, vector: list[float]) -> list[Source]:
+    """The findings a brief would be written from: retrieval under the connection's RLS, then the
+    off-topic gates. Shared with alerts.py, so "a study now answers your question" uses exactly the
+    rule a brief does. Junk questions are the caller's to skip."""
+    sources = retrieval.search(conn, question, embedder, query_embedding=vector)
+    topical = topicality_config(embedder.name)
+    if topicality.specific_terms(question) and topical["filter_off_topic"]:
+        # Lexical search: findings that share only generic words ("SME", "loan") are false hits.
+        return [s for s in sources if topicality.overlap(question, s)]
+    if topical.get("brief_needs_concept") and not topicality.answers_question(
+            question, sources, topical["coverage_bypass_similarity"]):
+        # Semantic search: nothing retrieved speaks to the question's concept.
+        return []
+    return sources
+
+
 class BriefService:
     def __init__(self, db: Database, llm: LLM, embedder: Embedder, fallback_llm: LLM,
                  today: Callable[[], date] = date.today):
@@ -97,8 +113,13 @@ class BriefService:
         self.today = today
 
     def ask(self, user: CurrentUser, question: str, reader_role: str | None = None,
-            report: Callable[[int, str | None], None] = progress.ignore) -> dict:
-        question = question.strip()
+            report: Callable[[int, str | None], None] = progress.ignore,
+            follow_up_of: dict | None = None) -> dict:
+        """A brief for `question`. A follow-up ({"id", "question"} of the brief it continues) is
+        searched and written as the earlier question plus the new one, so "What about Mindanao?"
+        keeps its subject; the reader sees their own words with a link back."""
+        asked = " ".join(question.split())
+        question = f"{follow_up_of['question']} Follow-up: {asked}" if follow_up_of else asked
         report(progress.SEARCH)
         vector = self.embedder.embed_query(question)
         junk = topicality.is_junk(question)
@@ -106,15 +127,7 @@ class BriefService:
         with self.db.as_user(user.id, user.email) as conn:
             sources, restricted = [], []
             if not junk:
-                sources = retrieval.search(conn, question, self.embedder, query_embedding=vector)
-                topical = topicality_config(self.embedder.name)
-                if focus and topical["filter_off_topic"]:
-                    # Lexical search: findings that share only generic words ("SME", "loan") are false hits.
-                    sources = [s for s in sources if topicality.overlap(question, s)]
-                elif topical.get("brief_needs_concept") and not topicality.answers_question(
-                        question, sources, topical["coverage_bypass_similarity"]):
-                    # Semantic search: nothing retrieved speaks to the question's concept.
-                    sources = []
+                sources = answering_sources(conn, question, self.embedder, vector)
                 sources = retrieval.attach_verbatims(conn, sources)
                 if sources or not focus or not topicality_config(self.embedder.name)["filter_off_topic"]:
                     restricted = retrieval.restricted_matches(conn, vector, retrieval_config(self.embedder.name),
@@ -193,7 +206,8 @@ class BriefService:
         gap_items = compute_gap_items(cited_sources, self.today()) if cited_sources else gap_items
         brief.gaps = [g["text"] for g in gap_items] + [g for g in brief.gaps if g not in computed_texts]
         payload = {
-            "question": question,
+            "question": asked,
+            "follow_up_of": {"id": follow_up_of["id"], "question": follow_up_of["question"]} if follow_up_of else None,
             "generated_by": generated_by,
             "generator_note": llm_note,
             "no_headline_message": no_headline_message,
@@ -222,9 +236,11 @@ class BriefService:
 
         with self.db.as_user(user.id, user.email) as conn:
             row = conn.execute(
-                "insert into public.briefs (user_id, question, payload, confidence, retrieved_finding_ids, model) "
-                "values (%s, %s, %s, %s, %s::uuid[], %s) returning id::text as id, created_at",
-                [user.id, question, Jsonb(payload), confidence["level"], [s.finding_id for s in sources], generated_by],
+                "insert into public.briefs (user_id, question, payload, confidence, retrieved_finding_ids, model, "
+                "question_embedding, follow_up_of) "
+                "values (%s, %s, %s, %s, %s::uuid[], %s, %s::extensions.vector, %s) returning id::text as id, created_at",
+                [user.id, question, Jsonb(payload), confidence["level"], [s.finding_id for s in sources], generated_by,
+                 to_pgvector(vector), follow_up_of["id"] if follow_up_of else None],
             ).fetchone()
             escalation = None
             # Route unresolved conflicts to an analyst once per conflict while it is open (asking

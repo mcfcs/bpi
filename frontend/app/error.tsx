@@ -10,7 +10,7 @@ export default function Error({ error, retry }: { error: unknown; retry: () => v
 
   return (
     <section className="page-head" role="alert">
-      <title>Something went wrong · Evidence brief</title>
+      <title>Something went wrong · ALAMKansya</title>
       <h1>This page could not be shown</h1>
       <p>
         Something unexpected came back from the evidence service. Your briefs and requests are saved; try again, or go

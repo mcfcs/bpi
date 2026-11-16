@@ -155,7 +155,7 @@ function Catalogue() {
   return (
     <>
       <section className="page-head">
-        <title>Studies · Evidence brief</title>
+        <title>Studies · ALAMKansya</title>
         <h1>Studies</h1>
         <p>
           Every approved study, including the ones {profile?.team_name ?? "your team"} cannot read yet. Open a report at the
