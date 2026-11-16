@@ -19,3 +19,10 @@ the script, edit `script.md`, regenerate `script.html` and print it the same way
 Figures come from `docs/HANDOFF.md` and the `backend/eval` runs. Token use and cost were measured
 on 6 Bedrock briefs (Claude Sonnet 5.5, medium effort, 16 Nov 2026). Pilot targets and hosting
 costs are proposals and estimates.
+
+## Live demo
+
+`ALAMKansya-Demo-Script.pdf` (source `demo-script.md`): a separate script for a live walkthrough of the app.
+A 6-minute core demo in three acts (Ben asks, Ana reviews and approves, Ben is told), four optional extras
+(permissions and access, ask an analyst, before you commission, Taglish), a pre-demo checklist and what to do if
+something goes wrong.
